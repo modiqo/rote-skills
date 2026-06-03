@@ -300,7 +300,6 @@ and `--email <addr>`. Show provider choices via AskUserQuestion, header `Sign in
 
 - **Google** → `rote login --provider google`
 - **GitHub** → `rote login --provider github`
-- **Email link** → ask for the address, then `rote login --email <addr>`
 
 Run the chosen one as its own Bash call:
 
