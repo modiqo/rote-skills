@@ -155,37 +155,84 @@ On success, state what landed where (id, org, visibility, version), then go to S
 
 ## Stage 4 — Turn the push into collaboration (members + invite)
 
-Right after a successful push, surface who's already in the org and offer to invite others to
-review or use the new artifact.
+Right after a successful push, offer to invite others to the org you just pushed into so they can
+review or use the new artifact. The flow is: **ask → snapshot who's already there → collect a set
+of emails → dedup → pick role(s) → invite each sequentially → report**.
 
-Show current members (owner/admin-gated — if it errors with a permissions message, say the user
-isn't an admin of that org and skip the invite offer):
-```bash
-rote registry org members <slug> --json
-```
-Returns `email` + `role` per member. Also surface pending invites if useful:
-```bash
-rote registry org invite pending <slug>
-```
+### 4a — Ask first
 
-Then ask (via `AskUserQuestion`): **invite anyone to `<slug>` to review/use `<artifact>`?**
+Via `AskUserQuestion`: **invite anyone to `<slug>` to review/use `<artifact>`?**
 - If no → done; offer Stage U (usage) or exit.
-- If yes → collect email(s) and a role (`developer` default, or `admin`), then invite one at a
-  time:
-```bash
-rote registry org invite <slug> <email> --role <role>
-```
+- If yes → continue to 4b.
 
-**`org invite` has no `--json`** — parse its human output into an outcome and report it plainly:
+### 4b — Snapshot existing members AND pending invites (dedup source)
+
+**Before collecting emails**, pull the current roster + outstanding invites in one call so you
+can skip anyone already in or already invited. `--pending` appends invites to the member list:
+```bash
+rote registry org members <slug> --pending --json
+```
+Returns `{ "members": [{email, role, …}], "pending": [{email, …}] }`. This is owner/admin-gated —
+if it errors with a permissions message, the user isn't an admin of that org: say so and skip the
+invite offer (only owners/admins can invite). Build a set of `{email → status}` (member /
+pending) from `.members[].email` and `.pending[].email` to dedup against in 4d.
+
+(If a build doesn't support `--json` together with `--pending`, fall back to two calls:
+`rote registry org members <slug> --json` and `rote registry org members <slug> --pending`.)
+
+### 4c — Collect the set of emails
+
+Ask the user for **one or more** emails to invite (a list is fine — they can paste several).
+Don't invite anything yet.
+
+### 4d — Dedup against the snapshot
+
+For each email, compare against the 4b set and bucket it **before** inviting:
+- **already a member** → skip, report "already in `<slug>` as `<role>`".
+- **already pending** → skip, report "invite already pending".
+- **new** → keep for invite.
+
+Only the *new* bucket proceeds. Show the user the skip list so it's clear why some were dropped.
+
+### 4e — Pick role(s), with the admin caveat
+
+The role determines what the invitee can do. Present all three via `AskUserQuestion` (default
+**developer**), and either apply one role to the whole batch or let the user set it per email:
+
+| Role | Can do | Use for |
+|------|--------|---------|
+| **reader** | Pull/use artifacts in the org. Cannot push or manage. | Teammates who only consume flows/adapters. |
+| **developer** | reader **+ push/update** adapters and flows. Cannot manage members or org settings. | Collaborators who contribute artifacts. |
+| **admin** | developer **+ manage the org**: invite/remove members, change roles, manage artifacts and visibility. | Co-maintainers you fully trust. |
+
+> **Admin caveat — call this out before granting it.** An admin can invite and remove *other*
+> members (including downgrading peers), change anyone's role, and delete/re-publish the org's
+> artifacts. It's near-total control short of deleting the org itself (owner-only). Grant it only
+> to people you'd trust to run the org; for someone who just needs to contribute flows,
+> **developer** is the right default. Don't default to admin to "save a step."
+
+**Seat check first.** From Stage U's `limit.members - current.members`, compute remaining seats.
+If the new-bucket count exceeds remaining seats, tell the user up front and invite only as many
+as fit (or have them upgrade / free a seat) — don't fire invites you know will hit the cap.
+
+### 4f — Invite each sequentially
+
+Invite **one email per command, in sequence** (never batch into a parallel block — each can fail
+independently and you report per-email):
+```bash
+rote registry org invite <slug> <email> --role <admin|developer|reader>
+```
+**`org invite` has no `--json`** — parse its human output into an outcome and report each plainly:
 - *added* (email already registered → in immediately)
 - *pending* (unregistered → invite activates on signup)
-- *already a member* → note it, skip
-- *duplicate pending* → already invited, skip
-- *quota_exceeded* (seat limit hit) → tell them the org is at its member cap; upgrade or free a
-  seat. Check remaining seats up front from Stage U's `limit.members - current.members` so you
-  don't attempt more invites than there are seats.
+- *already a member* / *duplicate pending* → note it, skip (shouldn't happen if 4d ran, but
+  handle it idempotently)
+- *quota_exceeded* (seat limit hit) → stop inviting; report the org is at its member cap.
+
+After the loop, summarize: who was added, who's pending, who was skipped (and why).
 
 To revoke a mistaken pending invite: `rote registry org invite revoke <slug> <email>`.
+To change a role later (e.g. walk back an over-grant): `rote registry org members role <slug> <email> <role>`.
 
 ---
 
