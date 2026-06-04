@@ -91,6 +91,35 @@ ls -la "$HOME/.local/bin/rote" "$HOME/.cargo/bin/rote" 2>/dev/null
 - Neither exists **and** `command -v rote` was empty → the binary is genuinely **not
   installed** (route to install, or tell the user). Do not go hunting for it elsewhere.
 
+### 1c. Shell expansion defeats the allowlist — prefer literal paths
+
+Even with `Bash(rote:*)`, `Bash(cd:*)`, and `~/.rote` all allowlisted (#1 above), a command
+will **still** prompt if it contains **parameter expansion with a default** (`${VAR:-fallback}`)
+or **command substitution** (`$(…)`). The agent's Bash tool flags these as "Contains expansion"
+and asks for confirmation **regardless of the allow rules** — it can't statically verify what
+the expansion resolves to. This is the most common "I allowlisted everything and it *still*
+prompts every step" trap.
+
+The single worst offender is prefixing workspace commands with
+`cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<name>` — the `${ROTE_HOME:-…}` default-expansion
+triggers a prompt on **every** command that uses it.
+
+Fixes, in order of preference:
+
+- **Use a literal absolute path** for the `cd`: `cd ~/.rote/rote/workspaces/<name>` or
+  `cd /Users/<you>/.rote/rote/workspaces/<name>`. (Plain `~` / `$HOME` and simple redirects
+  like `2>/dev/null` are fine — it's `${VAR:-default}` and `$(…)` that get flagged.)
+- **Lean on workspace persistence** — the rote workspace stays selected across Bash calls, so
+  after the first `cd` you usually don't need to `cd` again at all. Just run `rote …` directly
+  on subsequent steps.
+- **Run discrete single commands** — don't chain a rote call with `$(…)` substitution or an
+  `echo "… $(rote …)"` wrapper. Use `rote is-error @N` on its own line, then read the value
+  with a separate `rote @N '…' -r`, instead of `rote is-error @N && echo "$(rote @N …)"`.
+
+rote's embedded jq has two quirks worth knowing while inspecting responses: a string slice
+like `.body[0:200]` returns `null`, and a `slice | map({…})` chain errors — index a single
+element with `.[idx]` instead.
+
 ### 2. Step-wise, NEVER parallel
 
 Run **one command per Bash call, strictly in sequence** — never batch independent probes into a
