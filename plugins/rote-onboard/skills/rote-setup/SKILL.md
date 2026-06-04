@@ -41,6 +41,11 @@ Offer to add both via the `update-config` skill before the first rote command. O
 user confirms a prompt on every step — and re-prompts on every workspace command even after
 allowing the Bash rules.
 
+Even with both layers set, a command **still** prompts if it contains `${VAR:-default}`
+expansion or `$(…)` substitution ("Contains expansion") — so `cd` into workspaces with a
+**literal** path (`cd ~/.rote/rote/workspaces/<name>`, not `cd ${ROTE_HOME:-$HOME/.rote}/…`),
+and lean on workspace persistence to skip re-`cd`-ing. See INDEX § "Shared operating rules" #1c.
+
 All commands are non-destructive to the filesystem; they touch `~/.rote/` config and the
 registry.
 
