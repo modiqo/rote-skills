@@ -166,31 +166,38 @@ AskUserQuestion** (~3–4 lines — the "what" with a bit of dry humor, then the
 On repeat appearances, skip it — they've got it.
 
 These are the canonical beats. Keep the voice consistent (dry, confident, no hype, no invented
-numbers); adapt the wording to the moment but keep the *claims* exactly these.
+numbers); adapt the wording to the moment but keep the *claims* exactly these. The three map
+onto one motion — **reach → record → replay** — so the set reads as a single idea, not a
+grab-bag. Lead each with the *what*, land it on the *tax it removes*. The recurring dig is the
+honest one: you are charged a toll to call tools you already pay for. Never name a competitor,
+never invent a price.
 
-### Adapter — introduced at the "build an adapter" fork (setup), and in `rote-adapter-create`
+### Adapter — *Reach* — introduced at the "build an adapter" fork (setup), and in `rote-adapter-create`
 
-> **What:** An adapter lets your agent talk MCP to any API directly — no gateway, no SDK to
-> wire, no tool-call middleman taking a cut. rote reads the API's own spec and exposes it as
-> tools, locally.
-> **Value:** No per-tool-call fees, no extra infrastructure to run (it's all local), and no
-> new attack surface — your traffic goes straight to the provider, not through someone else's box.
+> **What:** An adapter lets your agent reach any API directly — talk its protocol from your own
+> machine, no gateway in the middle, no SDK to wire. rote reads the API's own spec and exposes
+> it as tools, locally.
+> **Value:** You already pay for these tools. An adapter means you don't pay a *second* toll to
+> call them — no per-tool-call fee, no extra box to run, no new attack surface. Your traffic
+> goes straight to the provider, not through someone else's meter.
 
-### Flow — introduced at the value-proof closer (setup Step 5), and when a flow is first saved
+### Flow — *Record → Replay* — introduced at the value-proof closer (setup Step 5), and when a flow is first saved
 
-> **What:** A flow is a workflow your agent builds and runs itself — no workflow-vendor
-> subscription, no LLM-memory provider. As you interact, rote watches what worked and what
-> failed and *crystallizes* the successes into reusable interaction memories, recalled next time.
-> **Value:** Determinism and token savings — a proven flow replays instead of re-reasoning.
-> Outcome-maxxing, not token-maxxing.
+> **What:** A flow is how your agent learns the way you did. As you work, rote *records* what
+> worked and what failed, then crystallizes the wins into reusable memory — so next time it
+> *replays* instead of re-reasoning from zero.
+> **Value:** Determinism and token savings, with nobody renting it back to you — no
+> workflow-vendor subscription, no memory provider metering your own recall. A proven flow runs
+> like muscle memory: you don't re-read the manual to ride the bike.
 
-### Hub — introduced in `rote-registry` before the first push
+### Hub — *Replay, shared* — introduced in `rote-registry` before the first push
 
-> **What:** When you build a flow or adapter that works, the hub lets your team and community
-> reuse it — the way a teacher's lesson saves every student from rediscovering it. Shared
-> artifacts become collective intelligence.
-> **Value:** Token savings across the whole org and community, with the same determinism — one
-> person's proven flow is everyone's, no re-derivation.
+> **What:** When a flow or adapter works, the hub lets your team and community replay it too —
+> the way a teacher's lesson saves every student from rediscovering it. One person's mastery
+> becomes everyone's.
+> **Value:** The same determinism, now shared, with no registry tax on knowledge you authored —
+> one proven flow is the whole org's, no re-derivation, no per-seat toll to reuse what your own
+> team already figured out.
 
 ## Shared closing-line convention (dry humor)
 
