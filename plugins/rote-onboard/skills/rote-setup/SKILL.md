@@ -353,9 +353,10 @@ the signed-in identity; do not skip or defer sign-in for any of them.
 
 **Invoke the `rote-adapter-create` skill** rather than inlining adapter creation here. That
 skill owns the full dry-run-first flow — spec discovery (catalog → web → local), `--dry-run`
-analysis, auth + toolset selection driven by the analysis, create, and the post-create
-options (write guard, sensitivity, subagent, credentials). It's the same skill a user invokes
-directly later when they add more adapters, so the logic lives in one place.
+analysis, auth + toolset selection driven by the analysis, create, the post-create options
+(write guard, sensitivity, credentials), and an automatic subagent generate once the adapter's
+proof probe is green. It's the same skill a user invokes directly later when they add more
+adapters, so the logic lives in one place.
 
 After `rote-adapter-create` finishes, continue the setup flow: offer **Step 3c** (credentials,
 if the new adapter needs a static token), the **install-skill** step, and the value closer
@@ -635,8 +636,27 @@ rote registry flow pull modiqo/list-top-committers --yes
 When unsure which mode, prefer the `cd … && rote deno run --allow-all main.ts` form — it works
 for every flow and matches how they're authored.
 
-Show the flow's output to the user — that's the payoff. Then suggest the main **rote** skill
-for day-to-day use (`rote flow search "<intent>"` before any direct adapter call).
+Show the flow's output to the user — that's the payoff.
+
+### Step 6 — Generate subagents (automatic, after the flow proves it works)
+
+Once the live flow has run green — proof that the installed adapters actually work
+(credentialed, tools resolving) — generate their subagent templates. This is the last setup
+step, and it runs **on its own, no AskUserQuestion**:
+
+```bash
+rote adapter agent generate --all --force
+```
+
+`--all` covers every adapter installed this run in one render; `--force` always lands fresh
+templates. It's a local template render (no LLM, no network), so it doesn't block. Gate it on
+the proof: only run it after at least one flow ran clean. If the proof was skipped (no
+credentialed adapter) or errored, **don't** generate — an unproven adapter shouldn't get
+subagent guidance written for it; say so in one line and point at the credential/probe fix.
+Mention it landed in a single line; don't make it a ceremony.
+
+Then suggest the main **rote** skill for day-to-day use (`rote flow search "<intent>"` before
+any direct adapter call).
 
 ---
 

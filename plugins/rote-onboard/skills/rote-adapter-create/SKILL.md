@@ -267,8 +267,11 @@ For OAuth-DCR servers (Notion) this opens a browser; tell the user to complete i
   a token. (Same secrets discipline as the setup skill.)
 - **Write guard**: `rote adapter guard init <id>`
 - **Sensitivity**: `rote sensitivity upgrade` (if needed) then `rote sensitivity apply <id> --json`
-- **Adapter subagent**: `rote adapter agent generate <id>`
 - **Capability index**: `rote adapter capability rebuild`
+
+> The **adapter subagent** is *not* offered here — it's generated automatically at the end of
+> Stage 6, but only once the proof probe is green (see below). Generating subagent guidance for
+> an adapter that fails its probe would be documenting a broken tool.
 
 ---
 
@@ -286,6 +289,23 @@ Show it's ready (tools/toolsets/auth). Offer to:
   ```bash
   cd ~/.rote/rote/workspaces/proof && rote <id>_probe "<query>"
   ```
+
+### Generate the subagent — automatic, only after a green probe
+
+The moment the proof probe returns clean, generate the adapter's subagent template. This is
+**not** an `AskUserQuestion` — it runs on its own, as the last step of a successful create:
+
+```bash
+rote adapter agent generate <id> --force
+```
+
+It's a fast local template render (no LLM, no network), so it doesn't block anything. `--force`
+always, so a re-created or re-probed adapter always lands a fresh template. Gate it on the
+probe: if the probe failed or was skipped (uncredentialed adapter), **do not** generate — say
+so in one line and point at the fix, so a broken adapter never gets subagent guidance written
+for it. Mention it landed in a single line; don't make it a ceremony.
+
+Then offer to:
 - **Tune it** — invoke **rote-adapter-config** for base-url, auth schemes, sensitivity, etc.
 - **Share it** — this is the schelling point for the registry. Hand off to **rote-registry**
   with the new adapter id: it checks whether the adapter already exists in the user's orgs,

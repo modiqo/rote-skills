@@ -2,6 +2,20 @@
 
 Distributable [Claude Code](https://claude.com/claude-code) skills for [rote](https://getrote.dev).
 
+## Three primitives, one idea
+
+rote is how an agent learns the way you learned to ride a bike: do it once, and it sticks.
+Three primitives carry that, and they're really one motion — **reach → record → replay**.
+
+| Primitive | Motion | What it is | The tax it removes |
+|---|---|---|---|
+| **Adapter** | **Reach** | Your agent talks straight to any API, locally — no gateway, no SDK to wire. | No tollbooth between you and tools you *already pay for*. Your traffic, your box, your bill — once. |
+| **Flow** | **Record → Replay** | As you work, rote keeps what worked and what failed, then crystallizes the wins into reusable memory. | No workflow-vendor subscription. A proven flow replays instead of re-reasoning — determinism, not a metered re-run. |
+| **Hub** | **Replay, shared** | A flow or adapter that works becomes your team's and community's — like a teacher's lesson. | No registry tax. One person's mastery is everyone's, with no re-derivation and no per-seat toll on shared knowledge. |
+
+The throughline: you pay for your tools once, reach them directly, and let what works become
+something you — and your team — never have to figure out twice.
+
 ## Install
 
 This repo is a **dual-format marketplace** — the same repo installs into both Claude Code

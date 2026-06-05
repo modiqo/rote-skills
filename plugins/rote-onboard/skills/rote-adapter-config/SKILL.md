@@ -130,7 +130,11 @@ Generate from a preset: `rote adapter policies <id> --generate --preset <github|
 rote adapter agent list
 rote adapter agent generate <id> [--force]
 ```
-Generates/refreshes the per-adapter subagent template. (To wire the rote skill itself into an
+Generates/refreshes the per-adapter subagent template. A fresh adapter already gets one
+generated automatically — `rote-adapter-create` runs `agent generate --force` once the proof
+probe is green, and `rote-setup` does the same after its live flow proves the adapter works. So
+this is the **refresh** path: re-run it (with `--force`) after a rote upgrade, after editing the
+adapter's tools, or to restore a template you customized. (To wire the rote skill itself into an
 agent, that's `rote install skill --provider <name> --agents` — a different, broader command.)
 
 ### Group / version
