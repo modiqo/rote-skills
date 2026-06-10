@@ -64,10 +64,10 @@
   <text x="330" y="652" fill="#f4f4f5" font-size="17" font-weight="700">Sign in <tspan fill="#9a8a78" font-size="13" font-weight="500">(mandatory)</tspan></text>
   <text x="330" y="674" fill="#b8a890" font-size="12.5" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">rote whoami → rote login</text>
   <line x1="324" y1="690" x2="636" y2="690" stroke="#3a2c1c" stroke-width="1"/>
-  <text x="330" y="716" fill="#d8d0c4" font-size="13">Have an account?</text>
-  <text x="346" y="740" fill="#c8c8d0" font-size="12.5">→ yes  ·  Google / GitHub</text>
-  <text x="346" y="760" fill="#c8c8d0" font-size="12.5">→ have an invite code  ·  rote join</text>
-  <text x="346" y="780" fill="#c8c8d0" font-size="12.5">→ no account  ·  request access</text>
+  <text x="330" y="716" fill="#d8d0c4" font-size="13">Choose provider</text>
+  <text x="346" y="740" fill="#c8c8d0" font-size="12.5">→ Google  ·  rote login --provider google</text>
+  <text x="346" y="760" fill="#c8c8d0" font-size="12.5">→ GitHub  ·  rote login --provider github</text>
+  <text x="346" y="780" fill="#c8c8d0" font-size="12.5">→ then connect APIs or take the live tour</text>
 
   <line x1="480" y1="790" x2="480" y2="822" stroke="#e8833a" stroke-width="2" marker-end="url(#arrowOrange)"/>
   <text x="500" y="814" fill="#8a8a92" font-size="12" font-style="italic">signed in as you@…</text>

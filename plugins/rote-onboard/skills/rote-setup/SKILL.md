@@ -2,16 +2,13 @@
 name: rote-setup
 description: >
   Guided, interactive first-run setup for rote. Installs the binary, signs the user in via
-  Google/GitHub (every experience is identity-gated). If they have no account it requests an
-  invite in-experience (`rote waitlist`) and is **resumable** — the user goes off to other
-  work and re-runs /rote-setup when the code arrives (24–48h), picking up right at the
-  claim-code step. Then forks: stop at just the CLI, pull curated powerpack
-  adapters, or build adapters from the 872-API built-in catalog. Then offers a menu of
-  remaining onboarding steps (adapters, credentials, OAuth, install skill, explore) and ends
-  by running one live flow to prove value. Use when the user says "set up rote", "rote
+  Google/GitHub (every experience is identity-gated). Then forks: stop at just the CLI, pull
+  curated powerpack adapters, or build adapters from the built-in catalog. Then offers a menu
+  of remaining onboarding steps (adapters, credentials, OAuth, install skill, explore) and
+  ends by running one live flow to prove value. Use when the user says "set up rote", "rote
   setup", "onboard me to rote",
   "get rote working", "install and configure rote", "/rote-setup", or is a first-timer
-  who needs hand-holding through `rote join` / `rote login` / installing adapters.
+  who needs hand-holding through `rote login`, API connection, and installing adapters.
   This skill drives the human through choices with AskUserQuestion at each branch —
   it does NOT silently run the whole one-liner.
 ---
@@ -19,8 +16,8 @@ description: >
 # rote-setup — Guided onboarding wizard
 
 Make installation feel like a breeze. You are the wizard: detect state, present clear
-choices, run one step at a time, confirm, move on. Lead with the happy path (sign in),
-fall back gracefully (request invite / claim code) only when needed.
+choices, run one step at a time, confirm, move on. Lead with the happy path: sign in,
+then let power users connect APIs directly or take the step-by-step live tour.
 
 Use **AskUserQuestion** for every branch below. Run **one command per Bash call** (the user
 mandates no chained/piped commands). After each step, give a one-line "what just happened"
@@ -209,96 +206,13 @@ Read the output:
 - `ok: <email>` → **already logged in.** Say "You're signed in as `<email>`." and go to the
   fork (**Step 2.5**).
 - Anything else (error, `not logged in`, empty) → **not logged in.** Go to **Step 1**.
-  **Resume awareness:** if the binary was already installed (Step -1 found it without
-  installing it this run), the user is very likely a **returning waitlister picking up where
-  they left off** — lead Step 1 with claim-code ("Welcome back — did your invite code arrive?")
-  rather than the cold "Do you have an account?" (see "Resuming after an invite request").
-  Either way, sign-in is required before the fork — do not skip it.
+  Sign-in is required before the fork — do not skip it.
 
 Do not assume — branch on the actual output of `rote whoami`.
 
 ---
 
-## Step 1 — Do you already have an account?
-
-Ask up front (per design): **"Do you already have a rote account?"**
-
-Present with AskUserQuestion, header `Account`:
-- **Yes, sign me in** — proceed to **Step 2 (sign-in)**.
-- **I have an invite code** — proceed to **Step 1a (claim code)**.
-- **No, I need an invite** — proceed to **Step 1b** — I'll **request one for you here** via
-  `rote waitlist` (no need to leave for a website).
-
-### Step 1a — Claim an invite code
-
-Ask for the code (AskUserQuestion is for choices, so just ask in prose: "Paste your invite
-code"). When you have it:
-
-```bash
-rote join <invite-code>
-```
-
-On success → continue to **Step 2 (sign-in)** with the email tied to that invite.
-On failure → show the error verbatim, offer to retry or fall back to **Step 1b**.
-
-### Step 1b — Request an invite (do it here, don't punt to the website)
-
-rote is invite-gated, but the request runs **in this experience** — there's a CLI command for
-it. Don't just send the user to a URL.
-
-1. **Ask for their email** (prose — it's free text, and it's where the invite code will be sent):
-   "What email should the invite go to?"
-2. **Request the invite** by passing the email as the argument (pass it explicitly — a bare
-   `rote waitlist` prompts on stdin, which has no TTY in an agent shell and would hang):
-   ```bash
-   rote waitlist user@example.com
-   ```
-   On success it prints "Waitlist request sent" and notes the invite code arrives by email
-   (typically within 24–48 hours). The request goes to the rote team; the code comes back to
-   the email given.
-3. **Hand off — they can go do other work; you'll resume on arrival.** The wait is real
-   (typically **under 24–48h**), so don't make them sit here. Say, in plain words:
-
-   > Invite requested — the code comes by email, usually within 24–48h. **Go do other work in
-   > the meantime.** When it lands in your inbox, just run **`/rote-setup`** again (or paste the
-   > code and say "I have my invite") and I'll **pick up right where we left off** — straight at
-   > the claim-code step. Nothing's lost: the binary's installed, you're at the invite gate, and
-   > resuming skips everything already done.
-
-   This is the resume contract — see **"Resuming after an invite request"** below for how
-   re-entry detects the right pickup point. No state file is written; the skill re-derives where
-   to resume from live probes each time.
-
-If `rote waitlist` errors (e.g. email service unreachable), fall back to the manual path:
-request at **https://getrote.dev** or email **ask@modiqo.ai** directly. Also offer the loop-back
-if they realize they **already have a code** → **Step 1a**. Don't fabricate an invite URL beyond
-the canonical `getrote.dev`.
-
-### Resuming after an invite request (pick up where we left off)
-
-A user who requested an invite will return — possibly days later, in a fresh session with no
-memory of this run. **Re-derive the resume point from live probes** (the skill keeps no state of
-its own); don't restart from zero or re-explain things already done:
-
-1. The **2×2 pre-flight (Step -1)** already runs first — it'll find the binary **installed** (it
-   was installed before the invite gate), so skip reinstalling. Acknowledge it: "rote's already
-   installed — picking up where we left off."
-2. Then **Step 0** runs `rote whoami`. For a returning waitlister it'll report **not logged in**
-   (they never got past the invite gate). That `installed + not-logged-in` combination IS the
-   resume signal: they're at the invite gate.
-3. **Go straight to the invite question and lead with claim-code** (don't make them re-pick "no
-   account" — they're past that): "Welcome back — did your invite code arrive?"
-   - **Yes, here's the code** → **Step 1a** (`rote join <code>` → sign in → fork). The happy resume.
-   - **Not yet** → they can keep waiting; re-run `/rote-setup` whenever it arrives. Re-confirm
-     `rote waitlist` only if they think the first request didn't go through.
-
-The whole "resume" is just: **install ✓ (skip) → not-logged-in (the gate) → ask for the code →
-claim → continue the normal flow.** No marker file, no special mode — the live state is the
-memory.
-
----
-
-## Step 2 — Sign in (detect configured providers)
+## Step 1 — Sign in (detect configured providers)
 
 Present the sign-in options. The CLI supports `--provider google`, `--provider github`,
 and `--email <addr>`. Show provider choices via AskUserQuestion, header `Sign in`:
@@ -327,7 +241,7 @@ provider.
 
 ## Step 2.5 — How far do you want to go? (fork, after login)
 
-The binary is installed **and the user is signed in** (login in Steps 0–2 always runs first —
+The binary is installed **and the user is signed in** (login in Steps 0–1 always runs first —
 every experience is identity-gated, so usage is attributable). Now ask how far they want to
 take setup.
 
@@ -705,14 +619,13 @@ any direct adapter call).
   active here" assumption. A stale memory must never short-circuit a probe; if memory and a
   live probe disagree, the probe wins. Once rote is present, start from `rote whoami` and
   branch on its real output.
-- **Lead with the happy path.** Sign-in first; invite/claim flows are the fallback.
+- **Lead with the happy path.** Sign-in first; then connect APIs or take the live tour.
 - **Browser steps are async.** After `rote login --provider ...` or `rote oauth setup
   google`, tell the user to finish in the browser, then re-run `rote whoami` /
   re-check before declaring success.
 - **Show errors verbatim.** Never paper over a failed step; offer a retry or alternate
   branch.
-- **Don't fabricate URLs or codes.** Canonical signup is `getrote.dev`; invite codes come
-  from the user.
+- **Don't fabricate URLs or codes.** Determine every setup fact from live CLI output.
 - After a successful first run, suggest the main **rote** skill takes over for day-to-day
   use (`rote flow search` before any direct adapter call).
 
