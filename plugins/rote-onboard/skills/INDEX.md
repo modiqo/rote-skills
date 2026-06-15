@@ -1,6 +1,7 @@
 # rote-onboard — skill map
 
-The full rote skill set: the day-to-day **rote** skill, the **rote-org** admin skill, and five
+The full rote skill set: the day-to-day **rote** skill, the **rote-org** admin skill, the
+**rote-browse** browser skill, and five
 guided slash-command skills that walk a human through getting rote working, sharing what
 they build, and keeping it all current. The guided skills are a sequence, not a grab-bag — each
 ends by naming the next logical step, so the path becomes muscle memory. This file is the
@@ -17,10 +18,11 @@ canonical map; each skill links back here.
 | 5 | `/rote-onboard:rote-update` | Keep current — update both layers (the `rote` binary **and** these skills), which version independently. | — |
 | — | `/rote-onboard:rote` | Day-to-day work — `rote flow search "<intent>"` before any direct adapter call, response reuse, crystallized workflows. | registry (share what you build) |
 | — | `/rote-onboard:rote-org` | Registry organization admin — create/delete orgs, members, roles, invites, plan and usage. | — |
+| — | `/rote-onboard:rote-browse` | Browser automation (beta) — navigate, snapshot, query page slices, attach to a logged-in Chrome/Edge session, recover stale refs, and crystallize replayable browser flows. | — |
 
 **Two kinds of skill:** the guided onboard skills (1–5) are for *changing your setup*; the
-**rote** skill is for *using* it day to day, with **rote-org** alongside for organization
-administration.
+**rote** skill is for *using* it day to day, with **rote-org** (organization administration)
+and **rote-browse** (browser automation) alongside.
 
 ## How to build muscle memory
 
