@@ -19,7 +19,7 @@ Rules: determine facts from live commands (never memory); secrets never captured
 (masked handoff); if rote isn't on PATH, resolve it via the **narrow probe** (check
 `$HOME/.local/bin/rote` then `$HOME/.cargo/bin/rote` — never a deep `find`; see INDEX § 1b).
 **Follow the shared
-operating rules in [`../../INDEX.md`](../../INDEX.md) § "Shared operating rules"** — offer the
+operating rules in [`../INDEX.md`](../INDEX.md) § "Shared operating rules"** — offer the
 full permissions on a fresh run — both `permissions.allow` (`Bash(rote:*)` / `Bash(cd:*)`) and
 `permissions.additionalDirectories` (`~/.rote`) — and run **one command per
 Bash call, strictly sequential — never parallel**.
@@ -170,9 +170,9 @@ rote adapter bump <id> [--minor|--major]
 
 **Closing line** (optional, on a clean exit): one dry one-liner keyed to whatever was just
 tuned — still the provider's own API, still no proxy taking a cut per call. Shared convention
-and rules in [INDEX.md](../../INDEX.md). Keep it lower-key than setup or create — config is
+and rules in [INDEX.md](../INDEX.md). Keep it lower-key than setup or create — config is
 housekeeping, so don't force it; skip it if a step errored.
 
-**Related onboard skills** ([INDEX.md](../../INDEX.md) is the full map):
+**Related onboard skills** ([INDEX.md](../INDEX.md) is the full map):
 - **New adapter:** `/rote-onboard:rote-adapter-create` · **First-run:**
   `/rote-onboard:rote-setup` · **Keep current:** `/rote-onboard:rote-update`

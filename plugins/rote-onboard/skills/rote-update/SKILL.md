@@ -15,7 +15,7 @@ distribution**. This skill does both. Determine facts from live commands; if rot
 PATH, resolve it via the **narrow probe** (check `$HOME/.local/bin/rote` then
 `$HOME/.cargo/bin/rote` — never a deep `find`; see INDEX § 1b). **Follow the shared operating
 rules in
-[`../../INDEX.md`](../../INDEX.md) § "Shared operating rules"** — offer the permission allowlist
+[`../INDEX.md`](../INDEX.md) § "Shared operating rules"** — offer the permission allowlist
 (`Bash(rote:*)` etc.) on a fresh run, and run **one command per Bash call, sequentially —
 never parallel**.
 
@@ -45,8 +45,10 @@ rote --version
 post-upgrade guidance):
 
 ```bash
-rote adapter agent generate --all --force
+rote adapter agent generate --force
 ```
+
+(Omitting the adapter id regenerates the template for every installed adapter.)
 
 ## 3. Update the rote-skills plugin (this skill set)
 
@@ -55,7 +57,7 @@ use:
 
 **Claude Code:**
 ```bash
-claude plugin update rote-setup@rote-skills
+claude plugin update rote-onboard@rote-skills
 ```
 
 **Codex:**
@@ -84,10 +86,10 @@ updated skills.
 
 **Closing line** (only after a clean update of both layers): one dry one-liner keyed to the
 version just landed on — still a local binary hitting providers directly, no middleman proxy to
-keep paying as it ages. Shared convention and rules in [INDEX.md](../../INDEX.md). Skip it if
+keep paying as it ages. Shared convention and rules in [INDEX.md](../INDEX.md). Skip it if
 `self-update` errored or deferred to a package manager. e.g. "Updated to {version} — your
 adapters still hit the real APIs directly, no proxy clipping a fee per call. Carry on."
 
-**Related onboard skills** ([INDEX.md](../../INDEX.md) is the full map):
+**Related onboard skills** ([INDEX.md](../INDEX.md) is the full map):
 - **First-run:** `/rote-onboard:rote-setup` · **New adapter:**
   `/rote-onboard:rote-adapter-create` · **Tune one:** `/rote-onboard:rote-adapter-config`

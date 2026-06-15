@@ -18,7 +18,7 @@ Build an adapter for any API the way the rote-vscode wizard does: **analyze the 
 side effects, then drive the choices from what the analysis found.** You hold the dry-run JSON
 in context and ask the user only the questions the analysis can't answer.
 
-**Follow the shared operating rules in [`../../INDEX.md`](../../INDEX.md) § "Shared operating
+**Follow the shared operating rules in [`../INDEX.md`](../INDEX.md) § "Shared operating
 rules"** — permissions allowlist, strict step-wise (never parallel), and required-state gates.
 On a fresh run, first offer the full permissions — both `permissions.allow` (`Bash(rote:*)` /
 `Bash(cd:*)`) and `permissions.additionalDirectories` (`~/.rote`) — so the user
@@ -40,7 +40,7 @@ Core rules:
 
 **If the user hasn't already heard the adapter pitch this run** (e.g. they invoked this skill
 directly, not via `/rote-setup`), open with the **Adapter** What/Value beat from
-[`../../INDEX.md`](../../INDEX.md) § "Primitive intros" (~3–4 lines: talk MCP to any API
+[`../INDEX.md`](../INDEX.md) § "Primitive intros" (~3–4 lines: talk MCP to any API
 directly — no gateway/SDK/tool-call middleman; value: no per-call fees, infra-less/local, no
 new attack surface). Skip it if they just came from the setup fork (they've heard it).
 
@@ -313,7 +313,7 @@ Then offer to:
   and offers to invite others for review/use. Only offer this on a clean create.
 
 **Closing line** (only on a clean create + green probe): land one dry one-liner keyed to this
-run's `total_tools` — the shared convention and rules live in [INDEX.md](../../INDEX.md).
+run's `total_tools` — the shared convention and rules live in [INDEX.md](../INDEX.md).
 e.g. "512 tools talking straight to the provider's API — no metered middleman quietly billing
 you per call." Skip it if the run was rocky.
 
@@ -331,7 +331,7 @@ you per call." Skip it if the run was rocky.
 
 ## Related onboard skills
 
-Part of the **rote-onboard** sequence ([INDEX.md](../../INDEX.md) is the full map):
+Part of the **rote-onboard** sequence ([INDEX.md](../INDEX.md) is the full map):
 - **Next (tune):** `/rote-onboard:rote-adapter-config` — auth, base URL, write guard,
   sensitivity.
 - **Next (share):** `/rote-onboard:rote-registry` — check/push to your orgs, then invite others.

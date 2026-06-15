@@ -23,7 +23,7 @@ Use **AskUserQuestion** for every branch below. Run **one command per Bash call*
 mandates no chained/piped commands). After each step, give a one-line "what just happened"
 and surface the next choice.
 
-**Follow the shared operating rules in [`../../INDEX.md`](../../INDEX.md) § "Shared operating
+**Follow the shared operating rules in [`../INDEX.md`](../INDEX.md) § "Shared operating
 rules"** — permissions, strict step-wise (never parallel), required-state gates, and flow
 execution. They apply to every step here.
 
@@ -247,7 +247,7 @@ take setup.
 
 **This fork is where "adapter" first appears — give the adapter What/Value beat before the
 question** (the user may not know what an adapter buys them). Deliver the **Adapter** beat from
-[`../../INDEX.md`](../../INDEX.md) § "Primitive intros" (~3–4 lines: what it is, with a bit of
+[`../INDEX.md`](../INDEX.md) § "Primitive intros" (~3–4 lines: what it is, with a bit of
 dry humor, then the value — no per-tool-call fees, infra-less/local, no new attack surface),
 *then* ask. AskUserQuestion, header `Scope`:
 
@@ -491,13 +491,13 @@ not just "complete." Only offer this if at least one credential is wired (a flow
 working credential will just error).
 
 **This is where "flow" first appears — give the flow What/Value beat before the question.**
-Deliver the **Flow** beat from [`../../INDEX.md`](../../INDEX.md) § "Primitive intros" (~3–4
+Deliver the **Flow** beat from [`../INDEX.md`](../INDEX.md) § "Primitive intros" (~3–4
 lines: a workflow your agent builds and runs itself — no workflow-vendor subscription, no
 LLM-memory provider; rote crystallizes what worked into recalled interaction memories. Value:
 determinism + token savings — outcome-maxxing, not token-maxxing). *Then* ask (AskUserQuestion,
 header `Try it`): "Want me to run a quick flow to see it work?" — yes / skip.
 
-**Follow [`../../INDEX.md`](../../INDEX.md) § "Running a flow"** — the canonical method. The
+**Follow [`../INDEX.md`](../INDEX.md) § "Running a flow"** — the canonical method. The
 short version, applied here:
 
 **1. Find a flow for a credentialed adapter.** Use `rote explore "<intent>"` to discover what
@@ -559,11 +559,11 @@ Once the live flow has run green — proof that the installed adapters actually 
 step, and it runs **on its own, no AskUserQuestion**:
 
 ```bash
-rote adapter agent generate --all --force
+rote adapter agent generate --force
 ```
 
-`--all` covers every adapter installed this run in one render; `--force` always lands fresh
-templates. It's a local template render (no LLM, no network), so it doesn't block. Gate it on
+Omitting the adapter id covers every adapter installed this run in one render; `--force`
+always lands fresh templates. It's a local template render (no LLM, no network), so it doesn't block. Gate it on
 the proof: only run it after at least one flow ran clean. If the proof was skipped (no
 credentialed adapter) or errored, **don't** generate — an unproven adapter shouldn't get
 subagent guidance written for it; say so in one line and point at the credential/probe fix.
@@ -634,11 +634,11 @@ any direct adapter call).
 ## Closing line + related skills
 
 **Closing line** (only after a clean first run): land one dry one-liner keyed to the live flow
-that just proved value — shared convention and rules in [INDEX.md](../../INDEX.md). e.g. "And
+that just proved value — shared convention and rules in [INDEX.md](../INDEX.md). e.g. "And
 that flow ran straight against the provider's API — no proxy in the middle quietly metering you
 per call. Welcome to rote." Skip it if any step errored.
 
-**Related onboard skills** (this is the front door; [INDEX.md](../../INDEX.md) is the full map):
+**Related onboard skills** (this is the front door; [INDEX.md](../INDEX.md) is the full map):
 - **Build more adapters:** `/rote-onboard:rote-adapter-create`
 - **Tune one:** `/rote-onboard:rote-adapter-config` · **Keep current:**
   `/rote-onboard:rote-update`

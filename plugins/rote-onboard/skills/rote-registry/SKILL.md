@@ -19,7 +19,7 @@ does it: **check before you push** (don't burn quota re-pushing something alread
 at the visibility the user chooses, then **turn the push into collaboration** by surfacing org
 members and offering invites.
 
-**Follow the shared operating rules in [`../../INDEX.md`](../../INDEX.md) § "Shared operating
+**Follow the shared operating rules in [`../INDEX.md`](../INDEX.md) § "Shared operating
 rules"** — on a fresh run, offer the full permissions (both `permissions.allow`
 `Bash(rote:*)`/`Bash(cd:*)` AND `permissions.additionalDirectories` `~/.rote`) so the user
 isn't prompted on every step.
@@ -65,7 +65,7 @@ rote registry whoami --verbose
 ## Stage 1 — Which orgs, and is the artifact already there?
 
 **This is where the "hub" concept first appears — give the hub What/Value beat before asking
-where to push.** Deliver the **Hub** beat from [`../../INDEX.md`](../../INDEX.md) § "Primitive
+where to push.** Deliver the **Hub** beat from [`../INDEX.md`](../INDEX.md) § "Primitive
 intros" (~3–4 lines: a working flow/adapter shared so the team and community reuse it — the way
 a teacher's lesson saves every student rediscovering it; shared artifacts become collective
 intelligence. Value: token savings across the org and community, with the same determinism).
@@ -88,9 +88,9 @@ Then run the **existence check** against each candidate org (Stage 2).
 For an **adapter** named `<id>`, compare the local fingerprint to what's published per org:
 
 ```bash
-rote adapter info <id> --json
+rote adapter info <id>
 ```
-(grab `fingerprint` + `version` locally), then for each org slug:
+(grab the `Fingerprint` and `Version` lines from the output), then for each org slug:
 ```bash
 rote registry adapter info <slug>/<id> --json
 ```
@@ -279,10 +279,10 @@ This is the `/show usage` answer — quota consumption at a glance, no surprises
 
 **Closing line** (only after a clean push): one dry one-liner keyed to what landed — e.g. the
 artifact name + org + that it's now shareable without a middleman registry tax. Shared
-convention and rules in [INDEX.md](../../INDEX.md). Skip it if the push errored or there was
+convention and rules in [INDEX.md](../INDEX.md). Skip it if the push errored or there was
 nothing to push.
 
-**Related onboard skills** ([INDEX.md](../../INDEX.md) is the full map):
+**Related onboard skills** ([INDEX.md](../INDEX.md) is the full map):
 - **Invoked by:** `/rote-onboard:rote-adapter-create` (after minting an adapter) and the flow
   crystallize path.
 - **Full org admin:** the **rote-org** skill · **Tune the adapter first:**

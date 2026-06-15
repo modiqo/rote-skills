@@ -1,9 +1,10 @@
 # rote-onboard — skill map
 
-Five guided slash-command skills that walk a human through getting rote working, sharing what
-they build, and keeping it all current. They're a sequence, not a grab-bag — each ends by
-naming the next logical step, so the path becomes muscle memory. This file is the canonical
-map; each skill links back here.
+The full rote skill set: the day-to-day **rote** skill, the **rote-org** admin skill, and five
+guided slash-command skills that walk a human through getting rote working, sharing what
+they build, and keeping it all current. The guided skills are a sequence, not a grab-bag — each
+ends by naming the next logical step, so the path becomes muscle memory. This file is the
+canonical map; each skill links back here.
 
 ## The skills, in the order you meet them
 
@@ -14,10 +15,12 @@ map; each skill links back here.
 | 3 | `/rote-onboard:rote-adapter-config` | Tune an adapter you already have — auth, base URL, write guard, sensitivity, capability index, OAuth re-auth, grouping. | back to itself (menu) · adapter-create (new one) |
 | 4 | `/rote-onboard:rote-registry` | Share an artifact — at the moment an adapter is minted or a flow crystallized, check if it's already in your orgs, push at chosen visibility, then surface members + invite. Also `/show usage` (quota across orgs). | rote-org (full admin) |
 | 5 | `/rote-onboard:rote-update` | Keep current — update both layers (the `rote` binary **and** these skills), which version independently. | — |
+| — | `/rote-onboard:rote` | Day-to-day work — `rote flow search "<intent>"` before any direct adapter call, response reuse, crystallized workflows. | registry (share what you build) |
+| — | `/rote-onboard:rote-org` | Registry organization admin — create/delete orgs, members, roles, invites, plan and usage. | — |
 
-**The day-to-day skill is separate:** once you're set up, the main **rote** skill takes over
-(`rote flow search "<intent>"` before any direct adapter call). The onboard skills are for
-*changing your setup*; the rote skill is for *using* it.
+**Two kinds of skill:** the guided onboard skills (1–5) are for *changing your setup*; the
+**rote** skill is for *using* it day to day, with **rote-org** alongside for organization
+administration.
 
 ## How to build muscle memory
 
