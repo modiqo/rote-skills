@@ -1,6 +1,6 @@
 ---
 name: rote-browse
-description: Use for browser automation through rote: browsing websites, attaching to active Chrome or Edge sessions, Gmail or other logged-in sites, headed/headless exploration, snapshots, readiness waits, page slices, ref rebasing, and crystallizing browser flows. Prefer rote browser primitives over direct Playwright calls.
+description: "Use for browser automation through rote: browsing websites, attaching to active Chrome or Edge sessions, Gmail or other logged-in sites, headed/headless exploration, snapshots, readiness waits, page slices, ref rebasing, and crystallizing browser flows. Prefer rote browser primitives over direct Playwright calls."
 ---
 
 # rote-browse
