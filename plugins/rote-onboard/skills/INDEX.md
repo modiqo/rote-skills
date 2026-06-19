@@ -21,8 +21,9 @@ canonical map; each skill links back here.
 | — | `rote-org` | Registry organization admin — create/delete orgs, members, roles, invites, plan and usage. | — |
 | — | `rote-browse` | Browser automation (beta) — navigate, snapshot, query page slices, attach to a logged-in Chrome/Edge session, recover stale refs, and crystallize replayable browser flows. | — |
 
-**Two kinds of skill:** the guided onboard skills (1–5) are for *changing your setup*; the
-**rote** skill is for *using* it day to day, with **rote-org** (organization administration),
+**Two kinds of skill:** the guided onboard skills (1-5) are for *changing your setup*; the
+**rote** skill is for *using* it day to day, with task-level references under
+`rote/references/`, and with **rote-org** (organization administration),
 **rote-using-adapters** (single-adapter execution), and **rote-browse** (browser automation)
 alongside.
 

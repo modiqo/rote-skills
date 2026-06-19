@@ -30,7 +30,8 @@ Existing workspace: <path>   # only for resumptions
   calling tools.
 - If resuming, `cd` to the supplied workspace and do not run `rote init` again.
 - Always probe before calling. Tool names and input schemas vary by adapter.
-- Before returning results, write and save a pending flow stub.
+- Before returning reusable results, write a pending flow stub. Run pending save immediately only
+  when the caller or user already approved saving, releasing, or making the workflow reusable.
 
 ## Start
 
@@ -121,8 +122,9 @@ After approval, re-enter the same workspace and retry the blocked call with
 
 ## Task Completion Protocol
 
-The last two commands inside the workspace, before any result text, are pending write and
-pending save.
+The last required lifecycle command inside the workspace, before reusable result text, is pending
+write. If the original request already approved saving, releasing, or making the workflow reusable,
+run pending save before result text too.
 
 ```bash
 rote flow pending write <workspace> \
@@ -131,16 +133,20 @@ rote flow pending write <workspace> \
   --response-path "<validated jq path>" \
   --notes "<encoding quirks, caveats, or data shape notes>"
 
+# Run immediately only when save/release/reuse was already requested.
 rote flow pending save <workspace>
 ```
 
-Capture the scaffold command printed by `pending save`. Then present the results and ask:
+Capture the scaffold command printed by `pending save` when you run it. If the user already asked to
+save, release, or make the workflow reusable, treat that as approval and run the scaffold path after
+pending save. Otherwise, keep the workspace name and save command, present the results, and ask:
 
 ```text
 Want to save this as a reusable flow? (yes/no)
 ```
 
-Do not create, release, or discard the flow until the user answers.
+Do not create, release, or discard the flow until the user answers or the original request already
+gave save/release approval. Never skip pending write; never skip pending save after save approval.
 
 ## If User Saves The Flow
 
