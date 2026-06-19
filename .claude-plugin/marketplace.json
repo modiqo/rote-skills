@@ -5,7 +5,7 @@
     "email": "social@modiqo.ai"
   },
   "metadata": {
-    "description": "Distributable Claude Code skills for rote — adapter workflow orchestration."
+    "description": "Distributable rote skills — adapter workflow orchestration."
   },
   "plugins": [
     {

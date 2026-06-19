@@ -33,7 +33,7 @@ If no flow exists → use rote to explore and crystallize one.
 ## CRITICAL: Run rote commands SEQUENTIALLY — never parallel-batch
 
 **rote commands form dependency chains. Run them one at a time, and read each result before
-issuing the next.** Do NOT batch multiple `rote` calls into a single parallel tool block.
+issuing the next.** Do NOT start multiple dependent `rote` commands at once.
 
 Why this is non-negotiable for rote specifically:
 - `@N` references (`rote @2 …`, `rote @3 …`, `$decoded` chains) read **cached responses the
@@ -44,15 +44,12 @@ Why this is non-negotiable for rote specifically:
 - Exploration → flow lookup → flow run is sequential by nature: you can't run the flow until
   you know which flow (and its path) the search/explore step returned.
 
-If you cram exploration + dependent `@N` queries + retries into one parallel batch and any one
-fails, the harness **cancels the entire batch** ("parallel tool call cancelled") — losing the
-ones that would have succeeded. This is the most common avoidable failure with rote.
+If you cram exploration + dependent `@N` queries + retries into one parallel batch, later
+commands can run before their inputs exist. This is the most common avoidable failure with rote.
 
-**The rule:** one `rote` command per tool call. Wait for it. Read its output (rote's output is
-the feedback — `@@status`, `@@flows`, `@@next`, errors). Then decide the next command from that
-real output, not from a guess. The harness's own rule says it: *"if there are dependencies
-between the calls … you MUST wait for previous calls to finish."* For rote, there are almost
-always dependencies.
+**The rule:** one `rote` command at a time. Wait for it. Read its output (rote's output is the
+feedback — `@@status`, `@@flows`, `@@next`, errors). Then decide the next command from that real
+output, not from a guess. For rote, there are almost always dependencies.
 
 ## MANDATORY: Keep MEMORY.md in sync with rote adapter state
 
@@ -79,7 +76,8 @@ makes future sessions skip rote entirely, or where a removed adapter still gets 
 ## Discovery sequence — check the catalog BEFORE falling back out-of-band
 
 If `rote flow search "<intent>"` and `rote explore "<intent>"` both come up empty, DO NOT
-jump straight to WebFetch / direct MCP / curl. Those search *already-installed* adapters
+jump straight to out-of-band tools such as web fetches, direct MCP calls, or `curl`. Those search
+*already-installed* adapters
 only — they say nothing about what's available to install. Run one more step first:
 
 1. **Search the installable adapter catalog:**
@@ -254,7 +252,7 @@ Example output for the matched flow:
 }
 ```
 
-Use the `path` field **verbatim** — never construct `~/.rote/flows/<org>/<name>/main.ts` by hand
+Use the `path` field **verbatim** — never construct a flow path by hand
 (the `<org>` segment, e.g. `modiqo`, is real and is NOT the flow name). The `parameters` array is
 in **declared order**; flows take **positional** args in exactly that order. Map the user's intent
 to those positions — don't pass `key=value` to a positional flow, and don't reorder. (`rote flow
@@ -262,34 +260,38 @@ list --json` carries the same `path` + `parameters` for every installed flow if 
 inventory.)
 
 > **Fallback only if `--json` is unavailable** (older rote): resolve the org with `rote flow
-> list` (flows are grouped `<org>` → `<name>`), then read the frontmatter `parameters:` block with
-> `sed -n '1,40p' ~/.rote/flows/<org>/<name>/main.ts`. Do **not** spiral into `find` batches.
+> list` (flows are grouped `<org>` → `<name>`), then read the frontmatter `parameters:` block from
+> `${ROTE_HOME:-$HOME/.rote}/flows/<org>/<name>/main.ts`. Do **not** spiral into `find` batches.
 > Note the two path shapes: a flow **pulled from a registry org** lives at
-> `~/.rote/flows/<org>/<name>/main.ts`; a flow **you just created locally** with `rote flow
-> template create` lives at `~/.rote/flows/<name>/main.ts` (single segment, no org until pushed).
+> `${ROTE_HOME:-$HOME/.rote}/flows/<org>/<name>/main.ts`; a flow **you just created locally** with
+> `rote flow template create` lives at `${ROTE_HOME:-$HOME/.rote}/flows/<name>/main.ts` (single
+> segment, no org until pushed).
 
 **3. Run it from `/tmp` with rote's bundled Deno:**
 
 ```bash
 # .ts flows (the common case) — CRITICAL: use rote's deno, not system deno:
-cd /tmp && rote deno run --allow-all ~/.rote/flows/<org>/<name>/main.ts [args in declared order]
+cd /tmp && rote deno run --allow-all <path from rote flow search --json> [args in declared order]
 
 # .sh flows (shell scripts):
-cd /tmp && ~/.rote/flows/<org>/<name>/main.sh [args]
+cd /tmp && <path from rote flow search --json> [args]
 ```
 
 Concrete example (the real path shape — note the `modiqo/` org segment):
 
 ```bash
-cd /tmp && rote deno run --allow-all ~/.rote/flows/modiqo/retrieve-rideshare-receipts/main.ts 2026/05/01 2026/05/31
+cd /tmp && rote deno run --allow-all /Users/you/.rote/flows/modiqo/retrieve-rideshare-receipts/main.ts 2026/05/01 2026/05/31
 ```
 
 (That flow's frontmatter declares a start date then an end date, positional — so "rideshare
 receipts for May 2026" becomes `2026/05/01 2026/05/31`.)
 
-**CRITICAL for .ts flows**: Do NOT execute TypeScript files directly or use system `deno`. Deno is managed by rote (bundled at `~/.rote/bin/deno`) and is NOT on the system PATH. **ALWAYS** use `rote deno run --allow-all` to run TypeScript flows. The `rote` binary itself IS on the system PATH — never prefix it with `~/.rote/bin/`.
+**CRITICAL for .ts flows**: Do NOT execute TypeScript files directly or use system `deno`. Deno
+is managed by rote (bundled at `~/.rote/bin/deno`) and may not be on the system PATH. **ALWAYS**
+use `rote deno run --allow-all` to run TypeScript flows. If `rote` itself is off PATH, use the
+absolute rote binary path discovered by the narrow probe.
 
-**Why `/tmp`?** Flows create temporary workspaces internally. Running from `/tmp` ensures you're outside `~/.rote/rote/workspaces/`. The `cd /tmp && rote deno run …` compound is one logical step.
+**Why `/tmp`?** Flows create temporary workspaces internally. Running from `/tmp` ensures you're outside `${ROTE_HOME:-$HOME/.rote}/rote/workspaces/`. The `cd /tmp && rote deno run …` compound is one logical step.
 
 **Alternative: Run with model tracking** (for analytics):
 
@@ -300,9 +302,9 @@ cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/my-task
 
 # 2. Execute the flow with model tracking (results stored as @1, @2, ...)
 rote run --inference-id $(uuidgen) \
-  --model claude-sonnet-4-5 \
+  --model <model-name> \
   --model-type chat \
-  --model-version 20250514 \
+  --model-version <model-version> \
   ${ROTE_HOME:-$HOME/.rote}/flows/<org>/<name>/main.ts [params in declared order]
 
 # 3. Query the cached results
@@ -312,7 +314,7 @@ rote @1 '.result' -r
 **Model tracking flags** (required for `rote run`):
 
 - `--inference-id`: Unique ID for this execution (use `$(uuidgen)`)
-- `--model`: Model name (e.g., `claude-sonnet-4-5`, `gpt-4-turbo`)
+- `--model`: Model name
 - `--model-type`: Model type (e.g., `chat`, `completion`)
 - `--model-version`: Model version string
 
@@ -345,33 +347,28 @@ This tells you which adapter(s) have relevant capabilities and whether it's a si
 
 ### Step 3: Route Based on Adapter Count
 
-**Before spawning anything**, check whether a subagent exists for the adapter:
-
-```bash
-rote adapter agent list
-```
-
-Look at the `Agent` column. If it says `no` — do NOT spawn. Handle everything directly in the main skill.
-
-**Single adapter WITH agent** → Spawn the specialized subagent AT THE START, before any workspace work:
+**Single adapter AND the environment supports subagents/delegation** → spawn a subagent AT THE
+START, before any workspace work. Tell it to use this rote skill's instructions, restrict itself to
+the discovered adapter, and never bypass rote:
 
 ```text
 rote explore "fetch messages" → shows messaging adapter
-rote adapter agent list → messaging adapter shows Agent: yes
-→ Spawn: rote-<adapter-id> agent with the full task (hand off immediately)
+→ Spawn subagent with:
+  "Use the rote-using-adapters skill for this task. Adapter: messaging. Task: fetch messages.
+   Do not call MCP servers or provider CLIs directly."
 
 rote explore "list tickets" → shows project tracker adapter
-rote adapter agent list → project tracker shows Agent: yes
-→ Spawn: rote-<adapter-id> agent with the full task (hand off immediately)
+→ Spawn subagent with the same rote-using-adapters contract and Adapter: project tracker
 ```
 
-**Single adapter WITHOUT agent** → Handle directly in main skill (do not spawn):
+Always use the prompt contract above for delegated single-adapter work. Do not create generated
+per-adapter instruction files.
+
+**Single adapter WITHOUT delegation support** → Handle directly in main skill:
 
 ```text
 rote explore "query data" → shows an adapter
-rote adapter agent list → adapter shows Agent: no
 → Stay in main skill, run the task directly in bash
-→ Generate agent: rote adapter agent generate <adapter-id> (then rote install skill --agents)
 ```
 
 **Multiple adapters** → Handle orchestration in main skill:
@@ -381,17 +378,24 @@ rote explore "sync issues to docs" → shows linear AND notion
 → Stay in main skill, orchestrate both adapters
 ```
 
-**CRITICAL — never spawn mid-workflow**: The subagent decision is made ONCE at the start, before any `rote init` or workspace work. If you are already in a workspace and hit a write-guard wall or any other obstacle, do NOT spawn a subagent — a new subagent creates a fresh workspace and loses all cached responses and session state from the current workspace.
+**CRITICAL — never delegate mid-workflow**: The delegation decision is made ONCE at the start,
+before any `rote init` or workspace work. If you are already in a workspace and hit a
+write-guard wall or any other obstacle, stay in the current workflow. Starting a new delegated
+run can create a fresh workspace and lose cached responses and session state from the current
+workspace.
 
-**Follow-up requests — workspace continuity**: Claude Code does not have `SendMessage`. Subagents are fire-and-forget. For follow-up requests to the same adapter, spawn a new subagent but **lead the prompt with a re-entry block** so the subagent skips `rote init` and goes straight to the existing workspace:
+**Follow-up requests — workspace continuity**: For follow-up requests to the same adapter, reuse
+the same delegated context if the environment supports it. If it does not, lead the new prompt
+with a re-entry block so the delegated worker skips `rote init` and goes straight to the existing
+workspace:
 
 ```text
 User: "list all projects"
-  → spawn rote-supabase-mcp, it creates workspace: supabase-list-projects
-  → subagent completes, returns results
+  → delegate to rote-supabase-mcp, it creates workspace: supabase-list-projects
+  → delegated worker completes, returns results
 
 User: "now list all tables in rote project"
-  → spawn new rote-supabase-mcp with prompt that STARTS with:
+  → reuse the worker, or start a new one with prompt that STARTS with:
 
     "EXISTING WORKSPACE — DO NOT run rote init, DO NOT create a new workspace.
      Step 1: cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/supabase-list-projects
@@ -399,19 +403,20 @@ User: "now list all tables in rote project"
      New task: [the follow-up task]"
 ```
 
-The subagent's Workflow Step 1 checks for this block and skips `rote init` when it's present. All cached responses (`@1`, `@2`, etc.) are still on disk.
+The delegated worker must honor this block and skip `rote init` when it is present. All cached
+responses (`@1`, `@2`, etc.) are still on disk.
 
 ### Step 4: Execute in Workspace
 
-Run `rote init`, enter the workspace, **immediately set the model identity (CHECK 0)**, then probe, call, query responses. The last two commands you run before leaving the workspace are always steps 4a and 4b — non-negotiable.
+Run `rote init`, enter the workspace, set the strongest confirmed current model identity, then probe, call, query responses. Exact model id is best; visible family is acceptable. The last two commands you run before leaving the workspace are always steps 4a and 4b — non-negotiable.
 
 ```bash
 rote init <name> --seq
 cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<name>
-rote model set <model> --provider <provider>      # CHECK 0 — mandatory, or flow records "model: not-captured"
+rote model set <current-model-or-family> --provider <provider> --confirmed-current
 ```
 
-Skipping `rote model set` is the single most-missed protocol step — `rote start` CHECK 0 exists for it. Workflow judges flag a missing `model set` after `rote init --seq` as a protocol failure even when the rest of the task succeeds.
+Record the actual model doing the exploration when it is known from the runtime, UI, user, or harness. If the UI says Opus but not the exact version, record `opus` with provider `anthropic`. Do not infer it from a subagent frontmatter model, harness default, or example. Skip this step only when no current model identity is visible at all; `model: not-captured` is better than guessed metadata.
 
 #### Step 4a: Write Pending Stub (LAST ACTION IN WORKSPACE — before any output to user)
 
@@ -481,76 +486,59 @@ workspace execution → pending write → pending save → present results → A
   → if no:  discard
 ```
 
-## Subagent Routing
+## Adapter Subagents
 
-rote has specialized subagents for each installed adapter. After discovering the adapter via `rote explore`, spawn the appropriate subagent.
+Use subagents only as execution isolation for single-adapter tasks. The subagent uses the
+`rote-using-adapters` skill for the single-adapter execution protocol: flow search first,
+workspace/probe/call, pending stub, pending save, then results. The main conversation stays
+responsible for cross-adapter orchestration and for asking the user to approve write-guard
+confirmations.
 
-### Single-Adapter Tasks → Spawn Subagent
-
-```text
-User: "Get my 10 most recent messages"
-1. rote flow search "fetch messages" → no results
-2. rote explore "fetch recent messages" → messaging adapter
-3. Spawn: rote-<adapter-id> agent
-
-User: "Create an issue for the bug"
-1. rote flow search "create issue" → no results
-2. rote explore "create issue" → project tracker adapter
-3. Spawn: rote-<adapter-id> agent
-
-User: "Show me my API costs for the last week"
-1. rote flow search "analytics" → archive-analytics flow
-2. Spawn: rote-analytics agent
-```
-
-### Cross-Adapter Tasks → Stay in Main Skill
+### Subagent Prompt Contract
 
 ```text
-User: "Send me a summary of my upcoming events"
-1. rote flow search "events summary notification" → no results
-2. rote explore "calendar events" → calendar adapter
-   rote explore "send message" → messaging adapter
-3. Stay in main skill (requires BOTH calendar AND messaging)
-4. Orchestrate: fetch events, compose summary, send
+Use the rote-using-adapters skill for this task.
+Adapter: <adapter-id>
+Task: <user request>
+
+Rules:
+- Run rote start first.
+- Search flows before exploring.
+- Use only rote commands for adapter work.
+- Do not call MCP servers, provider CLIs, or harness tools directly.
+- Before returning results, complete pending write and pending save in the workspace.
 ```
 
-### Available Subagents
+### Write-Guard in Delegated Context
 
-Run to see installed adapter subagents:
+When delegated work hits a write-guard confirmation wall, it surfaces the `confirm_token` and
+workspace path. Get approval from the user, then continue in the same workspace.
 
-```bash
-rote adapter agent list
-```
+**CRITICAL: the workspace has cached responses and session state. Starting over in a new
+workspace loses that context.**
 
-The available subagents depend on which adapters you have installed. Each installed adapter with
-an `agent.md` file gets a corresponding `rote-<adapter-id>` subagent. Run `rote adapter agent list`
-to see the full list with their capabilities.
+#### Correct protocol
 
-### Write-Guard in Subagent Context
+1. The delegated worker returns a `confirmation_required` result with a `confirm_token` and
+   workspace path.
+2. Present the impact and token to the user.
+3. If the user approves, continue in that workspace and retry the blocked call with
+   `--confirm <token>`.
 
-When a subagent hits a write-guard confirmation wall, it pauses and surfaces the token to the orchestrating agent. The orchestrating agent must get approval from the user and **resume the same subagent** — not spawn a new one.
-
-**CRITICAL: A paused subagent has a workspace, cached responses, and an active session. Spawning a new agent creates a fresh workspace and loses all of that context permanently.**
-
-#### Correct protocol (orchestrating agent)
-
-1. Subagent returns a `confirmation_required` result with a `confirm_token` and workspace path
-2. Use `AskUserQuestion` to present the impact and token to the user
-3. If user approves: spawn a **new** subagent with the token and workspace path — it re-enters the existing workspace and retries
-
-**Claude Code does not have `SendMessage`** — subagents are fire-and-forget. You cannot resume a paused agent. Instead, pass the workspace path and token to a new subagent:
+If the environment can resume the same worker, resume it. If it cannot, start a new delegated
+worker with the workspace path and token at the top of the prompt:
 
 ```text
-Subagent pauses:
+Delegated worker pauses:
   @@result contains:
     confirm_token: <token>
-    workspace: ~/.rote/rote/workspaces/<workspace-name>   ← copy verbatim
+    workspace: <absolute workspace path from @@result>   ← copy verbatim
 
 Orchestrator:
-  → AskUserQuestion: "Write guard requires approval for '<tool>'. Token: <token>. Approve?"
+  → Ask the user: "Write guard requires approval for '<tool>'. Token: <token>. Approve?"
   → User approves
-  → Spawn new subagent with prompt:
-    "Re-enter existing workspace: cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<workspace-name>
+  → Resume or start delegated work with prompt:
+    "Re-enter existing workspace: cd <absolute workspace path from @@result>
      All cached responses (@1, @2, etc.) are still on disk.
      Retry the blocked call verbatim with --confirm <token> appended.
      Then continue the flow from where it left off — pending write → pending save → results."
@@ -559,12 +547,12 @@ Orchestrator:
 #### Wrong protocol — NEVER do this
 
 ```text
-Subagent pauses with confirmation_required
-  → Orchestrating agent spawns new subagent WITHOUT passing workspace path   ✗ WRONG
-  → New agent creates a fresh workspace, loses all cached responses           ✗ Lost context
+Delegated worker pauses with confirmation_required
+  → Orchestrating agent starts over WITHOUT passing workspace path   ✗ WRONG
+  → New workspace loses all cached responses                          ✗ Lost context
 
-Correct: spawn new subagent WITH the workspace path from the @@result block
-  → New agent re-enters existing workspace: cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<name>
+Correct: continue WITH the workspace path from the @@result block
+  → Worker re-enters existing workspace: cd <absolute workspace path from @@result>
   → Retries with --confirm <token>, all @N responses still accessible
 ```
 
@@ -700,7 +688,7 @@ Cache queries are <100 microseconds (vs 500ms for HTTP re-execution).
     not edit main.ts. Re-run lint after each fix until it passes.)
 [ ] >>> END PREREQUISITE <<<
 
-[ ] Release confirmation obtained — user said yes to the release prompt, OR their original request explicitly asked for a released/crystallized flow. "Save as a reusable flow" (Step 5) alone does NOT authorize release.
+[ ] Release authorization obtained — user said yes to the release prompt, OR their original request asked for a reusable/runnable-again/released/crystallized/finalized/discoverable flow. A reusable flow is locally released and indexed; hub push remains separate.
 [ ] Released via `rote flow release <name>` (this re-runs lint as a belt-and-braces check, then flips `status: draft` → `status: released` and records the `flow_released` chronicle event. **Do NOT Edit main.ts manually to flip status — manual edits skip the lint gate, the chronicle event, and the search badge.**)
 [ ] rote flow index --rebuild run AFTER `rote flow release` (release does not auto-rebuild; rebuilding on a draft flow is a no-op)
 [ ] Verified searchable: rote flow search "<intent>" returns a hit for the new flow with no `[!]` lint marker — 0 hits means release or rebuild did not land, go back to Step 4
@@ -726,9 +714,9 @@ Cache queries are <100 microseconds (vs 500ms for HTTP re-execution).
 
 **Workflow**: Explore the API, scaffold with `rote flow template create`, then test.
 
-**Step 0: ELICIT REQUIREMENTS** - Before doing anything, use `AskUserQuestion` to collect inputs in one step:
+**Step 0: ELICIT REQUIREMENTS** - Before doing anything, collect the needed inputs in one step:
 
-Use the `AskUserQuestion` tool to ask the user (all in a single call):
+Ask the user:
 1. **What should the flow do?** — e.g. "fetch recent emails", "list open GitHub issues"
 2. **Which adapters are needed?** — confirm after running `rote explore "<intent>"`
 3a. **What server-side inputs does the tool expose?** — run the probe, read the
@@ -989,7 +977,7 @@ The hard gate (above) runs three greps; rerun them after editing `main.ts` to co
 ```bash
 # Test with at least 3 different inputs
 rote deno run --allow-all ${ROTE_HOME:-$HOME/.rote}/flows/github/fetch-issues/main.ts facebook react
-rote deno run --allow-all ${ROTE_HOME:-$HOME/.rote}/flows/github/fetch-issues/main.ts anthropic claude
+rote deno run --allow-all ${ROTE_HOME:-$HOME/.rote}/flows/github/fetch-issues/main.ts denoland deno
 rote deno run --allow-all ${ROTE_HOME:-$HOME/.rote}/flows/github/fetch-issues/main.ts microsoft vscode
 
 # Test edge cases
@@ -998,13 +986,13 @@ rote deno run --allow-all ${ROTE_HOME:-$HOME/.rote}/flows/github/fetch-issues/ma
 
 **Step 4: RELEASE (terminal gate — crystallized = released + searchable)**
 
-Release is a lifecycle transition the user owns — the same "never auto-crystallize" principle that gates Step 5 applies here. `rote flow release` records a `flow_released` chronicle event and makes the flow discoverable to every subsequent `rote flow search`. Do not run it autonomously.
+Release is a local lifecycle transition: `rote flow release` records a `flow_released` chronicle event and makes the flow discoverable to every subsequent `rote flow search`. A flow that remains draft is not really reusable by intent search.
 
 **Release confirmation (mandatory before any release command).** After tests pass, present state and ask:
 
 > "Flow `<name>` tested and working (status: draft). Ready to release it? This flips `status: draft` → `status: released`, making it discoverable via `rote flow search`. Reply 'release' to proceed, or keep it as draft."
 
-Skip this confirmation **only** when the user's original request used words like "release", "crystallize", "mark as released", "make discoverable", or "save as a released flow". "Save as a reusable flow" from Step 5 alone does NOT authorize release — that prompt gates the scaffold, not the lifecycle flip. Silence or ambiguity means ask.
+Skip this confirmation when the user's original request used words like "release", "crystallize", "finalize", "mark as released", "make discoverable", "save as a released flow", or "save as a reusable flow so I can run it again later". In that case, run the local release/index/search sequence without another pause. Silence or ambiguity means ask.
 
 If the user declines → stop here. The flow stays usable via `rote deno run <path>` but is hidden from search. That is a valid end state, not a failure.
 
@@ -1037,10 +1025,10 @@ If the user declines → stop here. The flow stays usable via `rote deno run <pa
 > | Thought | Reality |
 > |---------|---------|
 > | "Tests passed, I'll just release it now" | Release is a user decision. Ask the release-confirmation prompt unless the user already said "release" / "crystallize" in their original request. |
-> | "They said 'save it as a reusable flow' so release is implied" | No — that phrase gated the Step 5 scaffold. Release is a separate commitment. Ask. |
+> | "They said 'save it as a reusable flow so I can run it later' but didn't say release" | That authorizes local release and indexing. Run `rote flow release`, rebuild the index, and verify search. |
 > | "`rote flow search` returned 0 hits — maybe the index is stale" | The index only surfaces `status: released` flows. A rebuild on a draft flow is a no-op. Release first, then rebuild. |
 > | "Let me `rote flow validate` first to check the flow is OK" | Validate is a Step 3 test helper. It does not release the flow. A draft flow can validate cleanly and still be invisible to search. |
-> | "Let me `ls ~/.rote/flows/` to confirm the file exists" | If `rote flow template create` exited 0, the file exists. Listing directories does not release it. |
+> | "Let me `ls ${ROTE_HOME:-$HOME/.rote}/flows/` to confirm the file exists" | If `rote flow template create` exited 0, the file exists. Listing directories does not release it. |
 > | "Let me try `rote flow search --all` or a broader query" | No such flag. Search hides drafts by design. Run `rote flow release` (after user confirms). |
 > | "The flow runs end-to-end — that means it's released" | Execution ≠ release. `status:` is checked by the index and by scenario verifies, not by the deno runtime. |
 > | "I'll just Edit `main.ts` to change `status:` directly" | The scaffold uses jsdoc-wrapped frontmatter (`* status: draft`). Manual edits break indentation or skip the chronicle event. Use `rote flow release <name>`. |
@@ -1049,7 +1037,10 @@ If the user declines → stop here. The flow stays usable via `rote deno run <pa
 
 **Step 5: OFFER TO PUSH TO HUB (optional, user-owned)**
 
-After a flow is released, `rote flow release` emits a structured offer (a `next.mandatory` AskUserQuestion block) to push the flow and its associated adapters to the registry hub. This is the user's decision — never push autonomously. The offer carries the flow's discovered adapter ids and the caller's org slugs so you can present concrete options.
+After a flow is released, `rote flow release` emits a structured offer to push the flow and its
+associated adapters to the registry hub. This is the user's decision — never push autonomously.
+The offer carries the flow's discovered adapter ids and the caller's org slugs so you can present
+concrete options.
 
 **Why a user would say yes** (lead with the value, not the mechanics):
 
@@ -1059,8 +1050,8 @@ After a flow is released, `rote flow release` emits a structured offer (a `next.
 
 **Two-step elicitation** (exactly as the release output instructs):
 
-1. **AskUserQuestion — push or not:** "Flow `<name>` is released (adapters: …). Push it and its adapters to the hub?" Options: `Push` / `Keep local only`. If they decline, stop — local-only is a valid end state.
-2. **AskUserQuestion — where (only if they chose Push):** Options: `Private org namespace` (visible only to org members) / `Community public space` (discoverable by everyone). If `Private`, ask which org from the slugs in the release output; if the user has no orgs, point them at `rote registry org create --slug <slug> --name <name>` first.
+1. **Push or not:** "Flow `<name>` is released (adapters: …). Push it and its adapters to the hub so your team can recall it too?" Options: `Push` / `Keep local only`. If they decline, stop — local-only is a valid end state.
+2. **Where (only if they chose Push):** Options: `Private org namespace` (visible only to org members) / `Community public space` (discoverable by everyone). If `Private`, ask which org from the slugs in the release output; if the user has no orgs, point them at `rote registry org create --slug <slug> --name <name>` first.
 
 **Push sequence (adapters first, then the flow).** The flow's `--check-deps` push verifies each adapter is already in the target namespace, so adapters MUST be pushed before the flow:
 
@@ -1422,7 +1413,7 @@ rote set name=value               # Set variable
 ```bash
 # For adapters, always use adapter/<id> prefix:
 rote init-session adapter/github   # Initialize adapter session
-rote POST adapter/github '{}' -s   # Execute tool call (-s = session)
+rote POST adapter/github '{}' -s   # Execute adapter call (-s = session)
 rote tools adapter/github -s       # List tools
 rote resources adapter/github -s   # List resources
 
@@ -1511,9 +1502,9 @@ rote machine <topic>             # Architecture explanations
 
 **rote vs MCP**: rote orchestrates MCP workflows. Use MCP directly for simple calls, rote for multi-step workflows.
 
-**rote vs Skills**: Skills teach Claude *how* to use tools; rote *provides* workflow automation. They complement each other.
+**rote vs Skills**: Skills teach an agent how to use tools; rote provides workflow automation. They complement each other.
 
-**rote vs Subagents**: rote manages workflow state; subagents provide isolated contexts. Use rote for stateful workflows, subagents for isolation.
+**rote vs delegated workers**: rote manages workflow state; delegated workers provide isolated contexts when the environment supports them. Use rote for stateful workflows, delegation for isolation.
 
 ## Pay Attention to HINTS
 
@@ -1575,14 +1566,14 @@ rote -p POST /a '{...}' -s POST /b '{...}' -s
 rote flow search "your intent"
 
 # If found: resolve the exact path (rote flow list shows <org>/<name>), then run.
-# Pulled flows: ~/.rote/flows/<org>/<name>/main.ts  ·  locally-created: ~/.rote/flows/<name>/main.ts
+# Pulled flows: ${ROTE_HOME:-$HOME/.rote}/flows/<org>/<name>/main.ts  ·  locally-created: ${ROTE_HOME:-$HOME/.rote}/flows/<name>/main.ts
 rote flow list
 rote init my-task --seq
 cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/my-task
 rote run --inference-id $(uuidgen) \
-  --model claude-sonnet-4-5 \
+  --model <model-name> \
   --model-type chat \
-  --model-version 20250514 \
+  --model-version <model-version> \
   ${ROTE_HOME:-$HOME/.rote}/flows/<org>/<name>/main.ts [args in declared order]
 ```
 

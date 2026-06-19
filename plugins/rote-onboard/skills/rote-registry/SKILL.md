@@ -5,30 +5,29 @@ description: >
   schelling-point moment — right after an adapter is first created or a flow is crystallized
   (draft or release) — to check whether the artifact already exists in your orgs, tell you
   whether you need to push, and (after a push) surface org members and offer to invite others
-  for review or use. Also runs standalone for `push`, `/show usage` (plan + quota across all
+  for review or use. Also runs standalone for push/share requests, usage/quotas (plan + quota across all
   your orgs), invites, and member management. Use when the user says "push to registry",
   "share my adapter/flow", "publish this", "show my usage / quota", "invite someone to my org",
-  "who's in my org", "/rote-registry". Determines every fact from live `rote registry` commands
+  or "who's in my org". Determines every fact from live `rote registry` commands
   — never from memory.
 ---
 
 # rote-registry — share artifacts, manage the org
 
-Take a freshly-minted adapter or flow and get it into the registry the way the rote-vscode Hub
-does it: **check before you push** (don't burn quota re-pushing something already there), push
+Take a freshly-minted adapter or flow and get it into the registry with the same discipline as
+rote's guided setup: **check before you push** (don't burn quota re-pushing something already there), push
 at the visibility the user chooses, then **turn the push into collaboration** by surfacing org
 members and offering invites.
 
 **Follow the shared operating rules in [`../INDEX.md`](../INDEX.md) § "Shared operating
-rules"** — on a fresh run, offer the full permissions (both `permissions.allow`
-`Bash(rote:*)`/`Bash(cd:*)` AND `permissions.additionalDirectories` `~/.rote`) so the user
-isn't prompted on every step.
+rules"** — on a fresh run, clear command/filesystem access if the current environment requires
+it.
 
 Core rules:
 - **Determine facts from live `rote registry` commands, never from memory.** (If the rote
   binary isn't on PATH, resolve it via the **narrow probe** — check `$HOME/.local/bin/rote`
   then `$HOME/.cargo/bin/rote`, never a deep `find` of the home dir. See INDEX § 1b.)
-- **One command per Bash call, strictly sequential — never parallel.** Probes gate decisions.
+- **One command at a time, strictly sequential — never parallel.** Probes gate decisions.
 - **Auth-gate first.** Every registry op needs a valid session — see Stage 0.
 - **Existence is checked by fingerprint/version, not just name** — re-pushing an identical
   artifact wastes a quota slot. See Stage 2.
@@ -43,7 +42,7 @@ Core rules:
 **A. Hand-off (the schelling point).** `rote-adapter-create` (Stage 6) and the flow-crystallize
 path invoke this skill right after minting. The artifact id is known; jump to Stage 1 with it.
 
-**B. Standalone.** User invokes `/rote-registry` directly. Present the menu:
+**B. Standalone.** User asks for registry help directly. Present the menu:
 - **Push / share** an adapter or flow → Stage 1
 - **Show usage** (plan + quota across all orgs) → Stage U
 - **Manage org** (members / invites) → Stage 4
@@ -118,8 +117,7 @@ If every org says "in sync," tell the user there's nothing to push and offer Sta
 
 ## Stage 3 — Push (only where needed, at chosen visibility)
 
-For each org where a push is warranted, **ask visibility first** (never default it) via
-`AskUserQuestion`:
+For each org where a push is warranted, **ask visibility first** (never default it):
 - **Private** — org-only. For review/use inside the org. Reversible-ish.
 - **Public** — anyone on the registry can pull it. Confirm the user means it; for a public
   **adapter** push, remind them it ships config (base URL, auth scheme) — not token values, but
@@ -161,7 +159,7 @@ of emails → dedup → pick role(s) → invite each sequentially → report**.
 
 ### 4a — Ask first
 
-Via `AskUserQuestion`: **invite anyone to `<slug>` to review/use `<artifact>`?**
+Ask: **invite anyone to `<slug>` to review/use `<artifact>`?**
 - If no → done; offer Stage U (usage) or exit.
 - If yes → continue to 4b.
 
@@ -196,8 +194,8 @@ Only the *new* bucket proceeds. Show the user the skip list so it's clear why so
 
 ### 4e — Pick role(s), with the admin caveat
 
-The role determines what the invitee can do. Present all three via `AskUserQuestion` (default
-**developer**), and either apply one role to the whole batch or let the user set it per email:
+The role determines what the invitee can do. Present all three choices (default
+**developer**) and either apply one role to the whole batch or let the user set it per email:
 
 | Role | Can do | Use for |
 |------|--------|---------|
@@ -256,7 +254,7 @@ limit (e.g. ≥80%) so the user sees pressure before they hit it. Example row:
 > **conikee-home** · plan `org_admin` · members 1/∞ · private adapters 3/∞ · private flows
 > 2/∞ · public 0 · features: audit ✓, verification ✓
 
-This is the `/show usage` answer — quota consumption at a glance, no surprises.
+This is the usage answer — quota consumption at a glance, no surprises.
 
 ---
 
@@ -283,7 +281,7 @@ convention and rules in [INDEX.md](../INDEX.md). Skip it if the push errored or 
 nothing to push.
 
 **Related onboard skills** ([INDEX.md](../INDEX.md) is the full map):
-- **Invoked by:** `/rote-onboard:rote-adapter-create` (after minting an adapter) and the flow
+- **Invoked by:** `rote-adapter-create` (after minting an adapter) and the flow
   crystallize path.
 - **Full org admin:** the **rote-org** skill · **Tune the adapter first:**
-  `/rote-onboard:rote-adapter-config`
+  `rote-adapter-config`

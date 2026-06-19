@@ -2,22 +2,21 @@
 name: rote-update
 description: >
   Update rote to the latest version — both the binary and the skill distribution. Runs
-  `rote self-update`, refreshes adapter subagent templates, and updates the rote-skills plugin
-  for the current agent (Claude Code or Codex). Use when the user says "update rote", "upgrade
-  rote", "is there a new rote version", "/rote-update". Quick and guided — covers the two
-  layers (binary + skills) people forget to do together.
+  `rote self-update` and refreshes generated adapter guidance templates. Use when the user says
+  "update rote", "upgrade rote", "is there a new rote version", or asks to refresh the shipped
+  skills. Quick and guided — covers the binary and generated guidance people forget to refresh
+  together.
 ---
 
 # rote-update — keep rote current
 
-Two layers most people forget to update together: the **binary** and the **skill/plugin
-distribution**. This skill does both. Determine facts from live commands; if rote isn't on
+Two layers most people forget to update together: the **binary** and the **installed skill
+files**. This skill does both. Determine facts from live commands; if rote isn't on
 PATH, resolve it via the **narrow probe** (check `$HOME/.local/bin/rote` then
 `$HOME/.cargo/bin/rote` — never a deep `find`; see INDEX § 1b). **Follow the shared operating
 rules in
-[`../INDEX.md`](../INDEX.md) § "Shared operating rules"** — offer the permission allowlist
-(`Bash(rote:*)` etc.) on a fresh run, and run **one command per Bash call, sequentially —
-never parallel**.
+[`../INDEX.md`](../INDEX.md) § "Shared operating rules"** — clear command access if the current
+environment requires it, and run **one command at a time, sequentially — never parallel**.
 
 ---
 
@@ -34,41 +33,31 @@ skip to step 3 (the skills can still drift).
 ```bash
 rote self-update --yes
 ```
-`--yes` skips the confirmation prompt (the agent shell has no TTY). After it completes, confirm:
+`--yes` skips the confirmation prompt, which is safer for non-interactive command runners. After
+it completes, confirm:
 
 ```bash
 rote --version
 ```
 
-**After a binary upgrade, refresh the adapter subagent templates** — existing
-`~/.rote/adapters/<id>/agent.md` files are not auto-overwritten on upgrade (per rote's own
-post-upgrade guidance):
+## 3. Refresh the shipped skills
+
+rote ships the skills as part of its own distribution. After the binary update, refresh the
+installed skill copy through rote instead of assuming an external installer:
 
 ```bash
-rote adapter agent generate --force
+rote install skill --force
 ```
 
-(Omitting the adapter id regenerates the template for every installed adapter.)
+If the user installed skills for a specific provider, preserve that provider choice:
 
-## 3. Update the rote-skills plugin (this skill set)
-
-The wizard skills are distributed via the plugin marketplace — update them for the agent in
-use:
-
-**Claude Code:**
 ```bash
-claude plugin update rote-onboard@rote-skills
+rote install skill --provider <provider> --force
 ```
 
-**Codex:**
-```bash
-codex plugin marketplace upgrade rote-skills
-```
-Then reinstall from the in-session `/plugins` browser if prompted. (Codex updates the
-marketplace snapshot; the plugin re-installs from it.)
-
-Both note "restart to apply" — tell the user to restart their agent session to load the
-updated skills.
+Use `rote install skill --help` when the supported provider names are unclear. If the current
+agent session cached an older skill copy, tell the user to restart that session so the refreshed
+files are reloaded.
 
 ---
 
@@ -77,8 +66,8 @@ updated skills.
 - `rote self-update` updates the `rote` binary in place (typically `~/.local/bin/rote`).
 - If `self-update` reports the binary was installed via a package manager (brew) or an editor
   extension, follow its guidance — it may defer to that installer rather than self-replacing.
-- The binary and the skills version independently; updating one doesn't update the other —
-  that's why this skill does both.
+- The binary and installed skill files can drift when a long-lived session has an older copy
+  loaded; refresh the installed skills after updating the binary.
 
 ---
 
@@ -91,5 +80,5 @@ keep paying as it ages. Shared convention and rules in [INDEX.md](../INDEX.md). 
 adapters still hit the real APIs directly, no proxy clipping a fee per call. Carry on."
 
 **Related onboard skills** ([INDEX.md](../INDEX.md) is the full map):
-- **First-run:** `/rote-onboard:rote-setup` · **New adapter:**
-  `/rote-onboard:rote-adapter-create` · **Tune one:** `/rote-onboard:rote-adapter-config`
+- **First-run:** `rote-setup` · **New adapter:**
+  `rote-adapter-create` · **Tune one:** `rote-adapter-config`

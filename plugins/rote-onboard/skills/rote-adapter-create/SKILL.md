@@ -8,21 +8,21 @@ description: >
   the provider's docs to recommend a scheme and produce setup steps (API key / OAuth2). Use
   when the user says "add an adapter", "connect
   to <API>", "create a stripe/notion/datadog adapter", "build an adapter from this OpenAPI
-  spec", "/rote-add-adapter". Never creates from a discovered spec without a clean dry-run
+  spec". Never creates from a discovered spec without a clean dry-run
   first. Hands off to rote-adapter-config for tuning afterward.
 ---
 
 # rote-adapter-create — dry-run-first adapter creation
 
-Build an adapter for any API the way the rote-vscode wizard does: **analyze the spec with no
+Build an adapter for any API with the same dry-run-first discipline as rote's guided setup:
+**analyze the spec with no
 side effects, then drive the choices from what the analysis found.** You hold the dry-run JSON
 in context and ask the user only the questions the analysis can't answer.
 
 **Follow the shared operating rules in [`../INDEX.md`](../INDEX.md) § "Shared operating
-rules"** — permissions allowlist, strict step-wise (never parallel), and required-state gates.
-On a fresh run, first offer the full permissions — both `permissions.allow` (`Bash(rote:*)` /
-`Bash(cd:*)`) and `permissions.additionalDirectories` (`~/.rote`) — so the user
-isn't prompted on every step.
+rules"** — command access, strict step-wise execution (never parallel), and required-state
+gates. On a fresh run, clear any command/filesystem approvals the current environment requires
+before the first `rote` command.
 
 Core rules:
 - **Never `--yes` create from a discovered spec without a successful `--dry-run` first.** The
@@ -30,7 +30,7 @@ Core rules:
 - **Determine facts from live commands, never from memory.** (If the rote binary isn't on
   PATH, resolve it via the **narrow probe** — check `$HOME/.local/bin/rote` then
   `$HOME/.cargo/bin/rote`, never a deep `find` of the home dir. See INDEX § 1b.)
-- **One command per Bash call, strictly sequential — never parallel.** Each stage gates the
+- **One command at a time, strictly sequential — never parallel.** Each stage gates the
   next (dry-run result drives auth/toolsets); firing steps in parallel breaks the pipeline.
 - Secrets (API tokens) are never captured in chat — hand off to the masked wizard (see Stage 5).
 
@@ -39,9 +39,9 @@ Core rules:
 ## Stage 0 — Discover the spec (catalog → web → local file)
 
 **If the user hasn't already heard the adapter pitch this run** (e.g. they invoked this skill
-directly, not via `/rote-setup`), open with the **Adapter** What/Value beat from
+directly, not from `rote-setup`), open with the **Adapter** What/Value beat from
 [`../INDEX.md`](../INDEX.md) § "Primitive intros" (~3–4 lines: talk MCP to any API
-directly — no gateway/SDK/tool-call middleman; value: no per-call fees, infra-less/local, no
+directly — no gateway/SDK middleman; value: no extra per-call fees, infra-less/local, no
 new attack surface). Skip it if they just came from the setup fork (they've heard it).
 
 Ask what API the user wants (prose): "Which API? (e.g. notion, stripe, datadog — or paste a
@@ -58,8 +58,8 @@ rote adapter catalog search "stripe"
 matches** (this is a real bug seen on a fresh run: 2 matches were found but not shown, and the
 skill jumped to web anyway):
 
-- **1+ matches** → **present every match to the user** (id · category · provider) via
-  AskUserQuestion (or prose if many) and let them **choose** — or confirm the single match.
+- **1+ matches** → **present every match to the user** (id · category · provider) and let them
+  **choose** — or confirm the single match.
   Never silently pick one, and never fall through to web search while matches exist. Only after
   the user picks (or explicitly says "none of these, search the web") do you leave the catalog.
 - **0 matches** → only then go to **0b (web search)**.
@@ -182,15 +182,15 @@ only sharpens *which* `config-json` you assemble and *what instructions* the use
    cite `doc_url` for every claim:
    - **Confirms** the recommended scheme → proceed with it, now carrying the correct
      `header_format` + setup steps.
-   - **Contradicts** it (dry-run guessed bearer, docs say `X-Api-Key`) → present both via
-     `AskUserQuestion`, lead with the doc-backed one, cite the source.
+   - **Contradicts** it (dry-run guessed bearer, docs say `X-Api-Key`) → present both choices,
+     lead with the doc-backed one, cite the source.
    - **Inconclusive** → fall back to asking the user (today's behavior), but with whatever
      partial setup info was found.
 
 ### Present a researched recommendation, not a blind menu
 
-Use `AskUserQuestion`. Lead with the doc-backed scheme; put the setup steps in the option
-description so the user can act without leaving the flow.
+Lead with the doc-backed scheme; put the setup steps in the option description so the user can
+act without leaving the flow.
 
 **API-key shape:**
 ```
@@ -263,15 +263,14 @@ For OAuth-DCR servers (Notion) this opens a browser; tell the user to complete i
 
 - **Credentials** (static-token auth): hand off to the masked wizard — tell the user to run
   `rote powerpack credentials` in their own terminal (masked), or set one with
-  `rote token set <ENV> "<value>"` only as an explicit, transcript-visible opt-in. Never echo
+  `rote token set <ENV> "<value>"` only as an explicit, chat-visible opt-in. Never echo
   a token. (Same secrets discipline as the setup skill.)
 - **Write guard**: `rote adapter guard init <id>`
 - **Sensitivity**: `rote sensitivity upgrade` (if needed) then `rote sensitivity apply <id> --json`
 - **Capability index**: `rote adapter capability rebuild`
 
-> The **adapter subagent** is *not* offered here — it's generated automatically at the end of
-> Stage 6, but only once the proof probe is green (see below). Generating subagent guidance for
-> an adapter that fails its probe would be documenting a broken tool.
+> Adapter helper templates are opt-in. Do not generate or install one unless the user explicitly
+> asks for a reusable adapter-specific helper.
 
 ---
 
@@ -287,23 +286,8 @@ Show it's ready (tools/toolsets/auth). Offer to:
   rote init proof --seq --force
   ```
   ```bash
-  cd ~/.rote/rote/workspaces/proof && rote <id>_probe "<query>"
+  cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/proof && rote <id>_probe "<query>"
   ```
-
-### Generate the subagent — automatic, only after a green probe
-
-The moment the proof probe returns clean, generate the adapter's subagent template. This is
-**not** an `AskUserQuestion` — it runs on its own, as the last step of a successful create:
-
-```bash
-rote adapter agent generate <id> --force
-```
-
-It's a fast local template render (no LLM, no network), so it doesn't block anything. `--force`
-always, so a re-created or re-probed adapter always lands a fresh template. Gate it on the
-probe: if the probe failed or was skipped (uncredentialed adapter), **do not** generate — say
-so in one line and point at the fix, so a broken adapter never gets subagent guidance written
-for it. Mention it landed in a single line; don't make it a ceremony.
 
 Then offer to:
 - **Tune it** — invoke **rote-adapter-config** for base-url, auth schemes, sensitivity, etc.
@@ -332,8 +316,7 @@ you per call." Skip it if the run was rocky.
 ## Related onboard skills
 
 Part of the **rote-onboard** sequence ([INDEX.md](../INDEX.md) is the full map):
-- **Next (tune):** `/rote-onboard:rote-adapter-config` — auth, base URL, write guard,
+- **Next (tune):** `rote-adapter-config` — auth, base URL, write guard,
   sensitivity.
-- **Next (share):** `/rote-onboard:rote-registry` — check/push to your orgs, then invite others.
-- **First-run / setup:** `/rote-onboard:rote-setup` · **Keep current:**
-  `/rote-onboard:rote-update`
+- **Next (share):** `rote-registry` — check/push to your orgs, then invite others.
+- **First-run / setup:** `rote-setup` · **Keep current:** `rote-update`

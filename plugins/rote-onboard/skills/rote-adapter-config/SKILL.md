@@ -2,11 +2,11 @@
 name: rote-adapter-config
 description: >
   Tune an existing rote adapter — auth, base URL, write guard, sensitivity, capability index,
-  OAuth re-auth, GraphQL field filter, policies, subagent skill, grouping, versioning. A menu
+  OAuth re-auth, GraphQL field filter, policies, adapter guidance, grouping, versioning. A menu
   of small show → confirm → apply → re-show operations on an adapter you already created. Use
   when the user says "configure <adapter>", "change the base url", "re-auth notion", "rebuild
-  the capability index", "enable an auth scheme", "set up sensitivity / write guard",
-  "/rote-configure-adapter". For creating a NEW adapter, use rote-adapter-create instead.
+  the capability index", "enable an auth scheme", or "set up sensitivity / write guard". For
+  creating a NEW adapter, use rote-adapter-create instead.
 ---
 
 # rote-adapter-config — tune an existing adapter
@@ -19,10 +19,9 @@ Rules: determine facts from live commands (never memory); secrets never captured
 (masked handoff); if rote isn't on PATH, resolve it via the **narrow probe** (check
 `$HOME/.local/bin/rote` then `$HOME/.cargo/bin/rote` — never a deep `find`; see INDEX § 1b).
 **Follow the shared
-operating rules in [`../INDEX.md`](../INDEX.md) § "Shared operating rules"** — offer the
-full permissions on a fresh run — both `permissions.allow` (`Bash(rote:*)` / `Bash(cd:*)`) and
-`permissions.additionalDirectories` (`~/.rote`) — and run **one command per
-Bash call, strictly sequential — never parallel**.
+operating rules in [`../INDEX.md`](../INDEX.md) § "Shared operating rules"** — clear command
+access if the current environment requires it, and run **one command at a time, strictly
+sequential — never parallel**.
 
 ---
 
@@ -40,8 +39,8 @@ rote adapter info <id>
 rote adapter keys <id> --json
 ```
 
-Then present the operation menu (AskUserQuestion). Run only what the user picks; re-show the
-relevant state after each change.
+Then present the operation menu. Run only what the user picks; re-show the relevant state after
+each change.
 
 ---
 
@@ -124,19 +123,6 @@ rote adapter policies <id>
 ```
 Generate from a preset: `rote adapter policies <id> --generate --preset <github|openai|conservative>`.
 
-### Adapter subagent skill
-
-```bash
-rote adapter agent list
-rote adapter agent generate <id> [--force]
-```
-Generates/refreshes the per-adapter subagent template. A fresh adapter already gets one
-generated automatically — `rote-adapter-create` runs `agent generate --force` once the proof
-probe is green, and `rote-setup` does the same after its live flow proves the adapter works. So
-this is the **refresh** path: re-run it (with `--force`) after a rote upgrade, after editing the
-adapter's tools, or to restore a template you customized. (To wire the rote skill itself into an
-agent, that's `rote install skill --provider <name> --agents` — a different, broader command.)
-
 ### Group / version
 
 ```bash
@@ -174,5 +160,5 @@ and rules in [INDEX.md](../INDEX.md). Keep it lower-key than setup or create —
 housekeeping, so don't force it; skip it if a step errored.
 
 **Related onboard skills** ([INDEX.md](../INDEX.md) is the full map):
-- **New adapter:** `/rote-onboard:rote-adapter-create` · **First-run:**
-  `/rote-onboard:rote-setup` · **Keep current:** `/rote-onboard:rote-update`
+- **New adapter:** `rote-adapter-create` · **First-run:** `rote-setup` · **Keep current:**
+  `rote-update`
