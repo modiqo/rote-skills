@@ -123,17 +123,27 @@ For each org where a push is warranted, **ask visibility first** (never default 
   **adapter** push, remind them it ships config (base URL, auth scheme) — not token values, but
   still worth a glance.
 
+**Order matters: push the adapters first, then the flow.** A flow push verifies every adapter it
+depends on is already in the target namespace and hard-fails if one is missing — so the adapters
+have to land first.
+
+Both push commands accept `--dry-run`: it runs the full preflight (eligibility, visibility,
+version-conflict prediction, and — for flows — dependency reachability) and reports
+`would-create` / `would-push` / `would-skip` **without writing anything**. Use it to verify the
+artifact and report the status to the user, then re-run the *same command without `--dry-run`* to
+actually push to the hub.
+
 **Adapter** (pack + push):
 ```bash
-rote registry adapter publish <id> <slug>
+rote registry adapter publish <id> <slug> --dry-run   # verify + report; writes nothing
+rote registry adapter publish <id> <slug>             # push for real
 ```
 Add `--private` for a private push (omit for public).
 
-**Flow** (auto-archives + walks dependencies). Push the flow's `main.ts` path; `--check-deps`
-publishes the adapters it depends on first (skipping any already in sync — same fingerprint
-logic as Stage 2):
+**Flow** (auto-archives + walks dependencies). Push the flow's `main.ts` path:
 ```bash
-rote registry flow push <path-to-flow>/main.ts <slug> --check-deps
+rote registry flow push <path-to-flow>/main.ts <slug> --dry-run   # verify deps + report
+rote registry flow push <path-to-flow>/main.ts <slug>             # push for real
 ```
 Add `--private` for private.
 
