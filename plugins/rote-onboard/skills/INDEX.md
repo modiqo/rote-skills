@@ -99,6 +99,27 @@ rote's embedded jq has two quirks worth knowing while inspecting responses: a st
 like `.body[0:200]` returns `null`, and a `slice | map({…})` chain errors — index a single
 element with `.[idx]` instead.
 
+### 1d. Read state and responses through rote, never the raw filesystem
+
+Inspect workspace, adapter, and flow state with rote commands, and read every tool/adapter
+response through its cached `@N` id — `rote @N '<jq filter>'` — never by reading files under
+`${ROTE_HOME}`. Do **not** `cat`/`ls` or pipe `.rote/responses/<id>.json`, adapter configs, or
+other managed state into `python`/`jq`/`grep`/`sed`/`awk`: that bypasses the response cache the
+next command needs, misses rote-managed state, and breaks when the on-disk layout changes between
+versions. This applies inside an adapter-creation probe workspace too.
+
+rote has a native, in-cache equivalent for every shell tool you'd otherwise reach for here — you
+almost never need to shell out:
+
+- **JSON query/transform** → `rote @N '<jq filter>'` (topic `query`)
+- **grep / sed / awk** (line-oriented text) → `rote query-stdin` and topic `lines`
+- **bc** (math), **base64** (encoding) → the `bc` / `base64` grammar alternatives
+- **curl** (HTTP) → `rote POST` / `rote GET` (topic `http`)
+
+When unsure of the rote form, run `rote grammar <tool>` — `jq`, `grep`, `sed`, `awk`, `bc`,
+`base64`, and `curl` each have a conversion page — and stay inside rote before touching the
+filesystem.
+
 ### 2. Step-wise, NEVER parallel
 
 Run **one command at a time, strictly in sequence**. Do not start the next command before the

@@ -18,6 +18,7 @@ selected.
 Adapter: <adapter-id>
 Task: <user request>
 Existing workspace: <path>   # only for resumptions
+Selected route: <flow/explore result from caller>   # required for delegated subagents
 ```
 
 ## Core Rules
@@ -41,7 +42,10 @@ Run the protocol check first:
 rote start
 ```
 
-If this is a fresh task:
+If this is a delegated subagent task, do not run flow search again. The caller already selected the
+single-adapter route; resume that route and continue directly to sequential workspace commands.
+
+If this is a fresh top-level task:
 
 ```bash
 rote flow search "<task intent>"
