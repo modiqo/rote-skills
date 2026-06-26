@@ -25,9 +25,8 @@ If an installed `rote-<adapter-id>` subagent exists and the task is scoped to th
 before workspace work starts. Give the subagent the user's goal, relevant flow-search and explore
 results, and the current save-gate requirement.
 
-The subagent must follow the **`rote-using-adapters`** skill's single-adapter execution contract —
-resume the already-selected route, then run its own workspace commands sequentially — and return
-enough state for the main agent to continue the pending-stub save gate.
+The subagent must re-enter rote, run its own workspace commands sequentially, and return enough
+state for the main agent to continue the pending-stub save gate.
 
 Do not spawn the subagent after workspace calls have started. Mid-workflow handoff risks losing
 cached `@N` references and session context.
@@ -76,21 +75,10 @@ that mentions a provider plus several data needs, include both the provider and 
 the first query returns partial matches, search again with the missing capability before falling
 back.
 
-If the catalog returns a useful hit, first classify the install path:
-
-- Setup path: the user asked to add, create, connect, or set up an adapter; the task needs a new
-  credentialed adapter; auth is unclear or likely provider-specific; credentials are missing; or the
-  catalog hit needs toolset/auth choices. Run `rote adapter catalog info <id>` and hand off to the
-  **`rote-adapter-create`** skill. It owns dry-run-first analysis, auth research, and configured
-  creation.
-- Quick task-unblock path: the user is not asking for adapter setup, the adapter is just needed to
-  finish the current task, and the catalog info or prior probe makes auth clearly public/no-auth or
-  already configured. Only in this path, use `rote adapter new <id> --yes`.
-
-Treat a useful hit as the next execution path: after installing, probe it and call it through rote
-before direct MCP, WebFetch, curl, or custom scripts. Reading catalog info is not a substitute for
-installing and using the adapter when it fits the task, unless classification routed the work to
-`rote-adapter-create` first.
+If the catalog returns a useful hit, inspect or install through rote with `rote adapter catalog info
+<id>` or `rote adapter new <id> --yes`. Treat that hit as the next execution path: probe it and call
+it through rote before direct MCP, WebFetch, curl, or custom scripts. Reading catalog info is not a
+substitute for installing and using the adapter when it fits the task.
 
 If multiple catalog hits map to the request, inspect or install all required adapters before work
 starts. Use the catalog descriptions, authentication notes, and probe results to choose the right

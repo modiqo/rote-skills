@@ -81,24 +81,12 @@ If `rote flow search "<intent>"` and `rote explore "<intent>"` do not find a pat
 rote adapter catalog search "<intent>"
 ```
 
-If the catalog returns a useful match, first decide whether this is adapter setup work or a
-low-risk task unblock. Adapter setup work includes user requests to add, create, connect, or set up
-an adapter, plus task-framed requests that need a new credentialed adapter or have unclear auth.
-For setup work, the next rote command is `rote adapter catalog info <id>`, then hand off to the
-**`rote-adapter-create`** skill. That skill is dry-run-first: analyze the spec with no side effects,
-research auth from the provider's docs, and choose toolsets before creating.
-
-Use one-shot `rote adapter new <id> --yes` only when all of these are true: the user is not asking
-for adapter setup, the adapter is just a quick tool to unblock the current task, and the catalog info
-or prior probe makes auth clearly public/no-auth or already configured. After the one-shot install,
-probe and call the adapter before direct MCP, WebFetch, curl, or custom scripts. If the request spans
-multiple useful hits, inspect or install each required adapter before doing the work. Only fall back
-out-of-band when the catalog has no useful match, an installed catalog adapter cannot satisfy the
-task after probing, and the user has not supplied an adapter spec.
-
-Before any setup handoff, confirm no installed adapter already covers that API (`rote adapter list`);
-if one does, use it or tune it with **`rote-adapter-config`** rather than creating a duplicate. Never
-`rote adapter new --yes` from a discovered spec without a clean `--dry-run` first.
+If the catalog returns a useful match, the next rote command must be `rote adapter catalog info <id>`
+or `rote adapter new <id> --yes` for one of the hits. A useful catalog hit is binding: install and
+probe it before direct MCP, WebFetch, curl, or custom scripts. If the request spans multiple useful
+hits, inspect or install each required adapter before doing the work. Only fall back out-of-band when
+the catalog has no useful match, an installed catalog adapter cannot satisfy the task after probing,
+and the user has not supplied an adapter spec.
 
 Choose adapters by capability and auth fit, not name alone. For read-only reporting, prefer an
 adapter whose catalog notes and probe output show public or already-configured read operations over an
@@ -115,11 +103,8 @@ are on.
 | --- | --- |
 | Existing flow fully covers the request | Load [`references/flow-search-and-run.md`](references/flow-search-and-run.md), get path and parameters with `rote flow search --json`, run the flow, verify the requested artifact, then stop. |
 | Existing flow covers only a baseline or partial result | Run or preserve the baseline via [`references/flow-search-and-run.md`](references/flow-search-and-run.md), then route the uncovered work through [`references/task-routing.md`](references/task-routing.md) without discarding the baseline output. |
-| No flow matched, installed adapter can help | Load [`references/task-routing.md`](references/task-routing.md) before workspace work, then use [`references/workspace-protocol.md`](references/workspace-protocol.md). When delegating single-adapter work to a `rote-<adapter-id>` subagent, that subagent must follow the **`rote-using-adapters`** skill. |
+| No flow matched, installed adapter can help | Load [`references/task-routing.md`](references/task-routing.md) before workspace work, then use [`references/workspace-protocol.md`](references/workspace-protocol.md). |
 | No installed adapter matched | Search `rote adapter catalog search "<intent>"` before asking about out-of-band fallback. |
-| User asks to add, create, connect, or set up an adapter for an API | First check `rote adapter list` — if one already covers that API, use it (or tune it with **`rote-adapter-config`**), don't create a duplicate. Otherwise hand off to **`rote-adapter-create`** — dry-run-first; never `rote adapter new --yes` from a discovered spec without a clean `--dry-run`. |
-| User asks to browse a site, automate a logged-in session, or snapshot a page | Hand off to the **`rote-browse`** skill; keep browser-derived data flowing back through rote workspace state. |
-| User asks to administer an org — create/delete, members, roles, invites, plan/usage | Hand off to the **`rote-org`** skill. |
 | Workspace work produced reusable results | Load [`references/flow-crystallization.md`](references/flow-crystallization.md) before presenting final results. |
 | User asks to create, edit, lint, release, or publish a flow | Load [`references/flow-authoring.md`](references/flow-authoring.md). |
 | Command syntax or rote idioms are needed | Prefer `rote grammar <topic>` and load [`references/command-patterns.md`](references/command-patterns.md) only for task-focused patterns. |
