@@ -566,9 +566,9 @@ adapter call). For single-adapter delegated work, spawn a subagent and tell it t
   it. `rote token set <name> <value>` is a last-resort opt-in — only on explicit insistence,
   with a rotate-afterward warning. Never echo a token back or read the secrets dir.
 - **Verify without a workspace where possible.** To check a credential, use
-  `rote powerpack tokens` / `rote token get` — these work anywhere. But **anything that runs
-  a flow, probes an adapter, or calls an API needs a workspace cwd** (`rote flow run`,
-  `rote <adapter>_probe`, `rote ready`, `rote POST`) — outside one they fail with
+  `rote powerpack tokens` / `rote token get` — these work anywhere. But **anything that probes
+  an adapter or calls an API needs a workspace cwd** (`rote <adapter>_probe`, `rote ready`,
+  `rote POST`) — outside one they fail with
   `not in a workspace directory` / `Permission denied (os error 13)`.
 - **Running a workspace-scoped command (the correct pattern).** Do not assume the command runner
   preserves cwd between separate command invocations. `rote cd` / `--enter` only affect an

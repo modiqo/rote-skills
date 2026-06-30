@@ -34,6 +34,43 @@ rote flow search "<your intent>"
 - If a flow fully covers the request, its output is the deliverable. Verify the requested artifact,
   then stop; do not rewrite, replace, or "improve" it unless the user asked for edits.
 
+### Substrate Router: Adapter vs Browser vs Shell
+
+After the initial flow search, choose the substrate that best matches the
+user's intent. Do not force all tasks through adapters or shell.
+
+| Intent signal | Route |
+| --- | --- |
+| API objects, tickets, PRs, issues, CRM records, calendar data, databases | Use rote adapters first. |
+| "browse", "open this site", "attach to my browser", "use the page", "click", "type", "snapshot", "extract from the page", social/profile page extraction, Gmail/browser login, SSO/MFA, active tab state | Invoke `/rote-browse`. |
+| Local CLI, files, logs, commands, build/test/release checks, generated artifacts | Invoke `/rote-shell`. |
+| API result feeds a CLI or CLI result feeds an API | Keep one workspace and combine adapter calls with `/rote-shell`. |
+| Browser snapshot/file feeds a local CLI | Keep one workspace, use `/rote-browse` first, then `/rote-shell` on the saved evidence. |
+
+Browser routing rule:
+
+- Browser words outrank domain nouns. "Browse my calendar" routes to
+  `/rote-browse` after the initial flow search, even though calendar data can be
+  an adapter task. Use an adapter/flow only if it is already installed, healthy,
+  and completes the request. If it is missing, stale, unauthenticated, or fails
+  setup, switch to browser attach instead of asking the user to build an
+  adapter first.
+- Browser words also outrank native web search. If the user asks to browse or
+  extract public pages, use `/rote-browse` for page observation/extraction.
+  Native search may discover candidate URLs only when explicitly requested or
+  when no URL can be found through adapter/CLI evidence; it is not a replacement
+  for browser snapshots and page extraction.
+- If the user needs existing login, Gmail, SSO, MFA, extensions, active tabs, or
+  profile state, ask whether to attach to an existing headed browser.
+- If the work is public, read-only, CI, or replay-like, ask whether a headless
+  new session is acceptable.
+- If the user says only "browse", ask headed vs headless, then attach-existing
+  vs new session.
+
+Do not satisfy browser intent with native web search, WebFetch, raw `curl`, raw
+Playwright, `open`, or `rote proc run` unless the user explicitly switches from
+browser interaction to a non-browser substrate.
+
 ### Run rote commands sequentially
 
 **rote commands form dependency chains. Run them one at a time, and read each result before

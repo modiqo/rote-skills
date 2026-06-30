@@ -18,6 +18,13 @@ Do not start with generic `rote flow search`, do not execute a saved non-browser
 flow first, and do not silently choose headless. Activate the browser launch
 path first.
 
+Do not replace browser work with native web search, WebFetch, raw Playwright,
+`curl`, or shell scraping. If the user asks to browse, open, inspect, snapshot,
+click, type, or extract from pages such as public social profiles, use rote
+browser primitives to observe the page. Native search may only discover
+candidate URLs when the user asked for search/discovery or no URL can be found
+from existing adapter, CLI, or browser evidence.
+
 Load the browser guidance when you need more detail:
 
 ```bash

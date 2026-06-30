@@ -1,9 +1,10 @@
 # rote-onboard — skill map
 
 The full rote skill set: the day-to-day **rote** skill, the **rote-using-adapters** execution
-skill, the **rote-org** admin skill, the **rote-browse** browser skill, and five guided
-onboarding skills that walk a human through getting rote working, sharing what they build, and
-keeping it all current. The guided skills are a sequence, not a grab-bag — each
+skill, the **rote-org** admin skill, the **rote-browse** browser skill, the **rote-shell**
+CLI/process skill, and five guided onboarding skills that walk a human through getting rote
+working, sharing what they build, and keeping it all current. The guided skills are a sequence,
+not a grab-bag — each
 ends by naming the next logical step, so the path becomes muscle memory. This file is the
 canonical map; each skill links back here.
 
@@ -20,12 +21,13 @@ canonical map; each skill links back here.
 | — | `rote-using-adapters` | Single-adapter execution after the main rote skill has selected an installed adapter. | back to main **rote** skill for orchestration |
 | — | `rote-org` | Registry organization admin — create/delete orgs, members, roles, invites, plan and usage. | — |
 | — | `rote-browse` | Browser automation (beta) — navigate, snapshot, query page slices, attach to a logged-in Chrome/Edge session, recover stale refs, and crystallize replayable browser flows. | — |
+| — | `rote-shell` | CLI and shell work — run local commands with `rote proc run`, capture files/artifacts, follow logs, manage background processes, check deps, and crystallize process flows. | — |
 
 **Two kinds of skill:** the guided onboard skills (1-5) are for *changing your setup*; the
 **rote** skill is for *using* it day to day, with task-level references under
 `rote/references/`, and with **rote-org** (organization administration),
-**rote-using-adapters** (single-adapter execution), and **rote-browse** (browser automation)
-alongside.
+**rote-using-adapters** (single-adapter execution), **rote-browse** (browser automation),
+and **rote-shell** (CLI/process work) alongside.
 
 ## How to build muscle memory
 
@@ -117,7 +119,7 @@ resolve it (or ask the user) rather than marching to the next step on a broken f
 
 ### 4. Running a flow — explore, read frontmatter, run the right way
 
-There are two execution modes and you must pick by the flow's frontmatter:
+There is one reliable execution path for TypeScript flows:
 
 1. **Find the flow** for the intent (don't guess the name):
    `rote explore "<intent>"` (ranks installed adapters/flows) and/or `rote flow search "<q>"`.
