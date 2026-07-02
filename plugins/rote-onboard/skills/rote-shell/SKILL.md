@@ -547,8 +547,11 @@ When the user says yes, do the full release discipline:
     * name: csv-sales-report
     * description: "Summarizes a local CSV into JSON and a text report using rote shell primitives."
     * provenance:
+    *   author: Your Name <you@example.com>
     *   tier: local
+    *   created_at: 2026-01-01T00:00:00.000000+00:00
     *   workspace: csv-json-report-demo
+    *   rote_version: 0.49.0
     * metadata:
     *   status: draft
     *   kind: atomic
@@ -559,7 +562,8 @@ When the user says yes, do the full release discipline:
     *   parameters:
     *   - name: input
     *     type: string
-    *     required: true
+    *     required: false
+    *     default: "input.csv"
     *     description: "Input CSV path"
     *   - name: out_dir
     *     type: string
@@ -573,6 +577,22 @@ When the user says yes, do the full release discipline:
     * ---
     */
    ```
+
+   > **Frontmatter must parse:** a `provenance:` block requires `author`,
+   > `tier`, `created_at`, and `rote_version` (only `workspace` is optional).
+   > A missing `author` fails `rote deno run <flow>` with a generic
+   > "configuration error"; the real cause ("provenance: missing field
+   > `author`") shows only in `rote flow index --rebuild` stderr. The
+   > `created_at` / `rote_version` in the example are placeholders — use a real
+   > timestamp and your current `rote --version`.
+   >
+   > **Surviving `rote flow lint`:** lint runs the body in lint mode against a
+   > synthetic workspace. Shell SDK reads are lint-aware (`proc.stdout.text()`
+   > → `""`, `proc.exit()` → `{kind:"code",code:0}`, `proc.files()` → `[]`), so
+   > no `isLintMode()` guard is needed. But: (a) parsing must tolerate empty
+   > captured output (e.g. `text.split(...)` on `""`), (b) resolve relative path
+   > args against `Deno.cwd()` *before* `Rote.workspace()` switches the cwd, and
+   > (c) give parameters defaults — lint runs the flow with no arguments.
 
 2. Create `~/.rote/flows/<name>/main.ts`.
 3. For declarative DAG flows, put the replay graph in frontmatter `steps:`.

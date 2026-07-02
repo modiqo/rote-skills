@@ -8,18 +8,39 @@ flow output while building the combined result.
 
 ## 1. Get the path and parameter contract
 
-Re-run the same search with JSON output:
+When the flow name is known (often from a prior `rote flow search`), look it up directly — by bare
+name, `<org>/<name>` id, or a path to the flow file. Do not re-filter a search array client-side to
+isolate one flow:
 
 ```bash
-rote flow search "<intent>" --json
+rote flow info <name> --json
 ```
 
-Use the JSON fields directly:
+`rote flow info` is the exact-name counterpart to `rote flow search`: search returns a ranked array
+of fuzzy matches for discovery; info resolves a single flow and `--json` emits one object, not a
+list. Use the object's fields directly:
 
 - `path` is the absolute flow file path; use it verbatim.
 - `parameters` is the ordered positional argument contract.
 - Required parameters need values from the user's intent or a targeted follow-up question.
 - Optional parameters use their defaults unless the user gave a value.
+- The object also carries `id` (org-qualified as `<org>/<name>` for registry-pulled flows),
+  `description`, `format`, `source`, `scheme`, `is_composite`, status/kind/flow_type, endpoint and
+  session requirements, and adapter bindings when present.
+
+Resolve by identity, and handle the failure modes:
+
+- `rote flow info acme/<name> --json` selects an org flow. A bare name prefers a local flow when
+  one exists; otherwise it resolves a single matching flow by name. An ambiguous bare name exits
+  non-zero and lists disambiguation candidates — use the qualified id or the full file path (the
+  absolute `path` a prior lookup reported).
+- If the argument is an existing flow file path, `rote flow info` resolves that path before any
+  name/id lookup.
+- An unknown name exits non-zero with did-you-mean suggestions from the flow search index.
+- `-d, --dir <path>` resolves from an alternate flows root.
+
+If the name is not yet known, discover first with `rote flow search "<intent>" --json`, then look
+the chosen flow up by name.
 
 Do not construct `~/.rote/flows/<org>/<name>/main.ts` by hand. Registry-pulled flows include an
 organization segment, while local draft flows can have a different shape.
@@ -67,10 +88,10 @@ result, then answer the user. Do not overwrite, rewrite, reformat, enrich, or re
 with custom research or direct API output unless the user explicitly asks to edit the flow or create
 a separate enhanced artifact.
 
-Do not inspect the flow implementation source just because search returned a path. Once
-`rote flow search --json` exposes a runnable path and parameter contract, run the flow and verify the
-user-visible result. Read source only when the user asks to modify/debug the flow or live rote
-guidance says the contract cannot be determined otherwise.
+Do not inspect the flow implementation source just because a lookup returned a path. Once
+`rote flow info <name> --json` exposes a runnable path and parameter contract, run the flow and
+verify the user-visible result. Read source only when the user asks to modify/debug the flow or
+live rote guidance says the contract cannot be determined otherwise.
 
 Verification should check the artifact content, not only file existence. Confirm the requested path,
 key headings or markers, required parameters such as city/date/output path, and any live-data section

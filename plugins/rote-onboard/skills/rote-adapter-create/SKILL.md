@@ -45,8 +45,18 @@ directly — no gateway/SDK middleman; value: no extra per-call fees, infra-less
 new attack surface). Skip it if they just came from the setup fork (they've heard it).
 
 Ask what API the user wants (prose): "Which API? (e.g. notion, stripe, datadog — or paste a
-spec URL / file path)". Then resolve a **spec source** through this chain. The spec source is
-either a catalog id, a URL, or a local path.
+spec URL / file path)".
+
+**First, rule out an existing adapter.** Once you know which API, run `rote adapter list` as the
+inventory pass. If any listed adapter plausibly matches the target API, run
+`rote adapter info <id>` for each plausible match and use those details to decide whether it already
+covers the target API. If an adapter already covers it, stop — use it, or hand off to
+**rote-adapter-config** to tune it (auth, base URL, etc.); only continue to create a new one if the
+user explicitly wants a second. Re-creating over an existing adapter regenerates its fingerprint and
+churns config.
+
+Then resolve a **spec source** through this chain. The spec source is either a catalog id, a URL, or
+a local path.
 
 ### 0a. Catalog (built-in, ~872 specs) — ALWAYS try this first
 
