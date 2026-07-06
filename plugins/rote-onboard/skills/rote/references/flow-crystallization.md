@@ -108,8 +108,8 @@ rote flow search "<flow-name-or-intent>"
 rote flow search "<flow-name-or-intent>" --json
 ```
 
-If the verification requires an execution check, run the released flow from `/tmp` using
-[flow-search-and-run.md](./flow-search-and-run.md).
+If the verification requires an execution check, run the released flow from outside the active
+workspace using [flow-search-and-run.md](./flow-search-and-run.md).
 
 ## 5. If the user says no
 

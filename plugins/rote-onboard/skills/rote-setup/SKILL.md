@@ -412,8 +412,8 @@ Two kinds of credential, handled very differently — **classify first**:
 
 **Verify with cwd-independent checks only.** Do NOT run a flow or `rote ready` to test a
 token — those require being *inside a rote workspace* and otherwise fail with
-`not in a workspace directory` / `Permission denied (os error 13)` (that error from a
-scratch dir like `/tmp` is the workspace requirement, not a bad token). Verify with:
+`not in a workspace directory` / `Permission denied (os error 13)` (that error from outside a
+workspace is the workspace requirement, not a bad token). Verify with:
 
 ```bash
 rote powerpack tokens
@@ -533,8 +533,8 @@ by `rote flow search --json` or `rote flow list --json`. It tells you two things
   outside the project, so
   make sure the current environment has access if it requires filesystem approval.
 
-When unsure which mode, prefer the `cd … && rote deno run --allow-all main.ts` form — it works
-for every flow and matches how they're authored.
+When unsure which mode, inspect frontmatter or run `rote flow info <name-or-path> --json` first.
+Do not use direct Deno for a flow that declares `steps_with_presentation`.
 
 Show the flow's output to the user — that's the payoff.
 

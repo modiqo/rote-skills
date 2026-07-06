@@ -114,8 +114,8 @@ This rule is about **reading managed file contents**, not about your working dir
 **not** mean avoid the workspace folder. You still `cd` into the workspace at
 `${ROTE_HOME}/rote/workspaces/<name>` (rule 1c) before running workspace commands: `init-session`,
 `POST`, `tools`, `query`, and the rest resolve the active workspace from cwd, so a command left in
-`/tmp` (or anywhere outside the workspace) fails with `not in a workspace directory`. Entering the
-workspace is expected; only hand-reading the managed files inside it is not.
+a directory outside the workspace fails with `not in a workspace directory`. Entering the workspace
+is expected; only hand-reading the managed files inside it is not.
 
 rote has a native, in-cache equivalent for every shell tool you'd otherwise reach for here — you
 almost never need to shell out:
@@ -153,7 +153,10 @@ There is one reliable execution path for TypeScript flows:
    `rote explore "<intent>"` (ranks installed adapters/flows) and/or `rote flow search "<q>"`.
 2. **Read the flow's frontmatter** before running it: use the path returned by
    `rote flow search --json` or `rote flow list --json`. Does it have a `steps:` block?
-   - **Has `steps:` (DAG flow)** → `rote flow run <name> key=value …` works (needs a workspace cwd).
+   - **Has `steps:` and `execution_model: steps_with_presentation`** →
+     `rote flow run <name-or-path> key=value …`. Direct Deno will not receive the typed
+     presentation input.
+   - **Has `steps:` without presentation** → `rote flow run <name-or-path> key=value …` works.
    - **No `steps:` (legacy/sequential)** → `rote flow run` may misfire (it can fall back to a
      bash invocation instead of Deno). Run it the reliable way instead:
      ```bash
@@ -163,8 +166,8 @@ There is one reliable execution path for TypeScript flows:
      args (read them from the frontmatter `parameters:`). This `cd && rote deno run` compound is
      one logical step.
 
-When unsure which mode, prefer the `cd … && rote deno run` form — it works for both and matches
-how the flows are authored.
+When unsure which mode, inspect frontmatter or run `rote flow info <name-or-path> --json` first.
+Do not use direct Deno for a flow that declares `steps_with_presentation`.
 
 ## Primitive intros — explain the *what* and *why*, the first time
 

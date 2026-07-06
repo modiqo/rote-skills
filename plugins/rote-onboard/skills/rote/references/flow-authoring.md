@@ -54,6 +54,12 @@ Do not create flow directories by hand unless live rote guidance says to. The CL
 
 For TypeScript flows, follow [typescript-transformations.md](./typescript-transformations.md) and `rote grammar deno`.
 
+For flows whose frontmatter declares `metadata.execution_model: steps_with_presentation`, the
+TypeScript body is presentation-only. Import `__ROTE_PRESENTATION_SDK__`, read completed outputs
+with `loadPresentationContext()` and literal `stepName("...")` references, and render with
+`FlowOutput`. Do not import the broad SDK, construct `Rote`, run preflight, create a task queue,
+call `fetch`, spawn subprocesses, or read `Deno.args`/`Deno.env` directly from that body.
+
 Preserve a stable `FlowOutput` shape:
 
 - Return structured data for machine reuse.
@@ -63,13 +69,20 @@ Preserve a stable `FlowOutput` shape:
 
 ## 5. Test with diverse inputs
 
-Run the flow from `/tmp` with representative parameter sets:
+Run legacy TypeScript flows from outside the active workspace with representative parameter sets:
 
 ```bash
-cd /tmp && rote deno run --allow-all /absolute/path/to/main.ts [args]
+rote deno run --allow-all /absolute/path/to/main.ts [args]
 ```
 
-Cover the common case, an empty or no-result case, optional-parameter defaults, and at least one user-provided edge case. For shell flows, run the shell entrypoint directly from `/tmp`.
+Run `steps_with_presentation` flows through the flow runner instead; it executes effects first and
+then invokes the deprivileged presentation body:
+
+```bash
+rote flow run /absolute/path/to/main.ts param=value
+```
+
+Cover the common case, an empty or no-result case, optional-parameter defaults, and at least one user-provided edge case. For shell flows, run the shell entrypoint directly from outside the active workspace.
 
 ## 6. Lint, release, and rebuild search
 
@@ -86,13 +99,15 @@ the release/index/search sequence.
 Once release is approved, use this sequence:
 
 ```bash
-cd /tmp && rote deno run --allow-all /absolute/path/to/main.ts [representative args]
+rote deno run --allow-all /absolute/path/to/main.ts [representative args]
 rote flow lint <name>
 rote flow release <name>
 rote flow index --rebuild
 rote flow search "<intent-or-flow-name>"
 rote flow search "<intent-or-flow-name>" --json
 ```
+
+For `steps_with_presentation`, replace the first command with `rote flow run /absolute/path/to/main.ts param=value`.
 
 If lint or release fails, fix the violation before retrying. Do not rerun the same failing command
 until flow code, arguments, adapter configuration, cwd, or environment has changed. Do not edit

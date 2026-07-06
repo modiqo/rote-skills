@@ -28,7 +28,8 @@ Choose the narrowest rote primitive that preserves evidence:
 - process stream: `rote proc stream follow-process proc-1 --stream stdout --until READY`
 - terminal-sensitive command: `rote proc pty run -- <program> [args...]`
 - dependency preflight: `rote deps check deps.toml`
-- crystallized replay: `rote deno run --allow-all ~/.rote/flows/<name>/main.ts`
+- legacy TypeScript replay: `rote deno run --allow-all ~/.rote/flows/<name>/main.ts`
+- declarative or presentation replay: `rote flow run ~/.rote/flows/<name>/main.ts param=value`
 
 Do not replace these with ad hoc `command > file`, `tail -f`, or `ps | grep`
 when the evidence should be durable. Rote already stores typed responses,
@@ -495,6 +496,8 @@ raw shell when a rote primitive can preserve the evidence.
 Current mixed replay support is intentionally asymmetric:
 
 - adapter and `process.exec` actions are first-class `steps:` DAG actions
+- `steps_with_presentation` currently supports adapter-backed steps only; `process.exec` steps are
+  rejected before presentation lint
 - browser observations are bridged through saved responses, snapshots, and
   files until first-class browser DAG actions ship
 
@@ -505,14 +508,20 @@ file from `process.exec`.
 ## Crystallization Rule
 
 After a useful CLI workflow works twice, ask whether to crystallize it. The
-canonical replay command for TypeScript flows is:
+canonical replay command depends on the flow's execution model.
+
+Legacy TypeScript flows use rote's bundled Deno:
 
 ```bash
 rote deno run --allow-all ~/.rote/flows/<name>/main.ts
 ```
 
-Use `rote flow run` only as compatibility syntax. New generated usage should
-prefer `rote deno run --allow-all`.
+Declarative `steps:` flows, including `steps_with_presentation`, use the flow
+runner:
+
+```bash
+rote flow run ~/.rote/flows/<name>/main.ts param=value
+```
 
 ## Crystallization Workflow
 
@@ -610,7 +619,7 @@ When the user says yes, do the full release discipline:
    `--github-repo` parser unless both forms work.
 6. Start with `metadata.status: draft`. Do not set `released` until dependency
    preflight and replay QA have passed.
-7. Test the draft with at least three distinct inputs:
+7. Test the draft with at least three distinct inputs. For legacy TypeScript:
 
    ```bash
    cd ~/.rote/flows/<name>
@@ -619,6 +628,9 @@ When the user says yes, do the full release discipline:
    rote deno run --allow-all ~/.rote/flows/<name>/main.ts <input-b>
    rote deno run --allow-all ~/.rote/flows/<name>/main.ts <input-c>
    ```
+
+   For declarative or `steps_with_presentation` flows, replace the direct Deno
+   executions with `rote flow run ~/.rote/flows/<name>/main.ts <params>`.
 
    If dependency preflight fails, ask the user whether to provision missing
    required tools, with the install scope and side effects stated plainly. Do
@@ -631,14 +643,15 @@ When the user says yes, do the full release discipline:
 
    ```bash
    rote flow validate ~/.rote/flows/<name>/main.ts
-   rote deno run --allow-all ~/.rote/flows/<name>/main.ts --dry-run <params>
-   rote deno run --allow-all ~/.rote/flows/<name>/main.ts <params>
-   rote deno run --allow-all ~/.rote/flows/<name>/main.ts --resume latest <params>
+   rote flow run ~/.rote/flows/<name>/main.ts --dry-run <params>
+   rote flow run ~/.rote/flows/<name>/main.ts <params>
+   rote flow run ~/.rote/flows/<name>/main.ts --resume latest <params>
    ```
 
    `rote flow lint` checks the authored `FlowOutput` contract and is not a
    release gate for pure `steps:` DAG flows whose TypeScript body is bypassed by
-   the DAG runner.
+   the DAG runner. For `steps_with_presentation`, it is the presentation
+   conformance gate and must pass after TypeScript edits.
 
    Authored SDK flows:
 
@@ -668,7 +681,7 @@ When the user says yes, do the full release discipline:
 
 Do not claim a shell-derived flow is released from memory. The release claim
 must point back to `rote deps check deps.toml`, command output, saved responses,
-and successful `rote deno run --allow-all` executions.
+and successful replay commands for the flow's execution model.
 
 ## Step Reference Rules For Mixed DAGs
 

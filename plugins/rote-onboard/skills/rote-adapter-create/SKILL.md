@@ -72,6 +72,12 @@ skill jumped to web anyway):
   **choose** — or confirm the single match.
   Never silently pick one, and never fall through to web search while matches exist. Only after
   the user picks (or explicitly says "none of these, search the web") do you leave the catalog.
+  Include decision fields when available: kind/substrate, auth shape, spec-fetch auth, runtime auth,
+  capability fit, installed/health state, install/write impact, and next command.
+  When two matches are the **same product under different protocols** — e.g. a REST/OpenAPI spec
+  *and* an MCP server for it (`Spec Type` "MCP") — do not treat either as a redundant duplicate:
+  surface both and make the user choose, noting the tradeoff (a REST adapter and an MCP adapter
+  differ in protocol, auth model, and which tools they expose).
 - **0 matches** → only then go to **0b (web search)**.
 
 Once the user picks a catalog entry, show its details (auth type, spec URL, notes):
@@ -80,17 +86,22 @@ Once the user picks a catalog entry, show its details (auth type, spec URL, note
 rote adapter catalog info stripe
 ```
 
-**Important resolution detail (verified):** `rote adapter new <catalog-id>` (no `--dry-run`)
-auto-resolves the spec from the catalog, but **`--dry-run` does NOT resolve a catalog id** —
-it treats the argument as a file path. So for the dry-run, use the **Spec URL** from
-`catalog info`, not the catalog id:
+Always follow the catalog-provided install command. If `Spec Type = "MCP"`, use
+`rote adapter new-from-mcp`. Do not substitute generic `rote adapter new`.
+
+For non-MCP catalog entries, `rote adapter new <catalog-id>` and `--dry-run` resolve the spec from
+the catalog:
 
 ```bash
-rote adapter new <id> <SPEC_URL_FROM_CATALOG_INFO> --dry-run
+rote adapter new <catalog-id> --dry-run
 ```
 
-For MCP-type entries (catalog `info` Spec Type = "MCP", e.g. Notion), don't dry-run — go to
-the MCP path (Stage 5, MCP note).
+For MCP-type entries (catalog `info` Spec Type = "MCP", e.g. Notion), use the MCP path (Stage 5,
+MCP note). If you need a dry run, use `rote adapter new-from-mcp ... --dry-run`.
+
+If `catalog info`, MCP discovery, or dry-run returns `401/403` while fetching a spec, label it as
+spec-fetch auth required. That is separate from runtime auth after install; 401/403 is not proof the
+adapter is bad. Ask whether to authenticate/reauth or choose another catalog candidate.
 
 ### 0b. Web search (only when the catalog returned ZERO matches)
 
@@ -142,8 +153,10 @@ user wants to.
 ## Stage 3 — Auth (resolve, don't punt)
 
 Drive from `auth` + `auth_scoring`. Pick a branch from two fields — `has_ambiguity` and
-`recommended.confidence` — then **resolve ambiguity by reading the provider's own docs**, not
-by handing the user a blind multiple-choice:
+`recommended.confidence` — then **resolve ambiguity yourself**: sharpen the guess from the
+provider's docs *when web tools are available*, but the **probe → real call is the final
+arbiter**. Never hand the user a blind multiple-choice, and never stall waiting on docs you
+can't fetch:
 
 ```
 auth.type == "none"                                          → skip, no auth
@@ -154,8 +167,10 @@ auth.type == "per_operation"                                 → RESEARCH-FULL s
 ```
 
 Low confidence is itself a trigger — a single-scheme guess at 0.5 (common for GraphQL specs:
-`detail` says "no directives found") is rote *guessing*, so verify it before the user pastes a
-token, not after the probe 401s.
+`detail` says "no directives found") is rote *guessing*. Sharpen it up front when you can; when
+you can't (no web access, ambiguous docs), install the most-likely scheme and let the first
+real call correct it — a live auth error from the provider is the most authoritative signal
+there is, no web round-trip needed.
 
 - **CONFIRM** → state the scheme and proceed, pre-filling the token env var from
   `auth.token_env` / `key_env`. e.g. "Detected bearer auth (0.95 confidence, from the spec).
@@ -194,8 +209,10 @@ only sharpens *which* `config-json` you assemble and *what instructions* the use
      `header_format` + setup steps.
    - **Contradicts** it (dry-run guessed bearer, docs say `X-Api-Key`) → present both choices,
      lead with the doc-backed one, cite the source.
-   - **Inconclusive** → fall back to asking the user (today's behavior), but with whatever
-     partial setup info was found.
+   - **Inconclusive, or research skipped/unavailable** → don't punt the scheme to the user.
+     Install the most-likely scheme and let **Stage 6's probe → real call arbitrate**: on an
+     auth-indicating `4xx` (read the body, not just the status), switch the header format
+     (`Bearer` ↔ raw `Authorization`) and re-call. Ask the user only to obtain or paste a token.
 
 ### Present a researched recommendation, not a blind menu
 
@@ -229,8 +246,15 @@ Recommended: OAuth2 authorization_code  (provider docs URL)
   more there.
 - **The token value is a secret** — see Stage 5 for the masked handoff. Research produces
   *how to obtain* it and the *header format*, never the value.
-- **The probe is still the final gate.** Research raises confidence and yields correct setup,
-  but Stage 6's `<id>_probe` is what actually proves auth works.
+- **The probe → real call is the final gate — and the fallback arbiter.** Research raises
+  confidence and yields correct setup, but `<id>_probe` only *finds* operations (local
+  capability search — it comes back green even with broken auth). What actually proves auth is
+  Stage 6's real `<id>_call` on the probe's top hit. When auth went in unverified (low
+  confidence, no doc-backed confirmation), that call is **mandatory, not offered**: any `4xx`
+  whose body reads as an auth/token problem (usually `401`/`403`, but some providers signal a
+  wrong header scheme with `400`) means adjust the scheme (`rote adapter auth update`) and
+  re-call — do not stop or ask the user until the call is green or the failure is provably
+  token-side.
 
 ---
 
@@ -246,8 +270,9 @@ is no post-creation toolset toggle.
   narrow to specific areas?" Then let the user name areas (search `toolsets[].name`) or take
   all. Default to **all** if they don't care.
 
-Build `toolset_filters` from the selection: `{"<toolset-name>": "enabled", ...}` (omit to
-include everything).
+Build `toolset_filters` from the selection: `{"<toolset-name>": "<filter>", ...}` where
+`<filter>` is `all` | `read-only` | `write-only` | `exclude` (omit the map to include
+everything). For a read-oriented task, `read-only` on the selected toolsets is the safe default.
 
 ---
 
@@ -291,13 +316,27 @@ rote adapter info <id>
 ```
 
 Show it's ready (tools/toolsets/auth). Offer to:
-- **Prove it works** — probe inside a workspace (creation alone doesn't run it):
+- **Prove it works** — probe, then a real call, inside a workspace (creation alone runs
+  neither). The probe only *finds* the operation (local capability search — green even with
+  broken auth); the **call's response is the auth verdict**. If auth went in unverified
+  (Stage 3 RESEARCH branch, or research was skipped), both are **mandatory and you run them
+  yourself** — don't just offer them:
   ```bash
   rote init proof --seq --force
   ```
   ```bash
   cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/proof && rote <id>_probe "<query>"
   ```
+  ```bash
+  cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/proof && rote <id>_call <top-probe-hit> '<minimal-args>'
+  ```
+  Read the call's verdict by failure class — judge auth by the response *body*, not the status
+  code alone. Any whole-response `4xx` whose body points at the token, key, or header format is
+  auth (usually `401`/`403`, but some providers return `400` for a wrong header scheme) — fix
+  the scheme (`rote adapter auth update`) and re-call. A single *field* erroring inside an
+  otherwise-green GraphQL response is **not** auth — don't touch the scheme; invoke the
+  **rote-adapter-config** skill and use its GraphQL field filter
+  (`rote adapter tool-spec <id> --add --action skip --field <Type.field>`), then re-call.
 
 Then offer to:
 - **Tune it** — invoke **rote-adapter-config** for base-url, auth schemes, sensitivity, etc.
@@ -306,7 +345,7 @@ Then offer to:
   tells them if a push is needed, pushes at their chosen visibility, then surfaces org members
   and offers to invite others for review/use. Only offer this on a clean create.
 
-**Closing line** (only on a clean create + green probe): land one dry one-liner keyed to this
+**Closing line** (only on a clean create + green call): land one dry one-liner keyed to this
 run's `total_tools` — the shared convention and rules live in [INDEX.md](../INDEX.md).
 e.g. "512 tools talking straight to the provider's API — no metered middleman quietly billing
 you per call." Skip it if the run was rocky.
@@ -316,8 +355,8 @@ you per call." Skip it if the run was rocky.
 ## Notes
 
 - `--dry-run` creates nothing — safe to run repeatedly while discovering the right spec.
-- A provider-side `HTTP 401/403` on dry-run means the API gates even reading its spec (rare);
-  most catalog specs analyze cleanly.
+- A provider-side `HTTP 401/403` on dry-run means spec-fetch auth is required; runtime auth may still
+  be separate after install. This is not proof the adapter is bad.
 - After a successful create, suggest the main **rote** skill for day-to-day use
   (`rote flow search "<intent>"` before any direct adapter call).
 

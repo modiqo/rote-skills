@@ -63,6 +63,24 @@ If a later step becomes a clearly isolated single-adapter subtask, do not hand o
 workspace calls for the broader task have started. Prefer finishing the task and crystallizing the
 repeatable workflow.
 
+## Catalog Ambiguity Gate
+
+When catalog hits include multiple plausible same-provider adapters, or their auth shapes differ,
+pause before install/call and ask the user to choose unless:
+
+- the user named an exact adapter id;
+- one candidate is already installed, healthy, and clearly covers every required capability;
+- inspected metadata proves the others do not cover the needed operation.
+
+Compare only decision fields: adapter id, kind/substrate, auth shape, spec-fetch auth, runtime auth,
+capability fit, installed/health state, install/write impact, and next command.
+
+After `rote adapter catalog info`, follow the catalog-provided install command. If
+`Spec Type = "MCP"`, use `rote adapter new-from-mcp`. Do not substitute generic `rote adapter new`.
+
+A 401/403 while fetching an MCP/spec means spec-fetch auth is required; it is not proof the adapter
+is bad. Keep it in the comparison instead of silently falling through to another adapter.
+
 ## 5. Catalog fallback
 
 When no installed adapter or flow covers the task, run:

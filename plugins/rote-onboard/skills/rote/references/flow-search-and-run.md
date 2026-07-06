@@ -25,8 +25,8 @@ list. Use the object's fields directly:
 - Required parameters need values from the user's intent or a targeted follow-up question.
 - Optional parameters use their defaults unless the user gave a value.
 - The object also carries `id` (org-qualified as `<org>/<name>` for registry-pulled flows),
-  `description`, `format`, `source`, `scheme`, `is_composite`, status/kind/flow_type, endpoint and
-  session requirements, and adapter bindings when present.
+  `description`, `format`, `source`, `scheme`, `is_composite`, status/kind/flow_type,
+  execution model, endpoint and session requirements, and adapter bindings when present.
 
 Resolve by identity, and handle the failure modes:
 
@@ -50,33 +50,47 @@ organization segment, while local draft flows can have a different shape.
 Flow parameters are positional. Map the user's request to the declared order from `parameters`.
 Do not pass `key=value` pairs unless the flow's own documentation explicitly expects them.
 
-Example: if frontmatter declares `start_date`, then `end_date`, then optional `providers`, a May
-rideshare receipt task becomes:
+Example: if frontmatter declares `start_date`, then `end_date`, then optional `providers`, a
+legacy May rideshare receipt task becomes:
 
 ```bash
 rote deno run --allow-all /path/to/main.ts 2026/05/01 2026/05/31
 ```
 
-## 3. Run from `/tmp`
-
-Run TypeScript flows with rote's bundled Deno from `/tmp`:
-
-```bash
-cd /tmp && rote deno run --allow-all /absolute/path/to/main.ts [args in declared order]
-```
-
-Run shell flows directly from `/tmp`:
+For `metadata.execution_model: steps_with_presentation`, pass named flow parameters through the
+flow runner instead:
 
 ```bash
-cd /tmp && /absolute/path/to/main.sh [args]
+rote flow run /path/to/main.ts start_date=2026/05/01 end_date=2026/05/31
 ```
 
-The `cd /tmp && ...` compound is one logical step. It keeps flow-created workspaces outside the
-current workspace directory.
+## 3. Run outside the active workspace
+
+Run legacy TypeScript flows with rote's Deno wrapper from a directory outside the active workspace:
+
+```bash
+rote deno run --allow-all /absolute/path/to/main.ts [args in declared order]
+```
+
+Run `steps_with_presentation` flows with the flow runner, not direct Deno:
+
+```bash
+rote flow run /absolute/path/to/main.ts [param=value ...]
+```
+
+Run shell flows directly from a directory outside the active workspace:
+
+```bash
+/absolute/path/to/main.sh [args]
+```
+
+Running outside the current workspace keeps flow-created workspaces from nesting inside the
+workspace you are using to inspect or author the flow.
 
 ## 4. TypeScript execution rules
 
-- Use `rote deno run --allow-all` for `.ts` flows.
+- Use `rote deno run --allow-all` for legacy `.ts` flows.
+- Use `rote flow run` for `.ts` flows with `metadata.execution_model: steps_with_presentation`.
 - Do not run TypeScript flow files directly.
 - Do not use system `deno`; rote manages its own Deno runtime.
 - Do not prefix the `rote` binary with `~/.rote/bin/`; `rote` itself should be on `PATH`.

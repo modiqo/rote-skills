@@ -4,20 +4,26 @@ Use this reference when cached rote responses need TypeScript transformation or 
 
 ## Execution rules
 
-- Run TypeScript flows with `rote deno run --allow-all`.
-- Run from `/tmp` when executing flow files.
+- Run legacy TypeScript flows with `rote deno run --allow-all`.
+- Run `steps_with_presentation` flows with `rote flow run`; direct Deno skips the effect plane and
+  does not provide presentation input.
+- Run flow files from outside the active workspace.
 - Do not call system `deno` directly.
 - Do not prefix the binary with `~/.rote/bin/`; use `rote` on `PATH`.
 
 Typical execution:
 
 ```bash
-cd /tmp && rote deno run --allow-all /absolute/path/to/main.ts [args]
+rote deno run --allow-all /absolute/path/to/main.ts [args]
 ```
 
 ## SDK imports
 
 Use the SDK import form shown by `rote grammar deno` or `rote guidance typescript essential`. Avoid npm-style package assumptions unless the live guidance explicitly supports them for the current rote version.
+
+For `steps_with_presentation`, do not import `sdk/ts/mod.ts` or construct `Rote`. Import
+`__ROTE_PRESENTATION_SDK__`, then use `loadPresentationContext()`, literal `stepName("...")`
+references, and `FlowOutput`.
 
 ## Transform cached responses
 
@@ -41,4 +47,4 @@ Design `FlowOutput` for future agents as well as humans:
 
 ## Testing transformations
 
-Test with representative cached data or fixture input before release. Cover no-result, partial-result, and optional-parameter cases. After changes, rerun the flow through `rote deno run --allow-all` rather than a standalone TypeScript runner.
+Test with representative cached data or fixture input before release. Cover no-result, partial-result, and optional-parameter cases. After changes, rerun legacy TypeScript through `rote deno run --allow-all`; rerun `steps_with_presentation` through `rote flow run`.

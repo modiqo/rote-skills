@@ -24,7 +24,7 @@ Selected route: <flow/explore result from caller>   # required for delegated sub
 ## Core Rules
 
 - Use only `rote` commands for adapter work. Do not call MCP servers, provider CLIs, raw
-  adapter URLs, or harness-native tools directly.
+  adapter URLs, or external automation tools directly.
 - Run commands sequentially. `@N` responses and `$variables` exist only after earlier commands
   finish.
 - If starting fresh, create one workspace with `rote init <name> --seq` before probing or
@@ -88,20 +88,23 @@ Use `-s` when the adapter may need session state.
 
 Do not use Python, Node.js, Ruby, shell scripts, or raw `jq` subprocesses for filtering,
 reshaping, or formatting data already captured in rote responses. Use rote-native extraction.
+Do not pipe `rote query` output into `head`, `tail`, `grep`, `jq`, `python`, `node`, or temp files.
+If an external command is truly required, run it through `rote proc run` so the workspace keeps
+guidance and provenance.
 
 | Tier | When | Use |
 |------|------|-----|
-| 1 | Field extraction, filtering, counts, sorting | `rote @N '<jq>'` |
-| 2 | Formatting that jq cannot express cleanly | `rote @N --transform-ts '...'` or `--filter-ts` |
+| 1 | Field extraction, filtering, counts, sorting | `rote query @N '<jq>'` |
+| 2 | Formatting that jq cannot express cleanly | `rote query @N --transform-ts '...'` or `--filter-ts` |
 | 3 | Loops, conditionals, reusable orchestration | `rote flow template create` TypeScript flow |
 
 Start at Tier 1:
 
 ```bash
-rote @1 '.data[] | select(.status == "active")'
-rote @1 '.items | length'
-rote @1 '.users[] | {name, email}'
-rote @1 '.id' -s item_id
+rote query @1 '.data[] | select(.status == "active")'
+rote query @1 '.items | length'
+rote query @1 '.users[] | {name, email}'
+rote query @1 '.id' -s item_id
 ```
 
 Only escalate when the lower tier cannot express the transformation.
