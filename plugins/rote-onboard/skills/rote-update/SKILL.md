@@ -10,13 +10,35 @@ description: >
 
 # rote-update — keep rote current
 
+All `rote-<name>` references in this document — including every name in the Handoff
+Contract — are companion **skills**, never CLI commands (`rote-shell` is not `rote shell`).
+Invoke them through the runtime's skill mechanism; only literal `rote …` commands run in a
+terminal.
+
 Two layers most people forget to update together: the **binary** and the **installed skill
 files**. This skill does both. Determine facts from live commands; if rote isn't on
 PATH, resolve it via the **narrow probe** (check `$HOME/.local/bin/rote` then
-`$HOME/.cargo/bin/rote` — never a deep `find`; see INDEX § 1b). **Follow the shared operating
-rules in
-[`../INDEX.md`](../INDEX.md) § "Shared operating rules"** — clear command access if the current
-environment requires it, and run **one command at a time, sequentially — never parallel**.
+`$HOME/.cargo/bin/rote` — never a deep home-directory search). Clear command access if the current
+environment requires it, and run **one command at a time, sequentially — never parallel**. Use
+[`../rote/references/skill-workflow-map.md`](../rote/references/skill-workflow-map.md) only when a
+caller needs the full companion graph.
+
+## Handoff Contract
+
+- Use when: the user wants to check, update, upgrade, or refresh rote, including the binary and the
+  bundled skill distribution.
+- Preconditions: `rote` is runnable or the install/path/package-manager blocker can be stated; the
+  user accepts that long-lived agent sessions may need restart after skill refresh.
+- Owns: update availability check, self-update invocation, version confirmation, bundled skill
+  refresh, provider-specific skill refresh guidance, and restart/manual-refresh advice.
+- Hands off to: `rote-setup` if update reveals a broken or incomplete install; `rote` after the
+  refreshed binary/skills are ready for normal use.
+- Returns to: the caller with old/new version when known, update result, skill refresh command run,
+  provider target, restart requirement, and any package-manager/manual-update blocker.
+- Stop when: update/check completes, self-update defers to another installer, skill refresh finishes,
+  or restart/manual action is required before active skills can reload.
+- Completion signal: version and skill-refresh status reported from live commands, plus explicit
+  restart or next-skill guidance.
 
 ---
 
@@ -75,10 +97,10 @@ files are reloaded.
 
 **Closing line** (only after a clean update of both layers): one dry one-liner keyed to the
 version just landed on — still a local binary hitting providers directly, no middleman proxy to
-keep paying as it ages. Shared convention and rules in [INDEX.md](../INDEX.md). Skip it if
-`self-update` errored or deferred to a package manager. e.g. "Updated to {version} — your
+keep paying as it ages. Skip it if `self-update` errored or deferred to a package manager. e.g. "Updated to {version} — your
 adapters still hit the real APIs directly, no proxy clipping a fee per call. Carry on."
 
-**Related onboard skills** ([INDEX.md](../INDEX.md) is the full map):
+**Related onboard skills** (the full graph lives in
+[`../rote/references/skill-workflow-map.md`](../rote/references/skill-workflow-map.md)):
 - **First-run:** `rote-setup` · **New adapter:**
   `rote-adapter-create` · **Tune one:** `rote-adapter-config`

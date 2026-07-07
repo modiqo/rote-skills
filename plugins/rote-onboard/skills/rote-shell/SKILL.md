@@ -1,9 +1,14 @@
 ---
 name: rote-shell
-description: "Use for CLI and shell work through rote: running local commands with `rote proc run`, capturing stdout/stderr/files, following logs and background processes, checking dependency manifests, mixing adapters/browser/process steps, and crystallizing CLI work into TypeScript flows. Prefer rote shell primitives over raw shell when the command result should be remembered, queried, replayed, or shared."
+description: "Use for CLI and shell work through rote when command output, files, logs, process state, dependency checks, mixed API/browser evidence, or crystallized CLI flows must be remembered, queried, replayed, or shared."
 ---
 
 # rote-shell
+
+All `rote-<name>` references in this document — including every name in the Handoff
+Contract — are companion **skills**, never CLI commands (`rote-shell` is not `rote shell`).
+Invoke them through the runtime's skill mechanism; only literal `rote …` commands run in a
+terminal.
 
 Use rote for shell and CLI work when the result should become workspace memory:
 commands, outputs, files, logs, process lifecycle, dependencies, and flow replay.
@@ -34,6 +39,91 @@ Choose the narrowest rote primitive that preserves evidence:
 Do not replace these with ad hoc `command > file`, `tail -f`, or `ps | grep`
 when the evidence should be durable. Rote already stores typed responses,
 artifacts, hashes, offsets, process leases, and command-log provenance.
+
+Hard default: if command output feeds a final answer, user artifact, judge,
+verifier, flow body, or later reasoning step, it is not disposable. Use
+`rote proc` and then query the saved response.
+
+Chaining is acceptable when each meaningful shell process is captured by `rote proc`.
+For example, `rote proc run ... && rote proc run ...` preserves process nodes in the workspace DAG.
+Do not promote raw pipes or chained lifecycle commands as the default route. Adapter setup,
+workspace init/session setup, pending-flow lifecycle, release, index, and registry operations are
+clearer as separate commands unless the runtime explicitly prints a combined command.
+
+## Adapter-First Boundary
+
+`rote proc` is not an adapter substitute. If the task needs provider/API data,
+such as records, tickets, PRs, issues, markets, trades, CRM rows, calendar
+events, or database objects, return to `rote-task-routing` and use adapter
+search/install/probe/call first. Do not fetch provider REST endpoints through
+`curl`, Python, Node, a custom SDK, or inline HTTP scripts unless flow search,
+explore, catalog search, and adapter probes have failed to produce a rote path.
+
+Shell work starts after routing selects local command evidence, or after
+adapter/browser evidence has been captured and a local command needs to process
+it. Provider-native CLIs are shell work only when the CLI itself is the requested
+source or the router selected it as fallback after adapter checks.
+
+## Handoff Contract
+
+- Use when: local CLI commands, files, logs, process lifecycle, dependency checks, generated
+  artifacts, or shell-derived flow replay need rote memory.
+- Preconditions: `rote` can run; a task intent and working directory are known; browser/API state
+  that must feed the command has been materialized as a saved response, snapshot, slice, or file.
+- Owns: `rote proc` primitive selection, process evidence capture, dependency preflight,
+  background lease handling, shell flow crystallization shape, and shell SDK guidance.
+- Hands off to: `rote-flow-crystallization`, `rote-flow-authoring`, `rote-typescript-transformations`,
+  `rote-troubleshooting`, `rote-browse`, and `rote`.
+- Returns to: `rote` or the delegating companion with commands run, response IDs, process leases,
+  captured artifacts, result, reusability signal, cleanup state, and next recommended skill.
+- Stop when: the shell result is delivered, dependency provisioning needs user approval, a process
+  cleanup or credential prompt blocks, browser/API ownership is required, or reusable flow authoring
+  takes over.
+- Completion signal: queried process evidence, captured files/artifacts, resolved background
+  leases, dependency check status, and a save gate of pending, accepted, discarded, or not
+  applicable.
+
+## Handoff Packet
+
+Consume this packet from `rote`, `rote-browse`, `rote-workspace`, or a delegated skill:
+
+- Origin skill: `rote`, `rote-browse`, `rote-workspace`, or the delegated skill that handed off.
+- User intent: the exact shell-visible result or artifact requested.
+- Workspace path: current rote workspace path, or proposed workspace name.
+- Working directory: directory where local commands should run.
+- Input evidence: saved responses, browser snapshots/slices, files, or adapter results to consume.
+- Requirements: the command output, files/logs, output artifact, and verification checks that
+  must survive handoff.
+- Allowed commands: exact local CLIs or `rote proc` primitives expected.
+- Stop conditions: missing dependency, prompt/credential request, unsafe mutation, cleanup failure,
+  or user approval needed.
+- Return fields: commands run, response IDs, process leases, captured artifacts, cleanup state,
+  result, reusability signal, save gate, and next recommended skill.
+
+## Handoff Summary
+
+Write or return this summary when shell work must survive handoff, compaction, or background waits:
+
+```markdown
+# Rote Shell Handoff Summary
+
+- Active skill: `rote-shell`
+- Origin skill: `rote` or `rote-...`
+- User intent: ...
+- Workspace path: ...
+- Working directory: ...
+- Commands run: ...
+- Cached responses: ...
+- Process leases: ...
+- Captured artifacts: ...
+- Requirements: ...
+- Current gate: shell execution, dependency approval, background wait, cleanup, save gate, or blocker
+- Result: ...
+- Save gate: pending, accepted, discarded, or not applicable
+- Next skill: `rote-flow-crystallization`, `rote-flow-authoring`, `rote-troubleshooting`, `rote`, or none
+- Blockers: ...
+- Completion signal: ...
+```
 
 ## Browser Intent Router
 
@@ -196,6 +286,16 @@ rote guidance typescript flow-creation
 That guide owns frontmatter, `deps.toml`, FlowOutput, release QA, and the shell
 SDK wrapper contract.
 
+### Flow Runtime Boundary
+
+`rote proc run` is for exploration, not reusable flow bodies.
+
+- Shell flows must not call `rote init` internally.
+- Crystallized shell flows must not shell out to `rote proc run`.
+- During exploration, `rote proc run` records evidence; inside reusable flows, use SDK wrappers or
+  `process.exec` steps.
+- Use shell SDK exec only for task commands, not lifecycle bootstrapping.
+
 ## Strategy Pattern Library
 
 Map the user's vague request to the smallest shipped pattern that preserves
@@ -230,17 +330,23 @@ when available.
 
 ## Workspace Setup
 
-CLI work must happen inside a rote workspace:
+CLI work must happen inside a rote workspace. Command runners rarely preserve cwd between steps,
+so prefix each workspace-scoped command with the resolved `cd <workspace-path> && ` (one logical
+step):
 
 ```bash
 rote init cli-work --seq --force
-rote workspace sandbox cli-work off
-cd ~/.rote/rote/workspaces/cli-work
+cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/cli-work && rote model set <model> --provider <provider> --confirmed-current
+cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/cli-work && rote workspace sandbox cli-work off
 ```
+
+If the runtime does not expose the current model and provider and no command requires identity,
+record that they were unknown; do not fabricate model metadata.
 
 Keep commands simple and literal. Avoid shell control operators, command
 substitution, and long `&&` chains unless the user explicitly needs shell
-semantics. Prefer direct argv:
+semantics (the resolved `cd <workspace-path> && rote …` prefix is the standing
+exception). Prefer direct argv:
 
 ```bash
 rote proc run -- rg TODO docs
@@ -251,6 +357,10 @@ Use shell parsing only when it is the real subject of the work:
 ```bash
 rote proc run -- sh -c 'printf "alpha\n" | tr a-z A-Z'
 ```
+
+If parsing transforms evidence for a report, flow, or judge, keep it inside a
+tracked command and capture the inputs/outputs. Do not rely on terminal
+scrollback, untracked temp files, or raw pipelines as the only record.
 
 ## Query After Every Meaningful Step
 
@@ -496,8 +606,8 @@ raw shell when a rote primitive can preserve the evidence.
 Current mixed replay support is intentionally asymmetric:
 
 - adapter and `process.exec` actions are first-class `steps:` DAG actions
-- `steps_with_presentation` currently supports adapter-backed steps only; `process.exec` steps are
-  rejected before presentation lint
+- `steps_with_presentation` supports adapter-backed and `process.exec` steps; the presentation
+  body reads their completed (or skipped) outputs through the presentation SDK
 - browser observations are bridged through saved responses, snapshots, and
   files until first-class browser DAG actions ship
 
@@ -507,8 +617,12 @@ file from `process.exec`.
 
 ## Crystallization Rule
 
-After a useful CLI workflow works twice, ask whether to crystallize it. The
-canonical replay command depends on the flow's execution model.
+After a CLI workflow produces the requested result, run the reuse triage before the final
+answer — one verified run is enough to classify; a workflow that has already worked twice is
+simply a stronger save candidate. Before presenting, run `cd <workspace-path> && rote ls`: it
+surfaces the workspace's `@@` state and the `[MANDATORY PROTOCOL]` pending-stub warning when a
+reusable result has no pending flow yet. The canonical replay command depends on the flow's
+execution model.
 
 Legacy TypeScript flows use rote's bundled Deno:
 
@@ -536,7 +650,10 @@ When the user says yes, do the full release discipline:
      adapter-shaped flow.
    - Mixed adapter/shell flow: use `rote flow frontmatter` or
      `rote flow template create` so adapter fingerprints and parameters are
-     captured. Then choose one execution shape:
+     captured. Pass only real adapters to `--adapter`; do not pass `process`,
+     `shell`, or `adapter/process`. Represent shell/process work with
+     `rote.exec(...)`, `process.exec`, and `deps.toml`. Then choose one
+     execution shape:
      - Declarative DAG: add top-level `steps:` when the replay can be expressed
        as adapter calls plus `type: process.exec` actions.
      - Authored SDK: write TypeScript with `FlowOutput`, `runPreflight(...)`,
@@ -630,7 +747,8 @@ When the user says yes, do the full release discipline:
    ```
 
    For declarative or `steps_with_presentation` flows, replace the direct Deno
-   executions with `rote flow run ~/.rote/flows/<name>/main.ts <params>`.
+   executions with `rote flow run ~/.rote/flows/<name>/main.ts param=value ...`
+   — the DAG runner takes named `key=value` parameters, not positional args.
 
    If dependency preflight fails, ask the user whether to provision missing
    required tools, with the install scope and side effects stated plainly. Do
@@ -643,15 +761,16 @@ When the user says yes, do the full release discipline:
 
    ```bash
    rote flow validate ~/.rote/flows/<name>/main.ts
-   rote flow run ~/.rote/flows/<name>/main.ts --dry-run <params>
-   rote flow run ~/.rote/flows/<name>/main.ts <params>
-   rote flow run ~/.rote/flows/<name>/main.ts --resume latest <params>
+   rote flow run ~/.rote/flows/<name>/main.ts --dry-run param=value
+   rote flow run ~/.rote/flows/<name>/main.ts param=value
+   rote flow run ~/.rote/flows/<name>/main.ts --resume latest param=value
    ```
 
-   `rote flow lint` checks the authored `FlowOutput` contract and is not a
-   release gate for pure `steps:` DAG flows whose TypeScript body is bypassed by
-   the DAG runner. For `steps_with_presentation`, it is the presentation
-   conformance gate and must pass after TypeScript edits.
+   `rote flow lint` gates `rote flow release` for every shape — release runs
+   lint and refuses on failure. For pure `steps:` DAG flows the body checks are
+   largely vacuous (the DAG runner bypasses the TypeScript body), but the gate
+   still applies; for `steps_with_presentation`, lint is the presentation body
+   contract check and should run before release.
 
    Authored SDK flows:
 
@@ -664,11 +783,12 @@ When the user says yes, do the full release discipline:
    In both shapes, loop until hardcoded paths, missing dependency declarations,
    mismatched parameters, raw shell leaks, and output-format issues are fixed.
 
-9. Mark the flow released only after QA passes. Current practice is to edit the
-   frontmatter status from `draft` to `released`, then rebuild and verify the
-   index:
+9. Mark release only after QA passes. Use `rote flow release <name>` for the
+   lifecycle transition (it runs the lint gate; do not edit frontmatter
+   `status` by hand), then verify search:
 
    ```bash
+   rote flow release <name>
    rote flow index --rebuild
    rote flow search "<name or relevant keywords>"
    ```

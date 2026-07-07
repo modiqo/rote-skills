@@ -5,6 +5,11 @@ description: "Use for browser automation through rote: browsing websites, attach
 
 # rote-browse
 
+All `rote-<name>` references in this document — including every name in the Handoff
+Contract — are companion **skills**, never CLI commands (`rote-shell` is not `rote shell`).
+Invoke them through the runtime's skill mechanism; only literal `rote …` commands run in a
+terminal.
+
 Use rote for browser work before calling Playwright or another browser tool
 directly. Rote keeps browser observations in the workspace, gives
 them stable `@` addresses, stores page/slice/ref state, and turns exploration
@@ -95,6 +100,44 @@ rote flow search "<browser task>"
 
 If a flow is found, present it as one option that will use the chosen browser
 mode/session shape. Do not run it until the user confirms.
+
+## Handoff Contract
+
+- Use when: the task needs browser automation through rote, including navigation, attaching to an
+  existing browser, headed/headless exploration, snapshots, page slices, waits, auth state, browser
+  flow replay, or browser flow crystallization.
+- Preconditions: the browser intent is explicit or the `rote` orchestrator selected browser work;
+  launch mode/session source is chosen or safely defaulted; human gates are respected before login,
+  MFA, CAPTCHA, payment, destructive, or personal-browser actions.
+- Owns: browser launch choice, page lease/session handling, readiness waits, snapshots, slices, stale
+  ref recovery, human-gate classification, saved auth state, and browser replay/share caveats.
+- Hands off to: `rote-flow-crystallization` when browser exploration produced reusable results;
+  `rote-flow-authoring` when a browser flow needs implementation or release; `rote-registry` when a
+  validated private or portable browser flow should be shared; `rote` when the user switches from
+  browsing to adapter/flow routing.
+- Returns to: the caller with workspace, browser lease/session, launch mode, snapshot/page refs,
+  human-gate status, saved-auth state, result, replayability signal, and next recommended skill.
+- Stop when: the browser result is delivered, a human gate blocks automation, the page lease is
+  unrecoverable, the requested action becomes transactional without explicit approval, or flow
+  crystallization becomes the next owner.
+- Completion signal: browser state and result summarized with lease/session details, snapshot refs,
+  human-gate status, and reusable-flow recommendation.
+
+## Handoff Packet
+
+Consume or return this packet when browser work crosses a skill, workspace, or subagent boundary:
+
+- Origin skill: `rote`, `rote-browse`, or a browser subagent.
+- Target skill: `rote-browse` when consuming inbound work; `rote-flow-crystallization`,
+  `rote-flow-authoring`, `rote-registry`, or `rote` when returning results.
+- User intent: browser outcome requested.
+- Workspace: name/path and whether it already contains browser state.
+- Launch shape: headed/headless, attached/new session, new tab/window, saved auth profile.
+- Lease/session: current page lease, tab index/title/url, saved auth state, and cleanup policy.
+- Cached refs: page refs, snapshot response IDs, slices, and stale-ref notes.
+- Human gates: login/MFA/CAPTCHA/payment/destructive confirmation status and required human action.
+- Allowed actions: read-only inspection, click/type scope, flow replay, or stop-only.
+- Return fields: result, snapshot refs, saved auth profile, replayability, blockers, next skill.
 
 ## Interactive Browser Choice
 
@@ -222,7 +265,7 @@ rote browse snapshot
 Then validate before acting:
 
 ```bash
-rote @N '.content[0].text' -r | wc -l
+rote query @N '.content[0].text | length' -r
 rote browser deps --format compact
 rote browser slice @page.current clickable --format json
 ```
@@ -257,14 +300,25 @@ rote browse snapshot
 ```
 
 If the current lease is `target_missing`, the leased tab is gone or no longer
-visible to the extension. Do not act on another tab by guess. List tabs, pick
-the intended page by index/title/url, grant a new lease, then snapshot:
+visible to the extension. Do not act on another tab by guess. List tabs first.
+If another page tab is visible, pick the intended page by index/title/url, grant
+a new lease, then snapshot:
 
 ```bash
 rote browser tabs list --format json
 rote browser tabs activate --title-regex '<site-or-title>' --grant-lease --format json
 rote browse snapshot
 ```
+
+If live tab inventory shows only the Playwright extension connection or welcome
+tab, the extension is not exposing the intended page. Stop normal browser
+actions, keep the last good snapshot for read-only reasoning, and do not try to
+activate a tab. If no page tab is visible, ask the user to reconnect/share the
+intended tab or switch to a new managed browser session.
+Do not run another `--attach-existing --new-tab`; repeated new tabs create stale
+leases without restoring live control. If `target_missing` happens twice for the
+same intended URL, classify it as live-attach instability and stop retrying
+attached new-tab navigation.
 
 For Playwright extension attach, make sure the extension token is configured
 before continuing. For new-tab work, stateful forms, and multi-tab comparisons,
@@ -325,7 +379,11 @@ Read-only search/filter/result comparison is allowed. Submit, send, save,
 publish, delete, archive, mark-read, book, payment, seat/baggage/passenger
 detail, upload/download, account edits, and "continue" controls past result
 selection are transactional. Require explicit user confirmation. If no answer
-arrives in under one minute, stop at read-only inspection.
+arrives in under one minute, stop at read-only inspection. Before transactional
+actions, verify `rote browser tabs list --format json` still shows the intended
+non-extension tab, not just a workspace lease. Before transactional
+actions, verify `rote browser tabs list --format json` still shows the intended
+non-extension tab, not just a workspace lease.
 
 ## Anti-Agent Challenges
 
@@ -404,6 +462,29 @@ rote flow frontmatter --browser-session <domain>/<profile> --format typescript
 Do not store raw passwords or paste cookies into a flow. The flow should declare
 the browser session dependency and let runtime preflight validate it before side
 effects.
+
+## Handoff Summary
+
+Write or return this summary when browser work must survive handoff, compaction, or subagent return:
+
+```markdown
+# Rote Handoff Summary
+
+- Active skill: `rote-browse`
+- Origin skill: `rote` or browser subagent
+- User intent: <requested browser outcome>
+- Workspace path: <absolute workspace path>
+- Launch shape: headed/headless, attach/new, tab/window
+- Lease/session: page lease, tab title/url, saved auth profile, cleanup policy
+- Commands run: navigation, waits, snapshots, slices, clicks/types
+- Cached responses: `@N` ids, page refs, slices, screenshots
+- Human gate: none, credentials required, human required, blocked, or resolved
+- Result or artifact: <answer, artifact path, or cached response id>
+- Replayability: one-off, private recall candidate, or portable flow candidate
+- Next skill: `rote-flow-crystallization`, `rote-flow-authoring`, `rote-registry`, `rote`, or none
+- Blockers: <blocking gate or missing input, or none>
+- Completion signal: browser result delivered, human action requested, or reusable-flow path named
+```
 
 ## Private Hub Sharing
 

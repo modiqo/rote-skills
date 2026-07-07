@@ -15,13 +15,46 @@ Iterative configuration of an adapter that already exists. Unlike creation (a li
 dry-run-first pipeline), this is a **menu of discrete operations**, each a small loop:
 **show current state → confirm the change → apply → re-show**. Return to the menu after each.
 
-Rules: determine facts from live commands (never memory); secrets never captured in chat
-(masked handoff); if rote isn't on PATH, resolve it via the **narrow probe** (check
-`$HOME/.local/bin/rote` then `$HOME/.cargo/bin/rote` — never a deep `find`; see INDEX § 1b).
-**Follow the shared
-operating rules in [`../INDEX.md`](../INDEX.md) § "Shared operating rules"** — clear command
-access if the current environment requires it, and run **one command at a time, strictly
-sequential — never parallel**.
+`rote-adapter-config` is this skill's name, not a CLI command — there is no
+`rote adapter config` subcommand. Every operation below runs through the specific `rote adapter …`
+/ `rote token …` / `rote oauth …` commands shown.
+
+When this skill is invoked from a failed workspace, flow, or adapter call, it is a repair subroutine.
+It must return to the owner after the config change; it does not complete the user's task by itself.
+Repair is not complete until the owner reruns the failed probe/call or flow gate.
+
+Rules:
+
+- Determine facts from live commands, never memory.
+- Secrets never appear in chat. Use the **masked terminal handoff**: ask the user to run
+  `rote token set <ENV> --stdin` themselves in their terminal and paste the value there, then
+  continue the session once they confirm — never echo or capture the value in conversation.
+- If rote isn't on PATH, resolve it via the **narrow probe** (check `$HOME/.local/bin/rote` then
+  `$HOME/.cargo/bin/rote` — never a deep home-directory search).
+- If the environment gates shell commands behind an approval prompt or allowlist, get the `rote`
+  command pattern approved up front rather than stalling mid-loop.
+- Run **one command at a time, strictly sequential — never parallel**.
+- Use [`../rote/references/skill-workflow-map.md`](../rote/references/skill-workflow-map.md) only
+  when the caller needs the full companion graph or return contract.
+
+## Handoff Contract
+
+- Use when: the user wants to tune an existing adapter's auth, base URL, write guard, sensitivity,
+  OAuth session, GraphQL field filter, capability index, policies, grouping, or version.
+- Preconditions: the adapter already exists; the requested operation can be mapped to a live `rote`
+  command; secrets will be handled only through masked terminal handoff or explicit opt-in.
+- Owns: the show -> confirm -> apply -> re-show loop for one adapter configuration operation at a
+  time, including honest limits when rote has no first-class command.
+- Hands off to: `rote-adapter-create` when the requested change requires recreating the adapter;
+  `rote` for day-to-day use after tuning; `rote-troubleshooting` if repeated unchanged failures
+  prevent a configuration result.
+- Returns to: `rote-adapter-create` or `rote` with adapter id, setting changed, command run,
+  verification output, skipped operation, owner skill, failed command to rerun, and any credential
+  or browser action still pending.
+- Stop when: the requested setting is verified, the user declines or postpones the change, a missing
+  credential/browser action blocks the operation, or adapter recreation is the correct path.
+- Completion signal: affected state re-shown after each applied change, or a clear no-op/blocker
+  reason plus next recommended skill.
 
 ---
 
@@ -44,6 +77,21 @@ each change.
 
 ---
 
+## Auth Shape Matrix
+
+Classify auth before changing credentials. Existing adapters may store OAuth tokens behind a
+bearer env var, so never treat "Bearer" alone as proof of a static token.
+
+| Shape | How to recognize | Correct repair |
+|------|------------------|----------------|
+| Static bearer/API key | Health shows missing static env var or user is rotating a known API key | Use masked terminal handoff or `rote token set <ENV> --stdin`; never echo the value. |
+| OAuth client id/secret | Scheme metadata is OAuth2 or OpenAPI `oauth2_schemes` is present | Use `rote adapter auth scheme add <id> <scheme> [descriptor] --oauth2` when adding a scheme, or rerun the create flow if the whole adapter must change. |
+| OAuth DCR / MCP PRM | Token metadata says OAuth/DCR, MCP auth redirects, or provider registration was dynamic | Use `rote adapter reauth <id> [--scheme <name>]`; use `rote adapter reauth <id> --force-reregister` only when the provider pruned the dynamic client. |
+| Google Discovery | Google API adapter or `GSUITE_TOKEN`/Google scopes are involved | Use `rote oauth setup google --scopes ...`; do not ask for a pasted bearer token. |
+| Unknown bearer | Installed adapter reports bearer but provenance is unclear | Run `rote adapter list <id> --json --health` before advising token set vs reauth. |
+
+---
+
 ## Operations (all verified against the live CLI)
 
 ### Settable keys — base URL, name, description, tags, sensitivity tier
@@ -62,7 +110,8 @@ rote adapter auth update <id> --bearer-token <ENV_VAR>
 ```
 Variants: `--api-key-header <name=ENV>`, `--api-key-query <name=ENV>`, `--none` (remove auth).
 The token **value** is a secret — set it via the masked `rote powerpack credentials` (user's
-own terminal) or `rote token set <ENV> "<value>"` as an explicit opt-in. Never echo a token.
+own terminal) or `rote token set <ENV> --stdin` as an explicit terminal opt-in. Never echo a
+token.
 
 ### Auth — multi-scheme (per-operation adapters)
 
@@ -148,17 +197,31 @@ rote adapter bump <id> [--minor|--major]
 2. **Confirm** the change with the user.
 3. **Apply** the verified command.
 4. **Re-show** the affected state so the user sees the effect.
-5. Return to the menu, or exit.
+5. If this was a repair, return to the owning skill with the exact failed command or gate to rerun.
+6. Return to the menu, or exit.
+
+## Repair Return Packet
+
+When called because an adapter probe/call, flow run, or workspace gate failed, return:
+
+- Owner skill and workspace, if known.
+- Adapter id and setting changed.
+- Failed command or gate that triggered the repair.
+- Verification command that re-showed the changed setting.
+- Exact next command to rerun in the owner.
+
+Do not summarize success to the user until the owner reruns the failed command and resumes artifact
+composition. Updating auth, a base URL, or keys is only a changed precondition.
 
 ---
 
 ## Closing line + related skills
 
 **Closing line** (optional, on a clean exit): one dry one-liner keyed to whatever was just
-tuned — still the provider's own API, still no proxy taking a cut per call. Shared convention
-and rules in [INDEX.md](../INDEX.md). Keep it lower-key than setup or create — config is
-housekeeping, so don't force it; skip it if a step errored.
+tuned — still the provider's own API, still no proxy taking a cut per call. Keep it lower-key than
+setup or create — config is housekeeping, so don't force it; skip it if a step errored.
 
-**Related onboard skills** ([INDEX.md](../INDEX.md) is the full map):
+**Related onboard skills** (the full graph lives in
+[`../rote/references/skill-workflow-map.md`](../rote/references/skill-workflow-map.md)):
 - **New adapter:** `rote-adapter-create` · **First-run:** `rote-setup` · **Keep current:**
   `rote-update`

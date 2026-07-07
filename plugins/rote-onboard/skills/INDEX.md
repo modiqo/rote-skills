@@ -1,234 +1,54 @@
-# rote-onboard — skill map
+# rote-onboard - installed skill map
 
-The full rote skill set: the day-to-day **rote** skill, the **rote-using-adapters** execution
-skill, the **rote-org** admin skill, the **rote-browse** browser skill, the **rote-shell**
-CLI/process skill, and five guided onboarding skills that walk a human through getting rote
-working, sharing what they build, and keeping it all current. The guided skills are a sequence,
-not a grab-bag — each
-ends by naming the next logical step, so the path becomes muscle memory. This file is the
-canonical map; each skill links back here.
+This file is the plugin and install-facing map for the bundled rote skill set. It helps humans,
+installers, and tests sanity-check what shipped together. Active task routing starts in
+`rote/SKILL.md`; do not depend on this file as automatically loaded runtime context.
 
-## The skills, in the order you meet them
+Companion skills carry their own required gates and `## Handoff Contract` sections. The detailed
+active graph and packet shape live in `rote/references/skill-workflow-map.md`, which `rote/SKILL.md`
+or a companion skill loads explicitly only when needed.
 
-| Order | Skill | Use it when | Hands off to |
-|------:|---------------|-------------|--------------|
-| 1 | `rote-setup` | First run — install the binary, sign in, pull/build your first adapters, prove value with one live flow. | adapter-create (build more) · main **rote** skill (daily use) |
-| 2 | `rote-adapter-create` | Add an adapter for any API — dry-run-first, auth researched from the provider's docs. | adapter-config (tune it) · registry (share it) |
-| 3 | `rote-adapter-config` | Tune an adapter you already have — auth, base URL, write guard, sensitivity, capability index, OAuth re-auth, grouping. | back to itself (menu) · adapter-create (new one) |
-| 4 | `rote-registry` | Share an artifact — at the moment an adapter is minted or a flow crystallized, check if it's already in your orgs, push at chosen visibility, then surface members + invite. Also usage/quota across orgs. | rote-org (full admin) |
-| 5 | `rote-update` | Keep current — update the `rote` binary and the skills shipped with it. | — |
-| — | `rote` | Day-to-day work — `rote flow search "<intent>"` before any direct adapter call, response reuse, crystallized workflows. | rote-using-adapters (single-adapter execution) · registry (share what you build) |
-| — | `rote-using-adapters` | Single-adapter execution after the main rote skill has selected an installed adapter. | back to main **rote** skill for orchestration |
-| — | `rote-org` | Registry organization admin — create/delete orgs, members, roles, invites, plan and usage. | — |
-| — | `rote-browse` | Browser automation (beta) — navigate, snapshot, query page slices, attach to a logged-in Chrome/Edge session, recover stale refs, and crystallize replayable browser flows. | — |
-| — | `rote-shell` | CLI and shell work — run local commands with `rote proc run`, capture files/artifacts, follow logs, manage background processes, check deps, and crystallize process flows. | — |
+## Active entrypoint
 
-**Two kinds of skill:** the guided onboard skills (1-5) are for *changing your setup*; the
-**rote** skill is for *using* it day to day, with task-level references under
-`rote/references/`, and with **rote-org** (organization administration),
-**rote-using-adapters** (single-adapter execution), **rote-browse** (browser automation),
-and **rote-shell** (CLI/process work) alongside.
+Use `rote` for day-to-day orchestration. It owns the rote skill rule, the flow-search-first gate,
+platform reference selection, and lifecycle handoffs to narrower skills. When the task is already
+clearly setup, update, registry, org, browser, adapter creation, or adapter configuration, the
+matching companion skill can activate directly. Shell/process work routes through `rote-shell`.
+Ordinary single-adapter execution still routes
+through `rote-workspace` unless a generated helper or runtime explicitly selects
+`rote-using-adapters`.
 
-## How to build muscle memory
+## Bundled skills
 
-- **Discovery:** search the available skills for `rote`, or run `rote how` for the CLI guide.
-  This file gives the skills an order; a flat menu alone doesn't.
-- **The chain is the teacher:** every skill ends by naming the next step in context ("you just
-  made an adapter → `rote-adapter-config` tunes it"). Following the chain a few times is what
-  makes it stick — you stop needing this table.
-- **One entry point to remember:** `rote-setup` is the front door. From a clean
-  machine it routes to everything else.
+| Skill | Package role | Active owner for | Typical handoff |
+| --- | --- | --- | --- |
+| `rote` | Entrypoint orchestrator. | Flow search, top-level routing, platform adaptation, standard handoff packet. | Any companion skill; daily execution starts with `rote-flow-run`, `rote-task-routing`, or `rote-workspace`. |
+| `rote-flow-run` | Daily execution path. | Matched-flow execution, parameter mapping, partial-baseline preservation, output verification. | `rote-task-routing`, `rote-flow-crystallization`, `rote`. |
+| `rote-task-routing` | Daily execution path. | Explore/catalog gates, subagent-before-workspace decisions, adapter route selection, fallback boundary. | `rote-flow-run`, `rote-workspace`, `rote-using-adapters`, `rote-adapter-create`, `rote`. |
+| `rote-workspace` | Daily execution path. | Workspace init/entry, sequential adapter commands, cached responses, model identity, handoff summaries. | `rote-flow-crystallization`, `rote-troubleshooting`, `rote-registry`, `rote`. |
+| `rote-shell` | Shell/process path. | Local CLI commands, files, logs, process state, dependency checks, and shell-derived flow replay. | `rote-flow-authoring`, `rote-flow-crystallization`, `rote-troubleshooting`, `rote`. |
+| `rote-flow-crystallization` | Reuse save path. | Pending write/save gates, save-or-discard decisions, and reusable-result recovery. | `rote-flow-authoring`, `rote-registry`, `rote`. |
+| `rote-flow-authoring` | Flow authoring path. | Reusable contract elicitation, schema discovery, scaffold, tests, lint, release, search verification, and pending cleanup. | `rote-typescript-transformations`, `rote-registry`, `rote-flow-run`, `rote`. |
+| `rote-command-patterns` | Command idiom path. | Task-focused rote command patterns after live grammar/guidance surfaces are checked. | Owning workflow skill, `rote-troubleshooting`. |
+| `rote-typescript-transformations` | TypeScript transformation path. | Cached response transformations, TypeScript flow bodies, `FlowOutput` shape, and tests. | `rote-flow-authoring`, `rote-workspace`. |
+| `rote-troubleshooting` | Recovery path. | Repeated-failure diagnosis, no-blind-retry recovery, route changes, and owner-skill resume points. | Original owning workflow skill, `rote`. |
+| `rote-setup` | Guided setup path. | Install, login, first adapters, credentials, value proof. | `rote-adapter-create`, `rote-adapter-config`, `rote-registry`, `rote`. |
+| `rote-adapter-create` | Adapter creation path. | Catalog/spec discovery, dry-run, auth research, create and probe. | `rote-adapter-config`, `rote-registry`, `rote-setup`, `rote`. |
+| `rote-adapter-config` | Adapter tuning path. | Show/confirm/apply/re-show configuration loop. | `rote-adapter-create`, `rote`. |
+| `rote-registry` | Sharing and registry path. | Adapter/flow push, visibility, org selection, invites, pull readiness. | `rote-org`, `rote-adapter-create`, `rote`. |
+| `rote-org` | Organization administration path. | Orgs, members, roles, invites, usage, plan details. | `rote-registry`. |
+| `rote-browse` | Browser automation path. | Browser sessions, snapshots, page slices, headed/headless flows. | `rote`, browser flow crystallization paths. |
+| `rote-using-adapters` | Delegated single-adapter execution path. | Generated helper or runtime-selected work after `rote` has selected one installed adapter. | `rote-workspace`, `rote-flow-crystallization`, or `rote` for lifecycle completion. |
+| `rote-update` | Update path. | Binary update, bundled skill refresh, restart guidance. | `rote-setup`, `rote`. |
 
-## Shared operating rules (apply in EVERY skill)
+## Installed reference layout
 
-These are load-bearing — a skill that ignores them fumbles the run. Each SKILL.md references
-this section; keep them identical across skills.
+`rote/references/` contains support files only:
 
-### 1. Command access — clear approvals up front
-
-Most workflows run `rote`, enter directories under the active rote home, and may execute flows
-from that same home. Before the first command, check whether the current environment
-requires command or filesystem approval. If it does, ask the user to approve the minimum needed
-access for:
-
-- running `rote` commands;
-- entering `${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<name>` for probes and flow runs;
-- entering `${ROTE_HOME:-$HOME/.rote}/flows/<org>/<name>` for flow execution;
-- reading adapter metadata under `${ROTE_HOME:-$HOME/.rote}/adapters`.
-
-Do not assume a particular environment, permission file, or allowlist syntax. If the
-environment provides no approval mechanism, proceed normally and surface any permission error with
-the exact command that failed.
-
-### 1b. Resolving the rote binary — narrow probe, NEVER a deep search
-
-If `command -v rote` is empty, rote may be installed but off this shell's PATH. Check the
-**two known install locations directly** — do **NOT** run `find ~` / a recursive search of the
-home directory (it's slow, triggers a scary read-everything permission prompt, and is exactly
-the overreach to avoid):
-
-```bash
-ls -la "$HOME/.local/bin/rote" "$HOME/.cargo/bin/rote" 2>/dev/null
-```
-
-- Either path exists → use that **absolute path** for every later `rote` command in the run.
-- Neither exists **and** `command -v rote` was empty → the binary is genuinely **not
-  installed** (route to install, or tell the user). Do not go hunting for it elsewhere.
-
-### 1c. Prefer resolved workspace paths in agent-run commands
-
-Some command runners are conservative around shell expansion, especially default expansion
-(`${VAR:-fallback}`) and command substitution (`$(...)`). Prefer the absolute workspace path
-printed by `rote init`, `rote workspace inspect`, or a `@@result` block. If no absolute path is
-available, use `${ROTE_HOME:-$HOME/.rote}` rather than assuming the default home exists.
-
-Do not use `cd ~/.rote/rote/workspaces/<name>` unless you have already established that
-`ROTE_HOME` is unset and the default home is the active rote home. Sandboxes and eval harnesses
-often set `ROTE_HOME` to a temporary directory.
-
-Fixes, in order of preference:
-
-- **Use the exact absolute path from rote output** for the `cd`.
-- **Use `${ROTE_HOME:-$HOME/.rote}`** if you must construct the path.
-- **Avoid unnecessary `cd` commands** — if the current command runner preserves cwd, you can stay
-  in the workspace for subsequent steps. If it does not, include the resolved `cd <workspace> &&`
-  prefix in the same command invocation.
-- **Run discrete single commands** — don't chain a rote call with `$(…)` substitution or an
-  `echo "… $(rote …)"` wrapper. Use `rote is-error @N` on its own line, then read the value
-  with a separate `rote @N '…' -r`, instead of `rote is-error @N && echo "$(rote @N …)"`.
-
-rote's embedded jq has two quirks worth knowing while inspecting responses: a string slice
-like `.body[0:200]` returns `null`, and a `slice | map({…})` chain errors — index a single
-element with `.[idx]` instead.
-
-### 1d. Read state and responses through rote, never the raw filesystem
-
-Inspect workspace, adapter, and flow state with rote commands, and read every tool/adapter
-response through its cached `@N` id — `rote @N '<jq filter>'` — never by reading the **contents**
-of files under `${ROTE_HOME}`. Do **not** `cat`/`ls` or pipe `.rote/responses/<id>.json`, adapter
-configs, or other managed state into `python`/`jq`/`grep`/`sed`/`awk`: that bypasses the response
-cache the next command needs, misses rote-managed state, and breaks when the on-disk layout changes
-between versions. This applies inside an adapter-creation probe workspace too.
-
-This rule is about **reading managed file contents**, not about your working directory — it does
-**not** mean avoid the workspace folder. You still `cd` into the workspace at
-`${ROTE_HOME}/rote/workspaces/<name>` (rule 1c) before running workspace commands: `init-session`,
-`POST`, `tools`, `query`, and the rest resolve the active workspace from cwd, so a command left in
-a directory outside the workspace fails with `not in a workspace directory`. Entering the workspace
-is expected; only hand-reading the managed files inside it is not.
-
-rote has a native, in-cache equivalent for every shell tool you'd otherwise reach for here — you
-almost never need to shell out:
-
-- **JSON query/transform** → `rote @N '<jq filter>'` (topic `query`)
-- **grep / sed / awk** (line-oriented text) → `rote query-stdin` and topic `lines`
-- **bc** (math), **base64** (encoding) → the `bc` / `base64` grammar alternatives
-- **curl** (HTTP) → `rote POST` / `rote GET` (topic `http`)
-
-When unsure of the rote form, run `rote grammar <tool>` — `jq`, `grep`, `sed`, `awk`, `bc`,
-`base64`, and `curl` each have a conversion page — and stay inside rote before touching the
-filesystem.
-
-### 2. Step-wise, NEVER parallel
-
-Run **one command at a time, strictly in sequence**. Do not start the next command before the
-current result is available.
-Each step's output gates the next (an empty `whoami`, a 401 on a dry-run, an unset token all
-change what comes next). Parallel probing skips that gating and the run fumbles. If you catch
-yourself about to run two dependent commands at once: don't.
-
-### 3. Required-state gates block the next step
-
-When a step establishes a precondition the next step needs — a token set, a login succeeded, a
-dry-run passed — **verify it actually happened before proceeding.** Do not advance on an
-adapter whose required credential is unset, a login that still reports "not logged in", or a
-create whose dry-run errored. Re-read the real output; if the precondition isn't met, stop and
-resolve it (or ask the user) rather than marching to the next step on a broken foundation.
-
-### 4. Running a flow — explore, read frontmatter, run the right way
-
-There is one reliable execution path for TypeScript flows:
-
-1. **Find the flow** for the intent (don't guess the name):
-   `rote explore "<intent>"` (ranks installed adapters/flows) and/or `rote flow search "<q>"`.
-2. **Read the flow's frontmatter** before running it: use the path returned by
-   `rote flow search --json` or `rote flow list --json`. Does it have a `steps:` block?
-   - **Has `steps:` and `execution_model: steps_with_presentation`** →
-     `rote flow run <name-or-path> key=value …`. Direct Deno will not receive the typed
-     presentation input.
-   - **Has `steps:` without presentation** → `rote flow run <name-or-path> key=value …` works.
-   - **No `steps:` (legacy/sequential)** → `rote flow run` may misfire (it can fall back to a
-     bash invocation instead of Deno). Run it the reliable way instead:
-     ```bash
-     cd <flow directory from rote output> && rote deno run --allow-all main.ts [args…]
-     ```
-     `rote deno run` uses the bundled Deno from the active rote home. Pass the flow's positional
-     args (read them from the frontmatter `parameters:`). This `cd && rote deno run` compound is
-     one logical step.
-
-When unsure which mode, inspect frontmatter or run `rote flow info <name-or-path> --json` first.
-Do not use direct Deno for a flow that declares `steps_with_presentation`.
-
-## Primitive intros — explain the *what* and *why*, the first time
-
-A first-timer meets three rote primitives during onboarding — **adapter**, **flow**, **hub** —
-and the skills used to just *use* them without ever saying what they are or why they're worth
-it. **The first time a primitive appears in a run, give its What/Value beat before asking the
-user to choose** (~3–4 lines — the "what" with a bit of dry humor, then the concrete value).
-On repeat appearances, skip it — they've got it.
-
-These are the canonical beats. Keep the voice consistent (dry, confident, no hype, no invented
-numbers); adapt the wording to the moment but keep the *claims* exactly these. The three map
-onto one motion — **reach → record → replay** — so the set reads as a single idea, not a
-grab-bag. Lead each with the *what*, land it on the *tax it removes*. The recurring dig is the
-honest one: you are charged a toll to call tools you already pay for. Never name a competitor,
-never invent a price.
-
-### Adapter — *Reach* — introduced at the "build an adapter" fork (setup), and in `rote-adapter-create`
-
-> **What:** An adapter lets your agent reach any API directly — talk its protocol from your own
-> machine, no gateway in the middle, no SDK to wire. rote reads the API's own spec and exposes
-> it as tools, locally.
-> **Value:** You already pay for these tools. An adapter means you don't pay a *second* toll to
-> call them — no extra per-call fee, no extra box to run, no new attack surface. Your traffic
-> goes straight to the provider, not through someone else's meter.
-
-### Flow — *Record → Replay* — introduced at the value-proof closer (setup Step 5), and when a flow is first saved
-
-> **What:** A flow is how your agent learns the way you did. As you work, rote *records* what
-> worked and what failed, then crystallizes the wins into reusable memory — so next time it
-> *replays* instead of re-reasoning from zero.
-> **Value:** Determinism and token savings, with nobody renting it back to you — no
-> workflow-vendor subscription, no memory provider metering your own recall. A proven flow runs
-> like muscle memory: you don't re-read the manual to ride the bike.
-
-### Hub — *Replay, shared* — introduced in `rote-registry` before the first push
-
-> **What:** When a flow or adapter works, the hub lets your team and community replay it too —
-> the way a teacher's lesson saves every student from rediscovering it. One person's mastery
-> becomes everyone's.
-> **Value:** The same determinism, now shared, with no registry tax on knowledge you authored —
-> one proven flow is the whole org's, no re-derivation, no per-seat toll to reuse what your own
-> team already figured out.
-
-## Shared closing-line convention (dry humor)
-
-All skills end a **clean** run on one dry one-liner, keyed to what actually just happened.
-The running joke: rote wired you straight to the provider's own API — no metered middleman
-proxy billing per call, no extra network hop forwarding your request for a markup.
-
-Rules (identical across all skills — keep them consistent):
-- **Grounded in this run's facts**, never a canned template — the flow name, adapter count, or
-  tool count from *this* session.
-- **Honest claims only.** "Per-call metering" and "an extra network hop" are the safe, true
-  jabs. Never invent a dollar figure or name a competitor's pricing you didn't verify.
-- **Read the room.** Skip the quip if the run was rocky (login failed, a step errored, a probe
-  401'd, `self-update` deferred). A victory lap after a half-finished run reads as oblivious.
-- **One line.** If it needs a second sentence to explain the joke, cut it.
-
-Per-skill hook (so it lands on different facts each time, not a hardcoded tagline):
-- **setup** → the live flow that just proved value
-- **adapter-create** → the `total_tools` count just indexed
-- **adapter-config** → whatever was just tuned (lower-key; config is housekeeping)
-- **registry** → the artifact + org it just landed in, now shareable without a registry tax
-- **update** → the version just landed on
+- Platform/tool mappings: `claude-code-tools.md` (Claude Code), `codex-tools.md` (Codex),
+  `copilot-tools.md` (Copilot CLI), `gemini-tools.md` (Gemini), `pi-tools.md` (Pi), and
+  `antigravity-tools.md` (Antigravity).
+- Workflow support: `skill-workflow-map.md`, loaded only when the detailed companion graph or
+  standard handoff packet is needed, and `flow-search-and-run.md`, the shortest search → info →
+  run → verify path. Day-to-day task logic lives in standalone skill directories, not hidden
+  files under `rote/references/`.

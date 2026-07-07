@@ -15,6 +15,11 @@ description: >
 
 # rote-setup — Guided onboarding wizard
 
+All `rote-<name>` references in this document — including every name in the Handoff
+Contract — are companion **skills**, never CLI commands (`rote-shell` is not `rote shell`).
+Invoke them through the runtime's skill mechanism; only literal `rote …` commands run in a
+terminal.
+
 Make installation feel like a breeze. You are the wizard: detect state, present clear
 choices, run one step at a time, confirm, move on. Lead with the happy path: sign in,
 then let power users connect APIs directly or take the step-by-step live tour.
@@ -23,17 +28,18 @@ Ask the user for every branch below. Run **one command at a time** unless a step
 documents a single logical compound. After each step, give a one-line "what just happened" and
 surface the next choice.
 
-**Follow the shared operating rules in [`../INDEX.md`](../INDEX.md) § "Shared operating
-rules"** — permissions, strict step-wise (never parallel), required-state gates, and flow
-execution. They apply to every step here.
+## Operating Rules
 
-**First, clear command access if the current environment requires it.** See INDEX § "Shared
-operating rules" #1. The skills need to run `rote` and enter paths under the active rote home. Do
-not assume a particular environment, permission file, or allowlist syntax.
+This skill is self-contained. Use [`../rote/references/skill-workflow-map.md`](../rote/references/skill-workflow-map.md)
+only when you need the full companion graph or packet shape; do not depend on `INDEX.md` as active
+runtime context.
+
+First, clear command access if the current environment requires it. The skills need to run `rote`
+and enter paths under the active rote home. Do not assume a particular environment, permission file,
+or allowlist syntax.
 
 Prefer the exact workspace path printed by rote. If you must construct the path, use
 `${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<name>` rather than assuming `~/.rote`.
-See INDEX § "Shared operating rules" #1c.
 
 All commands are non-destructive to the filesystem; they touch `~/.rote/` config and the
 registry.
@@ -45,6 +51,25 @@ installed, where it lives, or whether the user is logged in. Determine every fac
 the probe commands in the steps below and branching on their **actual output** — memory may
 be stale, machine-specific, or simply wrong. If a recalled note contradicts a live probe,
 the live probe wins.
+
+## Handoff Contract
+
+- Use when: the user needs guided first-run setup, installation repair, login, starter adapters,
+  credentials, skill installation, or a first value-proof flow.
+- Preconditions: command access for `rote` can be requested or the binary/install blocker can be
+  stated; every setup fact will be determined from live probes in this run.
+- Owns: binary/state probing, install branch selection, login gate, starter adapter and credential
+  setup, agent skill installation, and optional first value-proof flow.
+- Hands off to: `rote-adapter-create` for building a new adapter; `rote-adapter-config` for tuning an
+  existing adapter; `rote-registry` when a newly useful artifact should be shared; `rote-update` when
+  an existing binary should be refreshed before setup continues; `rote` for day-to-day use after
+  onboarding.
+- Returns to: `rote` with installed binary path, signed-in identity, installed adapters, credential
+  state, skill-install target, value-proof result, and any skipped or blocked setup steps.
+- Stop when: the user chooses to stop at CLI-only setup, a required browser/credential/human action is
+  pending, a command fails and needs a branch decision, or the value-proof flow completes.
+- Completion signal: setup state summarized from live command output, next owner named, and no
+  unverified credential or flow proof presented as successful.
 
 ---
 
@@ -235,10 +260,9 @@ every experience is identity-gated, so usage is attributable). Now ask how far t
 take setup.
 
 **This fork is where "adapter" first appears — give the adapter What/Value beat before the
-question** (the user may not know what an adapter buys them). Deliver the **Adapter** beat from
-[`../INDEX.md`](../INDEX.md) § "Primitive intros" (~3–4 lines: what it is, with a bit of
-dry humor, then the value — no extra per-call fees, infra-less/local, no new attack surface),
-*then* ask how far they want to go:
+question** (the user may not know what an adapter buys them). Explain that an adapter lets rote talk
+to a provider API directly from the user's machine: no gateway SDK middleman, no extra per-call fees,
+and no new proxy quietly holding their data. Then ask how far they want to go:
 
 - **Just the CLI — stop here** — confirm rote is installed and signed in, print `rote how`
   for next steps, and **end the wizard cleanly**. No adapters. They can run `rote-setup`
@@ -371,21 +395,33 @@ Use `rote install skill --help` if the supported provider names are unclear, or 
 when the user wants every supported target. `--force` overwrites an existing SKILL.md without
 prompting — only add it if the user confirms an overwrite.
 
-### Step 3c — Credentials (static tokens — hand off, never capture in chat)
+## Auth Shape Matrix
 
-**State this constraint up front, before offering any option.** Do not collect static tokens in
-chat. Most agent conversations and command histories are not a masked secret-entry surface, and
-the exact retention/redaction behavior depends on the environment. The terminal wizard is the
-safe default because it uses masked input outside the conversation. Say this plainly so the user
-understands the handoff isn't friction, it's the secure choice.
+These credential shapes are handled differently:
 
-Two kinds of credential, handled very differently — **classify first**:
+| Shape | Examples | Setup direction |
+|------|----------|-----------------|
+| Static bearer/API key | github `GITHUB_TOKEN`, linear `LINEAR_API_TOKEN`, stripe | Use masked terminal handoff; `rote token set <ENV> --stdin` only as explicit terminal opt-in. |
+| OAuth client id/secret | OAuth2 OpenAPI adapters with `oauth2_schemes` | Register the app, collect client id/secret through the OAuth flow, and avoid pasted bearer tokens. |
+| OAuth DCR / MCP PRM | MCP adapters with automatic browser redirect and dynamic registration | Pull/create the adapter, then run `rote adapter reauth <name>` if auth is not already complete. |
+| Google Discovery | gmail, calendar, drive | Use `rote oauth setup google --scopes ...`; no static token. |
+| Unknown installed bearer | Existing adapter says bearer but provenance is unclear | Run `rote adapter list <id> --json --health` before telling the user to set a token. |
 
-- **OAuth adapters (Google: gmail, calendar)** → no static token at all. Skip to **Step 3d**
-  — the browser redirect keeps the secret out of chat and command history. Always
-  prefer this when the adapter supports it.
-- **Static-token adapters (github `GITHUB_TOKEN`, linear `LINEAR_API_TOKEN`, stripe, etc.)**
-  → the user holds a bearer string that has to be conveyed. Hand off to the masked wizard:
+- **Browser-OAuth adapters** → no static token at all; the browser redirect keeps the secret out
+  of chat and command history. Always prefer this shape when the adapter supports it. For Google
+  Discovery adapters (gmail, calendar) skip to **Step 3d**; for OAuth DCR / MCP PRM adapters skip
+  to **Step 3e** for reauth/DCR.
+
+### Step 3c — Static-token credential handoff
+
+**State this constraint up front, before offering any static-token option.** Do not collect
+static tokens in chat. Most agent conversations and command histories are not a masked
+secret-entry surface, and the exact retention/redaction behavior depends on the environment.
+The terminal wizard is the safe default because it uses masked input outside the conversation.
+Say this plainly so the user understands the handoff isn't friction, it's the secure choice.
+
+- **Static-token adapters** → the user holds a bearer string that has to be conveyed. Hand off
+  to the masked wizard:
 
 	  **Default — hand off to the terminal wizard.** Tell the user to run, **in their own
 	  terminal**:
@@ -399,13 +435,14 @@ Two kinds of credential, handled very differently — **classify first**:
   tell the user to **skip it**, since Google is wired via OAuth in Step 3d, not a token.
 
 	  **`rote token set` is a last-resort opt-in only.** Offer it only if the user explicitly
-	  refuses the terminal handoff and insists on setting a token through the current session.
-	  State plainly: "this may put the token in chat and shell history — rotate it
-	  afterward if it's long-lived." Only on explicit go-ahead:
-  ```bash
-  rote token set GITHUB_TOKEN "<value>"
-  ```
-  (This is the exposure tracked for a future `--stdin` fix — see the secrets behavior note.)
+		  refuses the terminal handoff and insists on setting a token through the current session.
+		  State plainly: "this may put the token in chat and shell history — rotate it
+		  afterward if it's long-lived." Only on explicit go-ahead:
+	  ```bash
+	  read -rsp "Token: " TOKEN; echo
+	  printf %s "$TOKEN" | rote token set GITHUB_TOKEN --stdin
+	  unset TOKEN
+	  ```
 
 - **Never print, echo, or re-quote a token back** to the user once set. Don't `cat` the
   secrets dir.
@@ -476,15 +513,13 @@ End on a win — run a real flow against the user's own data so setup ends with 
 not just "complete." Only offer this if at least one credential is wired (a flow with no
 working credential will just error).
 
-**This is where "flow" first appears — give the flow What/Value beat before the question.**
-Deliver the **Flow** beat from [`../INDEX.md`](../INDEX.md) § "Primitive intros" (~3–4
-lines: a workflow your agent builds and runs itself — no workflow-vendor subscription, no
-LLM-memory provider; rote crystallizes what worked into recalled interaction memories. Value:
-determinism + token savings — outcome-maxxing, not token-maxxing). *Then* ask: "Want me to run
-a quick flow to see it work?" — yes / skip.
+**This is where "flow" first appears — give the flow What/Value beat before the question.** Explain
+that a flow is a reusable workflow the agent can run locally: rote crystallizes what worked into
+deterministic steps, saving tokens and repetition without a workflow-vendor subscription. Then ask:
+"Want me to run a quick flow to see it work?" — yes / skip.
 
-**Follow [`../INDEX.md`](../INDEX.md) § "Running a flow"** — the canonical method. The
-short version, applied here:
+Use the `rote-flow-run` execution rules when a matched flow owns the proof. The short version,
+applied here:
 
 **1. Find a flow for a credentialed adapter.** Use `rote explore "<intent>"` to discover what
 can handle the intent, and/or list adapter-matched flows:
@@ -519,7 +554,7 @@ by `rote flow search --json` or `rote flow list --json`. It tells you two things
   rote init proof --seq --force
   ```
   ```bash
-  cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/proof && rote flow run <name> key=value …
+  cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/proof && rote flow run <name> param=value …
   ```
 - **No `steps:` (legacy/sequential flow — most curated flows)** → do **NOT** use
   `rote flow run` (it can fall back to a plain bash invocation instead of Deno). Run it via
@@ -534,7 +569,7 @@ by `rote flow search --json` or `rote flow list --json`. It tells you two things
   make sure the current environment has access if it requires filesystem approval.
 
 When unsure which mode, inspect frontmatter or run `rote flow info <name-or-path> --json` first.
-Do not use direct Deno for a flow that declares `steps_with_presentation`.
+Do not use direct Deno for any flow with frontmatter `steps:`.
 
 Show the flow's output to the user — that's the payoff.
 
@@ -576,7 +611,7 @@ adapter call). For single-adapter delegated work, spawn a subagent and tell it t
   workspace, then `cd` into its real directory **in the same command invocation** as the command:
   ```bash
   rote init proof --seq --force
-  cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/proof && rote flow run <name> key=value
+  cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/proof && rote flow run <name> param=value
   ```
   The workspace lives at `${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<name>`. This `cd && rote …` compound is a
   necessary exception to the one-command-at-a-time rule (the cwd must hold for the command).
@@ -605,10 +640,10 @@ adapter call). For single-adapter delegated work, spawn a subagent and tell it t
 ## Closing line + related skills
 
 **Closing line** (only after a clean first run): land one dry one-liner keyed to the live flow
-that just proved value — shared convention and rules in [INDEX.md](../INDEX.md). e.g. "And
-that flow ran straight against the provider's API — no proxy in the middle quietly metering you
-per call. Welcome to rote." Skip it if any step errored.
+that just proved value, e.g. "And that flow ran straight against the provider's API — no proxy in
+the middle quietly metering you per call. Welcome to rote." Skip it if any step errored.
 
-**Related onboard skills** (this is the front door; [INDEX.md](../INDEX.md) is the full map):
+**Related onboard skills** (this is the front door; the full graph lives in
+[`../rote/references/skill-workflow-map.md`](../rote/references/skill-workflow-map.md)):
 - **Build more adapters:** `rote-adapter-create`
 - **Tune one:** `rote-adapter-config` · **Keep current:** `rote-update`

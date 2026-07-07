@@ -8,18 +8,35 @@ description: >
 
 # rote-using-adapters - Single-Adapter Execution
 
+All `rote-<name>` references in this document — including every name in the Handoff
+Contract — are companion **skills**, never CLI commands (`rote-shell` is not `rote shell`).
+Invoke them through the runtime's skill mechanism; only literal `rote …` commands run in a
+terminal.
+
 Use this with the main `rote` skill. The main skill decides whether a task is single-adapter,
 multi-adapter, or out-of-scope. This skill gives the execution protocol once one adapter is
 selected.
 
-**Inputs expected from the caller:**
+Prefer `rote-workspace` for ordinary single-adapter execution in the main conversation. Use this
+skill mainly for delegated adapter helpers or runtimes that explicitly select a single-adapter
+execution specialist. It must still return through the shared workspace/crystallization lifecycle
+before final presentation.
 
-```text
-Adapter: <adapter-id>
-Task: <user request>
-Existing workspace: <path>   # only for resumptions
-Selected route: <flow/explore result from caller>   # required for delegated subagents
-```
+## Handoff Packet
+
+Consume this packet from `rote`, `rote-task-routing`, or a generated adapter helper:
+
+- Origin skill: `rote`, `rote-task-routing`, `rote-workspace`, or a generated helper.
+- Target skill: `rote-using-adapters`.
+- Adapter: `<adapter-id>`.
+- Task: the user request being delegated.
+- Existing workspace: path, only for resumptions.
+- Cached responses: `@N` ids and their meanings, if any.
+- Write-guard state: none, or confirmation token + impact + workspace.
+- Save gate: not started, pending write done, save approved, or save declined.
+- Stop conditions: missing credential, unsafe write, approval needed, or adapter mismatch.
+- Return fields: workspace name/path, response IDs, user-visible result, write-guard state,
+  reusable-result decision, next recommended skill.
 
 ## Core Rules
 
@@ -31,8 +48,48 @@ Selected route: <flow/explore result from caller>   # required for delegated sub
   calling tools.
 - If resuming, `cd` to the supplied workspace and do not run `rote init` again.
 - Always probe before calling. Tool names and input schemas vary by adapter.
-- Before returning reusable results, write a pending flow stub. Run pending save immediately only
-  when the caller or user already approved saving, releasing, or making the workflow reusable.
+- Before returning reusable results, write a pending flow stub and route through
+  `rote-flow-crystallization`. Run pending save immediately when the caller or user already approved
+  saving, releasing, or making the workflow reusable.
+
+## Auth Shape Check
+
+If probe/call fails for missing or invalid auth, classify before advising:
+
+```bash
+rote adapter list <id> --json --health
+```
+
+- Do not assume Bearer means static token. OAuth, OAuth DCR / MCP PRM, and Google Discovery can
+  all appear as bearer at the transport layer.
+- Static bearer/API key: hand off to masked credential entry or `rote token set <ENV> --stdin`
+  only as explicit terminal opt-in.
+- OAuth client id/secret or OAuth DCR / MCP PRM: return a blocker recommending
+  `rote adapter reauth <id>` or `rote adapter reauth <id> --scheme <name>`.
+- Google Discovery: return a blocker recommending `rote oauth setup google --scopes ...`.
+- Unknown bearer: report the health output and route to `rote-adapter-config`; do not request a
+  pasted token.
+
+## Handoff Contract
+
+- Use when: `rote` or a router selected exactly one installed adapter to satisfy a delegated task,
+  especially in a subagent or adapter-specific helper.
+- Preconditions: the caller supplied adapter id, user intent, any existing workspace, and stop
+  conditions; flow search has either been checked or explicitly delegated back to `rote` before new
+  adapter exploration. 
+- Owns: delegated single-adapter workspace entry, probe/call/query sequence, cached response
+  preservation, write-guard handling, pending flow stub creation, and return summary for the main
+  conversation. Does not own release/index/search cleanup.
+- Hands off to: `rote` when no installed adapter matches or the top-level route must change;
+  `rote-workspace` when broader multi-adapter workspace orchestration is needed; `rote-registry`
+  after a saved flow is ready to share; `rote-flow-crystallization` when the caller owns the save
+  gate.
+- Returns to: `rote` or the delegating skill with workspace path, cached response IDs, result,
+  write-guard state, reusable-result state, and next recommended skill.
+- Stop when: the task completes, probe shows the adapter cannot satisfy the request, a write guard
+  needs confirmation, a credential is missing, or save/release approval is unresolved.
+- Completion signal: handoff summary produced or returned with workspace, response IDs, result,
+  save gate, and blocker or next owner.
 
 ## Start
 
@@ -59,7 +116,7 @@ If no flow matches, create and enter a workspace:
 ```bash
 rote init <adapter-id>-task --seq
 cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<adapter-id>-task
-rote model set <model> --provider <provider>
+rote model set <model> --provider <provider> --confirmed-current
 ```
 
 If the environment cannot provide model/provider identity, continue after `rote start`; do not
@@ -70,16 +127,17 @@ invent values.
 Find the exact operation and input schema:
 
 ```bash
-rote <adapter_id_with_underscores>_probe "<natural language operation>"
+rote <adapter_id>_probe "<natural language operation>"
 ```
 
+Hyphens in the adapter id become underscores in the command name (`my-api` → `my_api_probe`).
 Use the exact operation name from the probe result. Read required parameters, optional
 parameters, and response shape before making the call.
 
 Then call through rote:
 
 ```bash
-rote <adapter_id_with_underscores>_call <operation_name> '{"param": "value"}' -s
+rote <adapter_id>_call <operation_name> '{"param": "value"}' -s
 ```
 
 Use `-s` when the adapter may need session state.
@@ -175,6 +233,29 @@ Then use the release command; never edit `main.ts` to flip status manually:
 rote flow release <name>
 rote flow index --rebuild
 rote flow pending discard <workspace>
+```
+
+## Handoff Summary
+
+Return this summary to the caller when delegated adapter work completes, blocks, or needs save-gate
+follow-up:
+
+```markdown
+# Rote Handoff Summary
+
+- Active skill: `rote-using-adapters`
+- Origin skill: `rote` or delegated helper
+- Adapter: <adapter-id>
+- User intent: ...
+- Workspace path: ...
+- Commands run: probe/call/query/pending-write commands
+- Cached responses: `@N` ids and what each contains
+- Write-guard state: none, approval required with token, or confirmed
+- Result or artifact: ...
+- Save gate: pending, accepted, discarded, or not applicable
+- Next skill: `rote`, `rote-flow-crystallization`, `rote-registry`, or none
+- Blockers: missing credential, unsafe write, adapter mismatch, or none
+- Completion signal: task result delivered, approval requested, or next owner named
 ```
 
 ## TypeScript Flow Boundary

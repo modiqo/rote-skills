@@ -14,35 +14,77 @@ description: >
 
 # rote-adapter-create — dry-run-first adapter creation
 
+All `rote-<name>` references in this document — including every name in the Handoff
+Contract — are companion **skills**, never CLI commands (`rote-shell` is not `rote shell`).
+Invoke them through the runtime's skill mechanism; only literal `rote …` commands run in a
+terminal.
+
 Build an adapter for any API with the same dry-run-first discipline as rote's guided setup:
 **analyze the spec with no
 side effects, then drive the choices from what the analysis found.** You hold the dry-run JSON
 in context and ask the user only the questions the analysis can't answer.
 
-**Follow the shared operating rules in [`../INDEX.md`](../INDEX.md) § "Shared operating
-rules"** — command access, strict step-wise execution (never parallel), and required-state
-gates. On a fresh run, clear any command/filesystem approvals the current environment requires
-before the first `rote` command.
+Use [`../rote/references/skill-workflow-map.md`](../rote/references/skill-workflow-map.md) when the
+full companion graph or packet shape is needed; this skill contains the active creation rules. On a
+fresh run, clear any command/filesystem approvals the current environment requires before the first
+`rote` command.
 
 Core rules:
 - **Never `--yes` create from a discovered spec without a successful `--dry-run` first.** The
   dry-run is the validation gate at every discovery branch.
+- **Never stop at dry-run.** A dry-run emits analysis and creates no adapter. The adapter creation
+  task is incomplete until the real create command succeeds, `rote adapter info <id>` verifies the
+  install, and a readiness probe or explicit skip reason is recorded.
 - **Determine facts from live commands, never from memory.** (If the rote binary isn't on
   PATH, resolve it via the **narrow probe** — check `$HOME/.local/bin/rote` then
-  `$HOME/.cargo/bin/rote`, never a deep `find` of the home dir. See INDEX § 1b.)
+  `$HOME/.cargo/bin/rote`, never a deep search of the home dir.)
 - **One command at a time, strictly sequential — never parallel.** Each stage gates the
   next (dry-run result drives auth/toolsets); firing steps in parallel breaks the pipeline.
 - Secrets (API tokens) are never captured in chat — hand off to the masked wizard (see Stage 5).
+
+## Handoff Contract
+
+- Use when: the user wants to create a new rote adapter, connect a provider API, or build from a
+  catalog, web, MCP, GraphQL, OpenAPI, or local spec source.
+- Preconditions: `rote` is runnable or the install blocker is known; the target adapter id and spec
+  intent can be elicited; no adapter will be created until the dry-run or MCP-specific create gate is
+  satisfied.
+- Owns: spec discovery, dry-run analysis, auth research, base-url and toolset decisions, adapter
+  creation, post-create credential/write-guard/sensitivity offers, and readiness probe options.
+- Hands off to: `rote-adapter-config` for tuning; `rote-registry` for sharing; `rote-setup` when this
+  was invoked from onboarding and setup should continue; `rote` for day-to-day use after creation.
+- Returns to: the caller with adapter id, spec source, dry-run summary, auth scheme, selected
+  toolsets, create command, post-op choices, `rote adapter info` result, probe result or skip reason,
+  and next recommended skill.
+- Stop when: dry-run fails, spec/auth choice is ambiguous and needs the user, adapter creation
+  succeeds or fails with a surfaced error, a credential/human browser action is pending, or another
+  skill owns the next step.
+- Completion signal: dry-run result recorded, create/probe status explicit, and a handoff packet
+  emitted when returning to setup, registry, config, or daily use.
+
+## Handoff Packet
+
+Return this packet when handing the created adapter to another skill:
+
+- Origin skill: `rote-adapter-create`.
+- Target skill: `rote-adapter-config`, `rote-registry`, `rote-setup`, or `rote`.
+- Adapter id: `<adapter-id>`.
+- Spec source: catalog id, spec URL, MCP URL, or local file path.
+- Dry-run summary: title, version, base URL, operation/toolset count, auth recommendation.
+- Decisions made: auth scheme, token env var, toolsets, base-url override, grouping.
+- Commands run: dry-run command, create command, `rote adapter info <adapter-id>`, and probe
+  command if any.
+- Credential state: configured, terminal handoff pending, OAuth browser pending, or not required.
+- Next owner: tuning, registry share, setup continuation, or daily rote use.
 
 ---
 
 ## Stage 0 — Discover the spec (catalog → web → local file)
 
 **If the user hasn't already heard the adapter pitch this run** (e.g. they invoked this skill
-directly, not from `rote-setup`), open with the **Adapter** What/Value beat from
-[`../INDEX.md`](../INDEX.md) § "Primitive intros" (~3–4 lines: talk MCP to any API
-directly — no gateway/SDK middleman; value: no extra per-call fees, infra-less/local, no
-new attack surface). Skip it if they just came from the setup fork (they've heard it).
+directly, not from `rote-setup`), explain that an adapter lets rote talk to an API directly from the
+user's machine — no gateway/SDK middleman, no extra per-call fees, and no new proxy holding their
+data. Skip it if they just came from the setup fork (they've heard it).
 
 Ask what API the user wants (prose): "Which API? (e.g. notion, stripe, datadog — or paste a
 spec URL / file path)".
@@ -50,10 +92,11 @@ spec URL / file path)".
 **First, rule out an existing adapter.** Once you know which API, run `rote adapter list` as the
 inventory pass. If any listed adapter plausibly matches the target API, run
 `rote adapter info <id>` for each plausible match and use those details to decide whether it already
-covers the target API. If an adapter already covers it, stop — use it, or hand off to
+covers the target API. If one adapter already covers it, stop — use it, or hand off to
 **rote-adapter-config** to tune it (auth, base URL, etc.); only continue to create a new one if the
-user explicitly wants a second. Re-creating over an existing adapter regenerates its fingerprint and
-churns config.
+user explicitly wants a second. If **several** installed adapters plausibly cover it (e.g. a REST
+and an MCP adapter for the same provider), present them and let the user choose — do not silently
+pick one. Re-creating over an existing adapter regenerates its fingerprint and churns config.
 
 Then resolve a **spec source** through this chain. The spec source is either a catalog id, a URL, or
 a local path.
@@ -86,7 +129,8 @@ Once the user picks a catalog entry, show its details (auth type, spec URL, note
 rote adapter catalog info stripe
 ```
 
-Always follow the catalog-provided install command. If `Spec Type = "MCP"`, use
+Always follow the catalog-provided install command — run the exact install command that
+`catalog info` prints for the entry, rather than assembling your own. If `Spec Type = "MCP"`, use
 `rote adapter new-from-mcp`. Do not substitute generic `rote adapter new`.
 
 For non-MCP catalog entries, `rote adapter new <catalog-id>` and `--dry-run` resolve the spec from
@@ -99,9 +143,10 @@ rote adapter new <catalog-id> --dry-run
 For MCP-type entries (catalog `info` Spec Type = "MCP", e.g. Notion), use the MCP path (Stage 5,
 MCP note). If you need a dry run, use `rote adapter new-from-mcp ... --dry-run`.
 
-If `catalog info`, MCP discovery, or dry-run returns `401/403` while fetching a spec, label it as
-spec-fetch auth required. That is separate from runtime auth after install; 401/403 is not proof the
-adapter is bad. Ask whether to authenticate/reauth or choose another catalog candidate.
+If `catalog info`, MCP discovery, or dry-run returns `401/403` — or a `400` whose body reads as an
+auth/token error — while fetching a spec, label it as spec-fetch auth required. That is separate
+from runtime auth after install; 401/403 is not proof the adapter is bad. Ask whether to
+authenticate/reauth or choose another catalog candidate.
 
 ### 0b. Web search (only when the catalog returned ZERO matches)
 
@@ -135,9 +180,26 @@ This emits JSON and **creates nothing**. Keep the JSON in context. Its shape (ve
   `basic` | `per_operation`. For `per_operation`: `schemes{}`, `default_scheme`.
 - `auth_scoring`: `{ recommended{auth_type,confidence,source,detail}, all_schemes[], has_ambiguity }`
 - `summary`: `{ total_toolsets, total_tools, get/post/put/delete_operations, read/write_operations }`
+- `dry_run`: `{ created:false, message, next_commands[] }` — if this says no adapter installed,
+  that is the current state. Run the real install command before probing or answering.
 
 If the dry-run errors, report the error verbatim and return to discovery (the URL/spec is the
 problem, not the adapter).
+
+---
+
+## Auth Shape Matrix
+
+Classify the auth shape before giving setup instructions. `auth.type` is the transport shape;
+OAuth/DCR often still appears as a bearer token at runtime.
+
+| Shape | Signals | Direction |
+|------|---------|-----------|
+| Static bearer/API key | `auth.type` is `bearer`, `api_key_header`, `api_key_query`, or `basic` with no OAuth metadata | Use masked credential handoff. If the user explicitly opts into a terminal command, use `rote token set <ENV> --stdin`. |
+| OAuth client id/secret | OpenAPI `oauth2_schemes`, dry-run `auth_scoring`, or provider docs list authorization-code/client-credentials | Configure the OAuth scheme during create; surface client id/secret, redirect URI, scopes, and token URL requirements. |
+| OAuth DCR / MCP PRM | Catalog entry is MCP, provider advertises dynamic client registration, or MCP handshake redirects to auth | Use `rote adapter new-from-mcp`, then `rote adapter reauth <id>` if needed. Do not ask for a static bearer token. |
+| Google Discovery | Spec source is Google Discovery or adapter is a Google API | Use `rote oauth setup google --scopes ...`; do not ask for a pasted token. |
+| Unknown installed bearer | Existing adapter reports bearer but the token provenance is unclear | Inspect `rote adapter list <id> --json --health` before advising. OAuth-backed bearers recover with reauth; static bearers use token set. |
 
 ---
 
@@ -152,11 +214,11 @@ user wants to.
 
 ## Stage 3 — Auth (resolve, don't punt)
 
-Drive from `auth` + `auth_scoring`. Pick a branch from two fields — `has_ambiguity` and
-`recommended.confidence` — then **resolve ambiguity yourself**: sharpen the guess from the
-provider's docs *when web tools are available*, but the **probe → real call is the final
-arbiter**. Never hand the user a blind multiple-choice, and never stall waiting on docs you
-can't fetch:
+Drive from the Auth Shape Matrix plus `auth` + `auth_scoring`. Do not assume `bearer` means
+static token. Pick a branch from two fields — `has_ambiguity` and `recommended.confidence` —
+then **resolve ambiguity yourself**: sharpen the guess from the provider's docs *when web tools
+are available*, but the **probe → real call is the final arbiter**. Never hand the user a blind
+multiple-choice, and never stall waiting on docs you can't fetch:
 
 ```
 auth.type == "none"                                          → skip, no auth
@@ -171,6 +233,12 @@ Low confidence is itself a trigger — a single-scheme guess at 0.5 (common for 
 you can't (no web access, ambiguous docs), install the most-likely scheme and let the first
 real call correct it — a live auth error from the provider is the most authoritative signal
 there is, no web round-trip needed.
+
+GraphQL adapters are a canonical low-confidence case: GraphQL SDL often carries no security
+directives, and some providers expect a raw `Authorization: <token>` header without the `Bearer `
+prefix. When auth scoring is that ambiguous, research provider docs and assemble `--config-json`
+explicitly instead of accepting the dry-run guess — and if research isn't possible, rely on the
+probe → real call arbiter to correct the header form after install.
 
 - **CONFIRM** → state the scheme and proceed, pre-filling the token env var from
   `auth.token_env` / `key_env`. e.g. "Detected bearer auth (0.95 confidence, from the spec).
@@ -298,8 +366,8 @@ For OAuth-DCR servers (Notion) this opens a browser; tell the user to complete i
 
 - **Credentials** (static-token auth): hand off to the masked wizard — tell the user to run
   `rote powerpack credentials` in their own terminal (masked), or set one with
-  `rote token set <ENV> "<value>"` only as an explicit, chat-visible opt-in. Never echo
-  a token. (Same secrets discipline as the setup skill.)
+  `rote token set <ENV> --stdin` only as an explicit terminal opt-in. Never echo a token.
+  (Same secrets discipline as the setup skill.)
 - **Write guard**: `rote adapter guard init <id>`
 - **Sensitivity**: `rote sensitivity upgrade` (if needed) then `rote sensitivity apply <id> --json`
 - **Capability index**: `rote adapter capability rebuild`
@@ -346,9 +414,8 @@ Then offer to:
   and offers to invite others for review/use. Only offer this on a clean create.
 
 **Closing line** (only on a clean create + green call): land one dry one-liner keyed to this
-run's `total_tools` — the shared convention and rules live in [INDEX.md](../INDEX.md).
-e.g. "512 tools talking straight to the provider's API — no metered middleman quietly billing
-you per call." Skip it if the run was rocky.
+run's `total_tools`, e.g. "512 tools talking straight to the provider's API — no metered middleman
+quietly billing you per call." Skip it if the run was rocky.
 
 ---
 
@@ -364,7 +431,8 @@ you per call." Skip it if the run was rocky.
 
 ## Related onboard skills
 
-Part of the **rote-onboard** sequence ([INDEX.md](../INDEX.md) is the full map):
+Part of the **rote-onboard** sequence (the full graph lives in
+[`../rote/references/skill-workflow-map.md`](../rote/references/skill-workflow-map.md)):
 - **Next (tune):** `rote-adapter-config` — auth, base URL, write guard,
   sensitivity.
 - **Next (share):** `rote-registry` — check/push to your orgs, then invite others.

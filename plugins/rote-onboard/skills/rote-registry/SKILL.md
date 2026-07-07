@@ -14,19 +14,24 @@ description: >
 
 # rote-registry — share artifacts, manage the org
 
+All `rote-<name>` references in this document — including every name in the Handoff
+Contract — are companion **skills**, never CLI commands (`rote-shell` is not `rote shell`).
+Invoke them through the runtime's skill mechanism; only literal `rote …` commands run in a
+terminal.
+
 Take a freshly-minted adapter or flow and get it into the registry with the same discipline as
 rote's guided setup: **check before you push** (don't burn quota re-pushing something already there), push
 at the visibility the user chooses, then **turn the push into collaboration** by surfacing org
 members and offering invites.
 
-**Follow the shared operating rules in [`../INDEX.md`](../INDEX.md) § "Shared operating
-rules"** — on a fresh run, clear command/filesystem access if the current environment requires
-it.
+Use [`../rote/references/skill-workflow-map.md`](../rote/references/skill-workflow-map.md) when the
+full companion graph or standard packet shape is needed; this skill contains the active registry
+rules. On a fresh run, clear command/filesystem access if the current environment requires it.
 
 Core rules:
 - **Determine facts from live `rote registry` commands, never from memory.** (If the rote
   binary isn't on PATH, resolve it via the **narrow probe** — check `$HOME/.local/bin/rote`
-  then `$HOME/.cargo/bin/rote`, never a deep `find` of the home dir. See INDEX § 1b.)
+  then `$HOME/.cargo/bin/rote`, never a deep home-directory search.)
 - **One command at a time, strictly sequential — never parallel.** Probes gate decisions.
 - **Auth-gate first.** Every registry op needs a valid session — see Stage 0.
 - **Existence is checked by fingerprint/version, not just name** — re-pushing an identical
@@ -34,6 +39,24 @@ Core rules:
 - **Visibility is never silently defaulted.** Public is hard to walk back; always ask.
 - Secrets discipline: pushing an adapter ships its *config*, not its token values. Confirm
   the user understands before a **public** push.
+
+## Handoff Contract
+
+- Use when: a newly created adapter or crystallized flow reaches the share point, or the user asks
+  for registry push/share, usage/quota, invite, member, artifact search, or registry collaboration.
+- Preconditions: `rote registry whoami --verbose` has authenticated or the login blocker is surfaced;
+  artifact id/path and target owner can be elicited; visibility is confirmed before any push.
+- Owns: registry auth gate, org/owner selection, existence checks, dry-run publish/push, visibility
+  selection, conflict recovery, usage reporting, and invite-at-share-time collaboration.
+- Hands off to: `rote-org` for deeper organization administration; `rote-adapter-create` when the
+  artifact is not ready to publish; `rote-flow-crystallization` or `rote-flow-authoring` when a flow
+  must be saved/released before push; `rote` for day-to-day routing after sharing.
+- Returns to: the caller with artifact kind/id/path, target org/owner, visibility, dry-run verdict,
+  push result or skip reason, version/conflict state, invite results, and next recommended skill.
+- Stop when: the artifact is shared or confirmed in sync, auth/org permission blocks, visibility is
+  unconfirmed, quota blocks invites/pushes, or the owning creation/authoring skill must resume.
+- Completion signal: registry state verified from live commands, push/share/invite result summarized,
+  and return data includes the artifact, owner, visibility, and any remaining blocker.
 
 ---
 
@@ -64,11 +87,9 @@ rote registry whoami --verbose
 ## Stage 1 — Which orgs, and is the artifact already there?
 
 **This is where the "hub" concept first appears — give the hub What/Value beat before asking
-where to push.** Deliver the **Hub** beat from [`../INDEX.md`](../INDEX.md) § "Primitive
-intros" (~3–4 lines: a working flow/adapter shared so the team and community reuse it — the way
-a teacher's lesson saves every student rediscovering it; shared artifacts become collective
-intelligence. Value: token savings across the org and community, with the same determinism).
-*Then* proceed.
+where to push.** Explain that the hub is where a working flow or adapter becomes reusable by the
+team or community: one proven lesson saved so everyone stops rediscovering it, with deterministic
+token savings across the org. Then proceed.
 
 List the orgs the user belongs to (the push targets):
 ```bash
@@ -286,11 +307,11 @@ This is the usage answer — quota consumption at a glance, no surprises.
 ## Closing line + related skills
 
 **Closing line** (only after a clean push): one dry one-liner keyed to what landed — e.g. the
-artifact name + org + that it's now shareable without a middleman registry tax. Shared
-convention and rules in [INDEX.md](../INDEX.md). Skip it if the push errored or there was
-nothing to push.
+artifact name + org + that it's now shareable without a middleman registry tax. Skip it if the push
+errored or there was nothing to push.
 
-**Related onboard skills** ([INDEX.md](../INDEX.md) is the full map):
+**Related onboard skills** (the full graph lives in
+[`../rote/references/skill-workflow-map.md`](../rote/references/skill-workflow-map.md)):
 - **Invoked by:** `rote-adapter-create` (after minting an adapter) and the flow
   crystallize path.
 - **Full org admin:** the **rote-org** skill · **Tune the adapter first:**

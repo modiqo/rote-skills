@@ -1,141 +1,41 @@
-# Flow Search and Run
+# Flow Search And Run
 
-Use this reference when `rote flow search "<intent>"` returns a usable existing flow. When the
-matched flow fully covers the request, it resolves the task branch: stop exploring, do not probe
-adapters, and do not rebuild the workflow from scratch. When the flow covers only a baseline or
-partial result, run or preserve that baseline before routing the uncovered work; do not discard the
-flow output while building the combined result.
+Use this reference when `rote flow search "<intent>"` returns a plausible reusable flow and you need
+the shortest reliable path to run it.
 
-## 1. Get the path and parameter contract
-
-When the flow name is known (often from a prior `rote flow search`), look it up directly — by bare
-name, `<org>/<name>` id, or a path to the flow file. Do not re-filter a search array client-side to
-isolate one flow:
+1. Resolve the exact flow contract:
 
 ```bash
-rote flow info <name> --json
+rote flow info <flow-name-or-path> --json
 ```
 
-`rote flow info` is the exact-name counterpart to `rote flow search`: search returns a ranked array
-of fuzzy matches for discovery; info resolves a single flow and `--json` emits one object, not a
-list. Use the object's fields directly:
+Use the returned `path` and declared parameters. Do not reconstruct a path from the name.
 
-- `path` is the absolute flow file path; use it verbatim.
-- `parameters` is the ordered positional argument contract.
-- Required parameters need values from the user's intent or a targeted follow-up question.
-- Optional parameters use their defaults unless the user gave a value.
-- The object also carries `id` (org-qualified as `<org>/<name>` for registry-pulled flows),
-  `description`, `format`, `source`, `scheme`, `is_composite`, status/kind/flow_type,
-  execution model, endpoint and session requirements, and adapter bindings when present.
+2. Pick the execution mode from the flow's frontmatter (or `rote flow info --json`).
 
-Resolve by identity, and handle the failure modes:
-
-- `rote flow info acme/<name> --json` selects an org flow. A bare name prefers a local flow when
-  one exists; otherwise it resolves a single matching flow by name. An ambiguous bare name exits
-  non-zero and lists disambiguation candidates — use the qualified id or the full file path (the
-  absolute `path` a prior lookup reported).
-- If the argument is an existing flow file path, `rote flow info` resolves that path before any
-  name/id lookup.
-- An unknown name exits non-zero with did-you-mean suggestions from the flow search index.
-- `-d, --dir <path>` resolves from an alternate flows root.
-
-If the name is not yet known, discover first with `rote flow search "<intent>" --json`, then look
-the chosen flow up by name.
-
-Do not construct `~/.rote/flows/<org>/<name>/main.ts` by hand. Registry-pulled flows include an
-organization segment, while local draft flows can have a different shape.
-
-## 2. Map arguments positionally
-
-Flow parameters are positional. Map the user's request to the declared order from `parameters`.
-Do not pass `key=value` pairs unless the flow's own documentation explicitly expects them.
-
-Example: if frontmatter declares `start_date`, then `end_date`, then optional `providers`, a
-legacy May rideshare receipt task becomes:
-
-```bash
-rote deno run --allow-all /path/to/main.ts 2026/05/01 2026/05/31
-```
-
-For `metadata.execution_model: steps_with_presentation`, pass named flow parameters through the
-flow runner instead:
-
-```bash
-rote flow run /path/to/main.ts start_date=2026/05/01 end_date=2026/05/31
-```
-
-## 3. Run outside the active workspace
-
-Run legacy TypeScript flows with rote's Deno wrapper from a directory outside the active workspace:
+Use `rote deno run --allow-all` for legacy `.ts` flows whose frontmatter has no `steps:` block,
+passing positional args in declared order, from a directory outside the active workspace:
 
 ```bash
 rote deno run --allow-all /absolute/path/to/main.ts [args in declared order]
 ```
 
-Run `steps_with_presentation` flows with the flow runner, not direct Deno:
+Use `rote flow run` for any flow whose frontmatter has `steps:`, passing named `key=value`
+parameters — direct Deno skips the effect plane:
 
 ```bash
 rote flow run /absolute/path/to/main.ts [param=value ...]
 ```
 
-Run shell flows directly from a directory outside the active workspace:
+`metadata.execution_model: steps_with_presentation` is still a `steps:` flow: the runner executes
+the declared steps first, then invokes the presentation body. Do not run it through direct Deno —
+the body would not receive the typed presentation input.
 
-```bash
-/absolute/path/to/main.sh [args]
-```
+3. Verify the requested output, not just process success. Check the artifact path, required
+sections, source markers, and live-data evidence the user asked for.
 
-Running outside the current workspace keeps flow-created workspaces from nesting inside the
-workspace you are using to inspect or author the flow.
+4. Stop after a verified full-flow match. Do not explore adapters, create a pending flow, or
+rebuild the workflow unless the user requested new workflow work or the flow only covers a baseline.
 
-## 4. TypeScript execution rules
-
-- Use `rote deno run --allow-all` for legacy `.ts` flows.
-- Use `rote flow run` for `.ts` flows with `metadata.execution_model: steps_with_presentation`.
-- Do not run TypeScript flow files directly.
-- Do not use system `deno`; rote manages its own Deno runtime.
-- Do not prefix the `rote` binary with `~/.rote/bin/`; `rote` itself should be on `PATH`.
-
-## 5. Treat matched-flow output as the answer
-
-After a fully matched flow runs, verify the requested output artifact exists and contains the flow's
-result, then answer the user. Do not overwrite, rewrite, reformat, enrich, or replace that artifact
-with custom research or direct API output unless the user explicitly asks to edit the flow or create
-a separate enhanced artifact.
-
-Do not inspect the flow implementation source just because a lookup returned a path. Once
-`rote flow info <name> --json` exposes a runnable path and parameter contract, run the flow and
-verify the user-visible result. Read source only when the user asks to modify/debug the flow or
-live rote guidance says the contract cannot be determined otherwise.
-
-Verification should check the artifact content, not only file existence. Confirm the requested path,
-key headings or markers, required parameters such as city/date/output path, and any live-data section
-the user requested.
-
-If the user asks for a combined workflow and the existing flow supplies only one part, keep the
-baseline flow output intact in the combined artifact. Add only the uncovered content through the
-routing path, and preserve any headings, markers, or summary text the baseline flow produced.
-
-## 6. Optional model tracking with `rote run`
-
-Use `rote run` only when the task needs model tracking and cached workspace responses for the
-flow execution:
-
-```bash
-rote init <workspace> --seq
-cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<workspace>
-rote model set <model> --provider <provider>
-rote run --inference-id $(uuidgen) \
-  --model <model> \
-  --model-type chat \
-  --model-version <version> \
-  /absolute/path/to/main.ts [args in declared order]
-rote @1 '.result' -r
-```
-
-Required tracking fields are `--inference-id`, `--model`, `--model-type`, and `--model-version`.
-
-## 7. Fallback for older rote versions
-
-If `rote flow search --json` is unavailable, resolve the flow from rote's flow listing and inspect
-only the flow's frontmatter for parameters. Prefer upgrading rote or using live `rote grammar`
-guidance over filesystem searches.
+5. For a partial match, preserve the baseline flow name, parameters, output artifact, and uncovered
+requirements before routing the remaining work to the next rote skill.
