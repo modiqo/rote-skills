@@ -41,10 +41,6 @@ rote deno run --allow-all /absolute/path/to/main.ts [args]
 Use SDK imports exactly as shown by live rote guidance. Avoid npm-style package assumptions unless
 the current rote version explicitly supports them.
 
-For `steps_with_presentation`, do not import `sdk/ts/mod.ts` or construct `Rote`. Import
-`__ROTE_PRESENTATION_SDK__`, then use `loadPresentationContext()`, literal `stepName("...")`
-references, and `FlowOutput`.
-
 ## Transform Cached Responses
 
 When a transformation can be expressed clearly with jq, prefer `rote query @N '<jq-filter>' -r` and return

@@ -79,11 +79,6 @@ new adapter contract scheme the default.
 | --- | --- | --- | --- |
 | Legacy TypeScript, no `steps:` | The workflow is inherently imperative or depends on dynamic SDK/browser/local orchestration. | No frontmatter `steps:`; effects live in the TypeScript body. | `rote flow template create ...`, then `rote deno run --allow-all` |
 | `steps:` DAG | Adapter/process calls are the reusable execution plan and the default DAG report/checkpoints are enough. | Frontmatter `steps:`; effects live in declarative steps. | Use the current `--with-steps` template/export path advertised by live rote help. |
-| `steps_with_presentation` | Effects are declarative, but callers need custom human, summary, or JSON rendering. This is a presentation variant of a `steps:` flow. | `steps:` for effects; `metadata.execution_model: steps_with_presentation`; TypeScript body is presentation-only. | Use the current `--with-steps --with-presentation` template/export path advertised by live rote help. |
-
-Do not put adapter calls, `Rote`, `runPreflight`, `fetch`, `Deno.Command`, direct env reads, or
-filesystem access in a `steps_with_presentation` body. That body reads completed step outputs
-through `__ROTE_PRESENTATION_SDK__`.
 
 ## Scaffold Through Rote
 
@@ -92,8 +87,8 @@ task. This applies even when the original request already said to save or releas
 write and pending save come first, then the emitted scaffold command.
 
 The emitted scaffold command creates the legacy body shape. When the flow-shape choice above calls
-for a `steps:` flow, append `--with-steps` (and `--with-presentation` when custom rendering is
-needed) to the emitted `rote flow template create` command before running it.
+for a `steps:` flow, append `--with-steps` to the emitted `rote flow template create` command before
+running it.
 
 For adapter-backed or mixed adapter/shell work, "save this" means preserve workspace history, run
 pending write/save, and scaffold from rote with `rote flow template create`. It does not authorize
@@ -132,12 +127,6 @@ Inspect `rote deno status`, `rote sdk status`, and `rote guidance typescript flo
 
 For TypeScript flow logic, hand off to `rote-typescript-transformations` or follow its rules before
 continuing this lifecycle.
-
-For flows whose frontmatter declares `metadata.execution_model: steps_with_presentation`, the
-TypeScript body is presentation-only. Import `__ROTE_PRESENTATION_SDK__`, read completed outputs
-with `loadPresentationContext()` and literal `stepName("...")` references, and render with
-`FlowOutput`. Do not import the broad SDK, construct `Rote`, run preflight, create a task queue,
-call `fetch`, spawn subprocesses, or read `Deno.args`/`Deno.env` directly from that body.
 
 Preserve a stable `FlowOutput` shape:
 

@@ -606,8 +606,6 @@ raw shell when a rote primitive can preserve the evidence.
 Current mixed replay support is intentionally asymmetric:
 
 - adapter and `process.exec` actions are first-class `steps:` DAG actions
-- `steps_with_presentation` supports adapter-backed and `process.exec` steps; the presentation
-  body reads their completed (or skipped) outputs through the presentation SDK
 - browser observations are bridged through saved responses, snapshots, and
   files until first-class browser DAG actions ship
 

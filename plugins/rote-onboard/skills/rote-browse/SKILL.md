@@ -46,7 +46,7 @@ rote vars --json
 
 ## Harness Permissions And Shell Friction
 
-On a fresh Claude/Codex-style harness, clear rote browser prompt friction before
+On a fresh Claude/Codex-style harness, clear browser prompt friction before
 the first navigation. `rote install skill --provider all --personal --force`
 installs the supported rules for the local harnesses.
 

@@ -76,7 +76,7 @@ rote adapter list <id> --json --health
   especially in a subagent or adapter-specific helper.
 - Preconditions: the caller supplied adapter id, user intent, any existing workspace, and stop
   conditions; flow search has either been checked or explicitly delegated back to `rote` before new
-  adapter exploration. 
+  adapter exploration.
 - Owns: delegated single-adapter workspace entry, probe/call/query sequence, cached response
   preservation, write-guard handling, pending flow stub creation, and return summary for the main
   conversation. Does not own release/index/search cleanup.
