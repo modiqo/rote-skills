@@ -449,6 +449,60 @@ rote browser ref rebase @page.previous @page.current e42
 Rote click/type commands also attempt one automatic stale-ref rebase when the
 ledger has enough element evidence.
 
+## Crystallizing Typed Browser Steps
+
+`rote workspace export` replays recorded browser work as typed steps — only
+these recorded commands are representable:
+
+- Navigations (including new-tab opens) → `type: browser.navigate`
+- A recorded snapshot with its canonical slices → `type: browser.extract`
+  (`slice: clickable|links|headings|forms|errors`)
+- Clicks and typing with element refs → `type: browser.click` / `type: browser.type`
+
+### Preserve an exportable browser sequence
+
+`rote browse code` (the `browser_run_code*` tools) is exploration-only. Export
+drops the recorded call and creates an **export barrier**: every later recorded
+browser command is dropped too, until a recorded state reset. The rule applies
+to the recorded tool call regardless of which CLI command produced it —
+run-code-backed helpers such as `rote browse wait` create the same barrier.
+
+The barrier is based on recorded command order, not page identity. It is reset
+only by one of these recorded commands with a usable URL:
+
+- `browser_navigate`
+- `browser_tabs` with `action: new`
+
+Clicks that navigate, tab selection, back/forward, and run-code navigation do
+not reset it. For a sequence you intend to export:
+
+1. Record every navigation, snapshot, click, and type the flow must replay.
+2. Run code and other run-code-backed probes only after the final exportable
+   browser command.
+3. If a probe happened earlier, record a new navigation or new-tab open and
+   re-record the required downstream snapshots and actions.
+
+### Choose the extraction slice explicitly
+
+Before export, confirm the facts the flow needs are reachable through a
+canonical slice: `clickable`, `links`, `headings`, `forms`, or `errors`.
+Extracted elements are `{ref, element_type, text, url}`; `url` on the `links`
+slice carries each link target as captured (it may be page-relative), so
+URL-borne facts (dates in permalinks, ids in paths) belong in the presentation
+body, not in a run-code script.
+
+A recorded snapshot carries every canonical slice, but the exported
+`browser.extract` picks a preferred one (`clickable` ranks first; the full
+order is clickable → forms → links → headings → errors). When generalizing the
+exported artifact, set `slice:` on every synthesized `browser.extract` to the
+one its presentation body consumes.
+
+Run the scaffold command printed by `rote flow pending save` unchanged;
+generalize the artifact produced by `rote workspace export` — the full
+generalize checklist (and the scaffold-command vs exported-artifact
+distinction) is in `rote guidance typescript flow-creation`. `rote grammar
+steps` has the step-kind blocks.
+
 ## Authenticated Replay
 
 If exploration used a logged-in browser, save the browser session before
@@ -456,12 +510,18 @@ crystallizing a flow:
 
 ```bash
 rote browse auth save --domain <domain> --profile <profile>
-rote flow frontmatter --browser-session <domain>/<profile> --format typescript
+rote flow pending write <workspace>
+rote flow pending save <workspace>
 ```
 
-Do not store raw passwords or paste cookies into a flow. The flow should declare
-the browser session dependency and let runtime preflight validate it before side
-effects.
+Run the command emitted by pending save unchanged; do not append shape flags. The scaffold
+carries the saved-session dependency and the schema-v1 steps + presentation default, but its `steps:` block
+is a placeholder skeleton — recorded browser actions are NOT translated into it. Synthesize them
+with no-shape-flag `rote workspace export ~/.rote/flows/<name>/main.ts` run from inside the
+workspace (it emits the recorded `browser.navigate`/`browser.extract`/click/type steps over the
+scaffold), then generalize the exported draft; a direct export without the scaffold also works.
+Do not store raw passwords or paste cookies into a flow. Runtime preflight validates the declared
+browser session before side effects.
 
 ## Handoff Summary
 

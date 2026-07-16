@@ -154,7 +154,8 @@ guidance and provenance.
 |------|------|-----|
 | 1 | Field extraction, filtering, counts, sorting | `rote query @N '<jq>'` |
 | 2 | Formatting that jq cannot express cleanly | `rote query @N --transform-ts '...'` or `--filter-ts` |
-| 3 | Loops, conditionals, reusable orchestration | `rote flow template create` TypeScript flow |
+| 3 | Declarative fan-out, conditions, or reusable orchestration | Default no-shape-flag `rote flow template create`; author `for_each`, conditions, and adapter calls in frontmatter `steps:` |
+| 4 | Truly dynamic imperative orchestration that typed steps cannot express | Explicit `rote flow template create ... --legacy-body` no-steps flow |
 
 Start at Tier 1:
 
@@ -221,8 +222,12 @@ For structured filters, add a raw JSON passthrough flag such as `--filter`.
 Before release, verify:
 
 ```text
-[ ] FlowOutput wired: new FlowOutput(); out.human(...); out.summary(...); out.result({...})
-[ ] Frontmatter parameters match CLI flags
+[ ] Adapter effects declared in frontmatter steps: (endpoint/method/params with $param tokens);
+    only an explicit --legacy-body flow calls adapters from the TypeScript body
+[ ] FlowOutput wired in the presentation body (legacy: in the imperative body):
+    new FlowOutput(); out.human(...); out.summary(...); out.result({...})
+[ ] Presentation body reads flow inputs from ctx.params, not Deno.args or step stdout
+[ ] Frontmatter parameters match the named key=value contract (legacy: CLI flags)
 [ ] Tests cover at least three distinct inputs, including one default-only run
 [ ] rote flow lint <name> exits 0
 ```
@@ -260,7 +265,23 @@ follow-up:
 
 ## TypeScript Flow Boundary
 
-Inside TypeScript flows:
+In the default steps + presentation flow, registered adapter effects belong in frontmatter `steps:`. The
+`steps_with_presentation` body imports only `__ROTE_PRESENTATION_SDK__` and reads typed recorded
+observations plus `ctx.params`; it must not call adapters, `fetch`, Deno file APIs, or
+subprocesses. An adapter step is `endpoint` + `method` + `params` with `$param` substitution:
+
+```yaml
+steps:
+  fetch_issues:
+    endpoint: adapter/github
+    method: issues/list-for-repo
+    params: { owner: $owner, repo: $repo, per_page: $limit }
+```
+
+Step syntax quick reference: `rote grammar steps`; complete worked example:
+`rote guidance typescript flow-creation`.
+
+Only inside an explicitly scaffolded `--legacy-body` with no `steps:` use these imperative APIs:
 
 | Operation | Do this | Not this |
 |-----------|---------|----------|

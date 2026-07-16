@@ -213,9 +213,9 @@ readiness, and use `rote proc status` plus `rote proc stop` instead of raw
 
 ## TypeScript SDK Pattern Map
 
-For authored TypeScript flows, use first-class SDK wrappers instead of
-hand-assembling command arrays. The SDK surface mirrors the shipped shell
-patterns:
+For explicit legacy no-steps TypeScript flows, use first-class SDK wrappers instead of
+hand-assembling command arrays. Recorded finite commands default to typed `process.exec` steps via
+workspace export; the SDK surface below is for dynamic behavior the DAG cannot express:
 
 | Pattern | SDK call |
 | --- | --- |
@@ -240,6 +240,19 @@ Do not invent SDK methods for deferred roadmap items. There is no
 current detach-like pattern is a tracked background lease with stdout/stderr
 files, `execWait`, `followProcess`, `execStatus`, and `execStop`.
 
+Reading an exec result — every read is awaited; `stdout`/`stderr` are stream
+handles, not strings:
+
+```typescript
+const proc = await rote.exec({ argv: ["git", "status", "--short"], deps: ["git"] });
+const text = await proc.stdout.text();   // stderr mirror: proc.stderr.text()
+const exit = await proc.exit();          // { kind: "code", code } | { kind: "signal", … }
+if (exit.kind !== "code" || exit.code !== 0) {
+  throw new Error(`git failed: ${await proc.stderr.text()}`);
+}
+const files = await proc.files();        // captured file artifacts ([] unless capture requested)
+```
+
 `rote.execMany` preserves workspace response ordering by running process
 requests serially. For true parallel shell fan-out, generate declarative
 frontmatter `steps:` with `type: process.exec`, `for_each`, and
@@ -256,20 +269,31 @@ stderr. Do not duplicate that announcement in crystallized flows. Use
 
 ## Crystallization Router
 
-When the user asks to turn shell exploration into a reusable flow, choose the
-flow shape from the work pattern:
+When the user asks to turn recorded shell exploration into a reusable flow, use
+`rote workspace export <path>` with no shape flags first. The default artifact is
+schema-v1 steps + presentation: typed `process.exec` effects in `steps:` plus a
+`steps_with_presentation` body. The export is a draft synthesized from one
+recording: `rote proc run` records literal argv, so replace recorded literals
+(paths, repos, dates) with `$param` tokens and prune any spurious inferred
+`parameters:` entries before lint. Use explicit `--format steps` only when the
+user wants a steps-only report. Adapterless template/frontmatter/pending
+commands still require a real adapter, so do not invent one for process-only
+work. Step syntax quick reference: `rote grammar steps`.
 
-| Exploration pattern | Crystallized shape |
-| --- | --- |
-| One finite command whose output is the fact | `rote.exec({ argv, deps, capture })` |
-| Command writes files that downstream work reads | `rote.exec({ capture: { files: [...] } })` plus typed file paths |
-| Existing file or log is the source of truth | `rote.followFile(path, options)` |
-| Long finite job where other useful work can run | `rote.execBackgroundAndJoin(request, async (job) => { ... }, options)` |
-| Long service or daemon with readiness | `rote.execBackground({ readyLog, capture })`, then status/follow/stop |
-| Need to inspect progress from a tracked lease | `job.follow(...)` or `rote.followProcess(...)` |
-| Need completion proof from a tracked lease | `job.wait(...)` or `rote.execWait(...)` |
-| Terminal behavior is the point | `rote.ptyRun({ argv, input, cols, rows })` |
-| Many independent commands share one shape | declarative `steps:` with `process.exec`, `for_each`, and `max_concurrency` |
+Use an explicit legacy no-steps shell body only when the workflow needs dynamic
+SDK orchestration that the typed DAG cannot express:
+
+| Exploration pattern | Crystallized shape | Author via |
+| --- | --- | --- |
+| One finite command whose output is the fact | Default steps + presentation export with a typed `process.exec` step | No-shape-flag `rote workspace export ~/.rote/flows/<name>/main.ts` |
+| Command writes files that downstream work reads | Default steps + presentation export with declared `process.exec` captures | No-shape-flag `rote workspace export ~/.rote/flows/<name>/main.ts` |
+| Existing file or log is the source of truth | Explicit legacy body with `rote.followFile(path, options)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
+| Long finite job where other useful work can run | Explicit legacy body with `rote.execBackgroundAndJoin(request, async (job) => { ... }, options)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
+| Long service or daemon with readiness | Explicit legacy body with `rote.execBackground({ readyLog, capture })`, then status/follow/stop | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
+| Need to inspect progress from a tracked lease | Explicit legacy body with `job.follow(...)` or `rote.followProcess(...)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
+| Need completion proof from a tracked lease | Explicit legacy body with `job.wait(...)` or `rote.execWait(...)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
+| Terminal behavior is the point | Explicit legacy body with `rote.ptyRun({ argv, input, cols, rows })` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
+| Many independent commands share one shape | declarative `steps:` with `process.exec`, `for_each`, and `max_concurrency` | Export first, then add `for_each`/`max_concurrency` per `rote grammar steps` |
 
 Crystallize causality, not waiting. Do not encode heartbeat loops, repeated
 status polling, or sleep/retry scaffolding as business DAG nodes. Those are
@@ -495,6 +519,23 @@ Do not pass secrets through `--input`; terminal echo may record them in the
 transcript. Do not use PTY for persistent REPLs or long human-driven sessions
 until start/send/snapshot/stop support exists.
 
+In a legacy flow body, `rote.ptyRun` returns the same evidence, typed:
+
+```typescript
+const proc = await rote.ptyRun({ argv: ["sh", "-c", "test -t 1 && echo interactive || echo piped"], cols: 100, rows: 30 });
+const transcript = await proc.transcript.text(); // raw transcript, ANSI escapes included
+const exit = await proc.exit();                  // { kind: "code", code } | { kind: "signal", … }
+if (exit.kind !== "code" || exit.code !== 0) throw new Error("capture failed");
+```
+
+Request fields are `argv`, `input` or `stdinFile` (not both), `cols`, `rows`,
+and `timeoutMs`. There is **no `cwd` option** — the command runs in the
+executor's current directory, which is the workspace directory once
+`Rote.workspace()` is open. Pass directories to the tool itself (`git -C
+"$root"`, `sh -c 'cd "$1" && …' sh "$dir"`) instead of relying on the flow's
+launch directory. Lint mode stubs `proc.exit()` (`{ kind: "code", code: 0 }`)
+and `proc.transcript.text()` (`""`), so PTY reads need no `isLintMode()` guard.
+
 Treat release and publish commands as high risk. For examples like
 `cargo release`, `npm publish`, `gh release create`, or deploy commands:
 
@@ -599,19 +640,20 @@ rote query @1 '.' -r
 rote query @2 '.stdout.text' -r
 ```
 
+The `$owner`/`$repo` above are exploration-time shell/workspace substitutions. In a crystallized
+flow's `steps:`, `$param` tokens are resolved by the DAG runner from the flow's declared
+`parameters:` — a different mechanism with the same spelling. Recorded `rote proc run` commands
+carry no tokens at all (literal argv), which is why exported drafts need the literals generalized.
+
 For browser plus CLI work, use `rote-browse` for page state and `rote-shell`
 for local processing of snapshots/artifacts. Do not drop into raw Playwright or
 raw shell when a rote primitive can preserve the evidence.
 
-Current mixed replay support is intentionally asymmetric:
-
-- adapter and `process.exec` actions are first-class `steps:` DAG actions
-- browser observations are bridged through saved responses, snapshots, and
-  files until first-class browser DAG actions ship
-
-For browser-involved crystallization today, capture the browser state with
-`rote-browse`, materialize the snapshot or slice to a file, then consume that
-file from `process.exec`.
+Adapter, `process.exec`, and typed `browser.navigate|extract|click|type` actions are first-class
+`steps:` effects. Default crystallization places them in one effect DAG and gives the presentation
+body their completed, checkpoint-restored, failed, skipped, or blocked observations through the
+presentation SDK. Browser extracts stay bounded projections, and stateful browser actions keep the
+ordering and runtime/auth dependencies recorded by `rote-browse`.
 
 ## Crystallization Rule
 
@@ -622,14 +664,14 @@ surfaces the workspace's `@@` state and the `[MANDATORY PROTOCOL]` pending-stub 
 reusable result has no pending flow yet. The canonical replay command depends on the flow's
 execution model.
 
-Legacy TypeScript flows use rote's bundled Deno:
+Explicit legacy TypeScript flows with no `steps:` use rote's bundled Deno:
 
 ```bash
 rote deno run --allow-all ~/.rote/flows/<name>/main.ts
 ```
 
-Declarative `steps:` flows, including `steps_with_presentation`, use the flow
-runner:
+Every flow containing frontmatter `steps:`, including the default
+`steps_with_presentation` artifact, uses the flow runner:
 
 ```bash
 rote flow run ~/.rote/flows/<name>/main.ts param=value
@@ -639,26 +681,88 @@ rote flow run ~/.rote/flows/<name>/main.ts param=value
 
 When the user says yes, do the full release discipline:
 
-1. Choose the correct scaffold path:
+1. Choose the correct crystallization path:
 
-   - Shell-only flow: write `~/.rote/flows/<name>/main.ts` manually with
-     `@rote-frontmatter`. Do not run `rote flow pending save`,
-     `rote flow template create`, or `rote flow frontmatter`; those commands
-     require `--adapter` in the current implementation and will fail or emit an
-     adapter-shaped flow.
-   - Mixed adapter/shell flow: use `rote flow frontmatter` or
-     `rote flow template create` so adapter fingerprints and parameters are
-     captured. Pass only real adapters to `--adapter`; do not pass `process`,
-     `shell`, or `adapter/process`. Represent shell/process work with
-     `rote.exec(...)`, `process.exec`, and `deps.toml`. Then choose one
-     execution shape:
-     - Declarative DAG: add top-level `steps:` when the replay can be expressed
-       as adapter calls plus `type: process.exec` actions.
-     - Authored SDK: write TypeScript with `FlowOutput`, `runPreflight(...)`,
-       and SDK calls such as `rote.exec({ argv })` when custom branching,
-       formatting, help text, or richer TypeScript logic is needed.
+   - Process-only recorded workspace: use `rote workspace export <path>` with no shape flags. It
+     emits the default steps + presentation `process.exec` flow without a fake adapter. Then generalize the
+     draft: recorded argv is literal, so substitute `$param` tokens for recorded values and prune
+     inferred `parameters:` entries that are not part of the contract. Do not run `rote flow
+     pending save`, `rote flow template create`, or `rote flow frontmatter`; those commands still
+     require a real `--adapter`.
+   - Mixed adapter/process/browser workspace: use pending save or direct template/export. Run the
+     pending-save command unchanged; it already encodes the steps + presentation shape and recorded dependencies.
+     With direct template/export, no shape flags means schema-v1 `steps:` plus presentation. Pass
+     only real adapters or browser runtime endpoints to `--adapter`; never pass `process`, `shell`,
+     or `adapter/process`.
+   - Explicit steps-only request: use `--with-steps` for a template or `--format steps` for export,
+     without a presentation flag.
+   - Explicit legacy shell/no-steps request, or dynamic shell orchestration the DAG cannot express:
+     write `~/.rote/flows/<name>/main.ts` manually with `@rote-frontmatter`, `FlowOutput`, and shell
+     SDK calls. This is the legacy escape, not the default.
 
-   Minimal shell-only frontmatter shape:
+   Minimal **default steps + presentation** process frontmatter shape — this is what a generalized export
+   looks like and the shape to copy for the default path (full worked example:
+   `rote guidance typescript flow-creation`):
+
+   ```typescript
+   /**
+    * Repo Changelog
+    *
+    * Lists recent commit subjects for a local checkout.
+    *
+    * @rote-frontmatter
+    * ---
+    * name: repo-changelog
+    * description: "Lists recent commit subjects for a local git checkout."
+    * provenance:
+    *   author: Your Name <you@example.com>
+    *   tier: local
+    *   created_at: 2026-01-01T00:00:00.000000+00:00
+    *   rote_version: 0.53.0            # your current rote --version
+    * metadata:
+    *   rote_version: 0.53.0            # must parse as a real version
+    *   status: draft
+    *   kind: atomic
+    *   flow_type: sequential
+    *   execution_model: steps_with_presentation
+    *   format: typescript
+    *   requires_endpoints: []
+    *   requires_sessions: false
+    *   tags:
+    *   - shell
+    *   - typescript
+    * parameters:
+    * - name: root
+    *   type: string
+    *   required: true
+    *   description: "Absolute path to the git checkout"
+    * - name: count
+    *   type: string
+    *   required: false
+    *   default: "20"
+    *   description: "Number of commits to list"
+    * steps:
+    *   changelog:
+    *     type: process.exec
+    *     argv: [git, -C, $root, log, --oneline, -n, $count]
+    * ---
+    */
+
+   const { FlowOutput, isProcessExecBody, loadPresentationContext, stepName } =
+     await import("__ROTE_PRESENTATION_SDK__");
+   const out = new FlowOutput();
+   const ctx = await loadPresentationContext();
+   const log = ctx.requireAvailable(stepName("changelog"));
+   if (!isProcessExecBody(log.body)) throw new Error("changelog is not a process.exec observation");
+   const stdout = log.body.stdout?.text;
+   if (stdout === undefined) throw new Error("changelog captured no stdout");
+   const lines = stdout.split("\n").filter((l) => l.trim().length > 0);
+   out.human(lines.join("\n"));
+   out.summary(`${lines.length} commits in ${String(ctx.params.root)}`);
+   out.result({ run_id: ctx.run.run_id, commits: lines });
+   ```
+
+   Minimal explicit legacy shell-only frontmatter shape (the opt-in escape, NOT the default):
 
    ```typescript
    /**
@@ -677,6 +781,7 @@ When the user says yes, do the full release discipline:
     *   workspace: csv-json-report-demo
     *   rote_version: 0.49.0
     * metadata:
+    *   rote_version: 0.49.0
     *   status: draft
     *   kind: atomic
     *   flow_type: sequential
@@ -703,7 +808,9 @@ When the user says yes, do the full release discipline:
    ```
 
    > **Frontmatter must parse:** a `provenance:` block requires `author`,
-   > `tier`, `created_at`, and `rote_version` (only `workspace` is optional).
+   > `tier`, `created_at`, and `rote_version` (only `workspace` is optional),
+   > and `metadata:` requires its own `rote_version` — the provenance copy is
+   > a separate field, not a substitute; omitting either fails parsing.
    > A missing `author` fails `rote deno run <flow>` with a generic
    > "configuration error"; the real cause ("provenance: missing field
    > `author`") shows only in `rote flow index --rebuild` stderr. The
@@ -719,8 +826,9 @@ When the user says yes, do the full release discipline:
    > (c) give parameters defaults — lint runs the flow with no arguments.
 
 2. Create `~/.rote/flows/<name>/main.ts`.
-3. For declarative DAG flows, put the replay graph in frontmatter `steps:`.
-   For authored SDK flows, use TypeScript SDK shell primitives for process
+3. For default steps + presentation and explicit steps-only flows, put the replay graph in frontmatter `steps:`.
+   The default presentation body only reads completed observations through
+   `__ROTE_PRESENTATION_SDK__`. For explicit legacy SDK flows, use TypeScript shell primitives for process
    work: `rote.exec`, `rote.execBackground`, `rote.execStatus`,
    `rote.execStop`, `rote.followFile`, `rote.followProcess`, `rote.ptyRun`,
    `rote.depsCheck`, and `rote.execMany`. Use adapter handles from
@@ -734,7 +842,16 @@ When the user says yes, do the full release discipline:
    `--github-repo` parser unless both forms work.
 6. Start with `metadata.status: draft`. Do not set `released` until dependency
    preflight and replay QA have passed.
-7. Test the draft with at least three distinct inputs. For legacy TypeScript:
+7. Test the draft with at least three distinct inputs. For the default steps + presentation flow and every other
+   flow containing `steps:`:
+
+   ```bash
+   rote flow run ~/.rote/flows/<name>/main.ts param=<input-a>
+   rote flow run ~/.rote/flows/<name>/main.ts param=<input-b>
+   rote flow run ~/.rote/flows/<name>/main.ts param=<input-c>
+   ```
+
+   Only for an explicit legacy TypeScript body with no `steps:`:
 
    ```bash
    cd ~/.rote/flows/<name>
@@ -744,9 +861,8 @@ When the user says yes, do the full release discipline:
    rote deno run --allow-all ~/.rote/flows/<name>/main.ts <input-c>
    ```
 
-   For declarative or `steps_with_presentation` flows, replace the direct Deno
-   executions with `rote flow run ~/.rote/flows/<name>/main.ts param=value ...`
-   — the DAG runner takes named `key=value` parameters, not positional args.
+   The DAG runner takes named `key=value` parameters, while the legacy body takes its declared
+   positional argument order.
 
    If dependency preflight fails, ask the user whether to provision missing
    required tools, with the install scope and side effects stated plainly. Do
@@ -803,17 +919,21 @@ and successful replay commands for the flow's execution model.
 
 ## Step Reference Rules For Mixed DAGs
 
-In `steps:` flows, `@step{.path}` resolves against the step response body, not
-the persisted `@N` envelope on disk. For an MCP adapter call, the response body
-is the JSON-RPC body, so a GitHub adapter text payload usually needs a scalar
-query such as:
+In `steps:` flows, `@step{.path}` resolves against the unwrapped step response body, not the
+persisted `@N` envelope on disk. For example:
 
 ```text
-@repo_adapter{.result.content[0].text | fromjson | .full_name}
+@repo_adapter{.full_name}
 ```
 
-For process steps, the response body is `process.exec`, so downstream steps can
+Presentation code must still tolerate legacy adapter envelope residue when normalizing old cached
+observations, but new `@step` references never navigate that envelope. For process steps, the
+response body is `process.exec`, so downstream steps can
 reference fields such as `.stdout.text` or captured file metadata. Keep
 `process.exec` `argv`, stdin paths, and capture paths scalar after resolution.
 Do not pass large adapter/browser payloads through argv when a file bridge or a
 small scalar projection is clearer.
+
+`$param` tokens resolve in the same fields (`argv` elements, adapter `params:` values, stdin and
+capture paths) from the flow's declared `parameters:`. An unresolved `$name` passes through as a
+literal, and `$item`/`$item_index` are reserved for `for_each` fan-out.

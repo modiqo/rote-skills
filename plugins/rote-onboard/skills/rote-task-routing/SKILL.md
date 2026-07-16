@@ -137,8 +137,9 @@ combine adapter/browser evidence after it has been captured through rote.
 
 The handoff packet should include the working directory, input evidence, allowed local tools, any
 baseline artifact that must be preserved, and whether the user already asked to save or release the
-result. Shell-only reusable flows use the `rote-shell` crystallization discipline, not
-adapter-shaped pending save commands.
+result. Process-only reusable work uses `rote-shell` and no-shape-flag workspace export for the
+default steps + presentation artifact; template/pending commands still require a real adapter, so never invent
+one.
 
 Do not use shell routing as an excuse for raw, untracked parsing of rote responses. If the local
 command consumes adapter/browser/flow evidence, route it through `rote-shell` and `rote proc` with

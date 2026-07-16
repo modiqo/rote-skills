@@ -29,8 +29,12 @@ browser steps, manual transformations, a composed superflow built around a parti
 an explicit user request to save/release/publish a new workflow.
 
 Do not use this skill for shell-only `rote proc` work unless `rote-shell` explicitly returns here.
-Shell-only flows have their own crystallization route because adapter-shaped pending save/scaffold
-commands are not the right primitive for process-only flows.
+Template and pending commands still require a real adapter, so process-only work uses the
+adapterless workspace-export route instead of inventing one. That export is steps + presentation by default;
+the explicit no-steps legacy TypeScript body is the escape when typed process steps cannot express
+the workflow. An exported artifact is a draft — generalize recorded literals to `$param` and prune
+inferred spurious parameters before lint (`rote-flow-authoring` owns that checklist). The
+run-unchanged rule applies to the pending-save *scaffold command*, never to the exported artifact.
 Mixed shell plus adapter, provider API, or browser workflows use this pending lifecycle. Only
 workflows with no adapter, provider API, or browser state stay on the shell-only authoring route.
 
@@ -114,8 +118,9 @@ rote flow pending save <workspace-name>
 ```
 
 `pending save` prints the pre-filled `rote flow template create ...` command; it does not create or
-release the flow. Capture the emitted scaffold command so the save path survives compaction or
-handoff.
+release the flow. The pending artifact already encodes the default `steps:` plus presentation shape,
+so capture and run the emitted command unchanged. Never append shape flags or reconstruct the
+command after compaction or handoff.
 
 Scaffold output is an agent action, not user-facing instructions. If save was already approved, run
 the scaffold command yourself.

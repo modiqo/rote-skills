@@ -447,10 +447,10 @@ Say this plainly so the user understands the handoff isn't friction, it's the se
 - **Never print, echo, or re-quote a token back** to the user once set. Don't `cat` the
   secrets dir.
 
-**Verify with cwd-independent checks only.** Do NOT run a flow or `rote ready` to test a
-token — those require being *inside a rote workspace* and otherwise fail with
-`not in a workspace directory` / `Permission denied (os error 13)` (that error from outside a
-workspace is the workspace requirement, not a bad token). Verify with:
+**Verify with cwd-independent checks only.** Do not run a flow or `rote ready` merely to test a
+token: both exercise provider capabilities rather than reporting credential state. Direct adapter
+checks such as `rote ready` require an active workspace, while a `steps:` flow must run outside
+every active workspace so its runner can create the DAG workspace. Verify the token itself with:
 
 ```bash
 rote powerpack tokens
@@ -549,19 +549,21 @@ by `rote flow search --json` or `rote flow list --json`. It tells you two things
 
 **5. Run it the right way (this is the fix for the "ran via bash, not Deno" bug).**
 
-- **Frontmatter has `steps:` (DAG flow)** → `rote flow run` works, inside a workspace:
+- **Frontmatter has `steps:` (DAG flow)** → run it from a directory outside every active rote
+  workspace. The flow runner creates and owns its DAG execution workspace:
+
   ```bash
-  rote init proof --seq --force
+  cd /tmp && rote flow run <name> param=value …
   ```
-  ```bash
-  cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/proof && rote flow run <name> param=value …
-  ```
+
 - **No `steps:` (legacy/sequential flow — most curated flows)** → do **NOT** use
   `rote flow run` (it can fall back to a plain bash invocation instead of Deno). Run it via
   the bundled Deno from the flow's own directory:
+
   ```bash
   cd <flow directory from rote output> && rote deno run --allow-all main.ts [args…]
   ```
+
   Pass the flow's positional args (from the `parameters:` block), e.g.
   `… main.ts modiqo/rote`. `rote deno run` uses the bundled Deno from the active rote home.
   The `cd && rote deno run` compound is one logical step. This `cd`s into the flow directory
@@ -584,10 +586,14 @@ adapter call). For single-adapter delegated work, spawn a subagent and tell it t
 ## Behavior notes
 
 - **One command at a time.** No `&&`, `|`, or `;` chains. Keep each
-  success/failure visible on its own. Two allowed compounds, both single logical steps: the
+  success/failure visible on its own. Four allowed compounds are single logical steps: the
   vendor installer `ROTE_YES=1 bash -c "$(curl -fsSL https://getrote.dev/install)"` (run only
-  after explicit confirmation — it executes remote code), and `cd <workspace> && rote …` for
-  workspace-scoped commands (the cwd must hold for the command; see below).
+  after explicit confirmation — it executes remote code); `cd <workspace> && rote …` for
+  adapter probes or calls that require a workspace cwd (see below);
+  `cd /tmp && rote flow run <name> param=value` for a `steps:` flow whose runner must own the DAG
+  workspace (never point that `cd` at an active rote workspace); and
+  `cd <flow directory> && rote deno run --allow-all main.ts [args…]` for a legacy no-steps flow
+  (step 5 above).
 - **Prefer non-interactive commands in agent-run shells.** Many agent command runners cannot
   answer terminal prompts. The non-interactive switch differs per command: installer →
   `ROTE_YES=1`; powerpack picker → `--yes`; `rote adapter new` →
@@ -602,19 +608,24 @@ adapter call). For single-adapter delegated work, spawn a subagent and tell it t
   with a rotate-afterward warning. Never echo a token back or read the secrets dir.
 - **Verify without a workspace where possible.** To check a credential, use
   `rote powerpack tokens` / `rote token get` — these work anywhere. But **anything that probes
-  an adapter or calls an API needs a workspace cwd** (`rote <adapter-id>_probe`, `rote ready`,
-  `rote POST`) — outside one they fail with
+  an adapter or calls an API directly needs a workspace cwd** (`rote <adapter-id>_probe`,
+  `rote ready`, `rote POST`) — outside one they fail with
   `not in a workspace directory` / `Permission denied (os error 13)`.
 - **Running a workspace-scoped command (the correct pattern).** Do not assume the command runner
   preserves cwd between separate command invocations. `rote cd` / `--enter` only affect an
   interactive shell, so `eval $(rote cd …)` usually won't carry over. Instead, create the
   workspace, then `cd` into its real directory **in the same command invocation** as the command:
+
   ```bash
   rote init proof --seq --force
-  cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/proof && rote flow run <name> param=value
+  cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/proof && rote <adapter-id>_probe "<intent>"
   ```
+
   The workspace lives at `${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<name>`. This `cd && rote …` compound is a
-  necessary exception to the one-command-at-a-time rule (the cwd must hold for the command).
+  necessary exception to the one-command-at-a-time rule for direct adapter work (the cwd must hold
+  for the command). It does not apply to a DAG flow: use
+  `cd /tmp && rote flow run <name> param=value` so the runner can own its execution workspace
+  outside every active rote workspace.
   `--force` skips the "search for existing flows first" gate. Clean up later with
   `rote workspace clean` if desired.
 - **Detect before offering.** Confirm the rote binary (`command -v rote`) before any rote

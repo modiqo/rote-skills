@@ -65,6 +65,17 @@ If reusable or plausibly reusable, invoke the `rote-flow-crystallization` skill 
 presentation:
 pending write, pending save, then save/discard decision. If not reusable, briefly record why.
 
+## Default Flow Shape
+
+When work is crystallized, no shape flags means the schema-v1 steps + presentation model: adapter,
+`process.exec`, and browser effects live in frontmatter `steps:`, while
+`metadata.execution_model: steps_with_presentation` selects a deprivileged TypeScript renderer.
+Schema v2 remains an explicit `--scheme 2` opt-in. Explicit `--with-steps` (template) or
+`--format steps` (export) is steps-only; `--legacy-body` or a deliberate shell/no-steps route is the
+legacy escape. Every flow containing `steps:` runs with `rote flow run`; only no-steps legacy
+TypeScript uses `rote deno run --allow-all`. For the concrete step syntax use `rote grammar steps`;
+the complete assembled artifact lives in `rote guidance typescript flow-creation`.
+
 ## Requirements Across Interruptions
 
 For long, interrupted, partial-flow, or reusable work, note the requirements before execution
@@ -237,8 +248,8 @@ Shell/process routing rule:
    multi-adapter execution.
 7. `rote-flow-crystallization` for new reusable workspace, browser, or manual results before final
    presentation; unchanged reuse of an existing released flow is already reusable and skips this
-   gate. Shell-only crystallization stays in `rote-shell` because it uses `rote proc`/`deps.toml`
-   and may not have adapter-backed pending save state.
+   gate. Process-only crystallization stays in `rote-shell`: its recorded workspace uses the
+   adapterless export path plus `deps.toml`, because template/pending still require a real adapter.
 8. `rote-flow-authoring` only after direct authoring intent or an approved pending save command.
 9. `rote-command-patterns` and `rote-typescript-transformations` are helper/reference skills; they
    return to the owner and do not complete the lifecycle themselves.
@@ -328,7 +339,7 @@ map, and the compact flow search/run reference.
 | No flow matched, installed adapter can help | `rote-task-routing`, then `rote-workspace`. | Adapter work runs in a rote workspace with cached response IDs preserved. |
 | No installed adapter matched | Search `rote adapter catalog search "<intent>"`; use `rote-adapter-create` if the user supplied or accepts an adapter spec. | Useful catalog hits are inspected or installed before out-of-band fallback. |
 | Workspace, browser, or manual work produced new reusable results | `rote-flow-crystallization`. | Pending write and pending save happen before final presentation; save/discard state is resolved. |
-| Shell/process work produced reusable results | `rote-shell`, then `rote-flow-authoring` or `rote-flow-crystallization` only when the shell skill returns that handoff. | Shell-only flows use `rote proc`/`deps.toml` authoring discipline instead of adapter-shaped pending save. |
+| Shell/process work produced reusable results | `rote-shell`, then `rote-flow-authoring` or `rote-flow-crystallization` only when the shell skill returns that handoff. | Recorded process-only work uses no-shape-flag workspace export for the default steps + presentation flow; adapter-requiring pending/template commands are not used. |
 | User asks to create, edit, lint, release, or publish a flow | `rote-flow-authoring`. | The flow lifecycle reaches scaffold, tests, lint, release, index/search verification, cleanup, publish, or a clear blocker. |
 | Command syntax or rote idioms are needed | Prefer `rote grammar <topic>`; invoke the `rote-command-patterns` skill for task-focused patterns. | Live grammar is treated as source of truth. |
 | TypeScript flow transformation detail is needed | Prefer `rote grammar deno`; invoke the `rote-typescript-transformations` skill. | Cached responses and `FlowOutput` shape are preserved. |
@@ -371,8 +382,9 @@ map, and the compact flow search/run reference.
    `rote-flow-crystallization`: pending write, pending save, then save/discard decision. If
    save/release was already requested, continue to authoring without asking again. Do not run this
    gate for unchanged reuse of an existing flow.
-11. For reusable shell/process work, let `rote-shell` choose the shell-only or mixed-flow authoring
-    route. Do not force shell-only work through adapter-shaped pending save/scaffold commands.
+11. For reusable shell/process work, let `rote-shell` choose adapterless workspace export, a mixed
+    pending/template route, or an explicit legacy no-steps body. Never invent an adapter or append
+    shape flags to a pending-save command.
 12. After authoring, release with `rote flow release`, rebuild the index, verify search, then clear
     the pending stub with `rote flow pending discard <workspace>`.
 
@@ -483,5 +495,6 @@ only when the full companion graph or handoff packet shape is needed.
   parameters. Use it after choosing a flow from search, instead of filtering a search array
   client-side.
 - `rote flow list` - inventory released local flows; do not use an empty search query as inventory.
-- `rote grammar query`, `rote grammar deno`, `rote grammar export`, and related topics - current
-  command syntax.
+- `rote grammar query`, `rote grammar steps`, `rote grammar deno`, `rote grammar export`, and
+  related topics - current command syntax (`steps` covers the frontmatter `steps:` plane: step kinds,
+  `$param` substitution, `@step{…}` references, `for_each`).

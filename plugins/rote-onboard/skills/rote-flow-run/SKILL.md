@@ -54,7 +54,8 @@ Pick the mode from the flow's frontmatter — inspect it or run
 `rote flow info <name-or-path> --json` when unsure. Do not use direct Deno for any flow with
 frontmatter `steps:`.
 
-Run any flow whose frontmatter has `steps:` through the flow runner (needs a workspace cwd):
+Run any flow whose frontmatter has `steps:` through the flow runner, from a directory outside any
+active workspace. The runner creates and owns the DAG execution workspace:
 
 ```bash
 rote flow run /absolute/path/to/main.ts [param=value ...]
@@ -72,16 +73,14 @@ workspace you are using to inspect or author the flow:
 rote deno run --allow-all /absolute/path/to/main.ts [args in declared order]
 ```
 
-Run shell flows directly, also from outside the active workspace:
-
-```bash
-/absolute/path/to/main.sh [args]
-```
-
 Do not use `rote run` as a fallback for normal TypeScript flow execution — stay with the
-execution-model-appropriate command above. The one exception: when the scenario or command output
-explicitly requires model tracking or cached workspace responses for the flow execution, use this
-sequence instead:
+execution-model-appropriate command above. A flow with frontmatter `steps:` stays on
+`rote flow run` even when tracking is requested; never route a DAG through `rote run`. If no
+supported tracked wrapper exists, return that tracking limitation instead of changing runners.
+
+Only an explicit legacy TypeScript flow with no frontmatter `steps:` may use `rote run` when the
+scenario or command output requires model tracking or cached workspace responses. For that legacy
+case, use this sequence:
 
 ```bash
 rote init <workspace> --seq

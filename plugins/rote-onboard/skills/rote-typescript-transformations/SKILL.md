@@ -41,6 +41,47 @@ rote deno run --allow-all /absolute/path/to/main.ts [args]
 Use SDK imports exactly as shown by live rote guidance. Avoid npm-style package assumptions unless
 the current rote version explicitly supports them.
 
+For `steps_with_presentation`, do not import `sdk/ts/mod.ts` or construct `Rote`. Import
+`__ROTE_PRESENTATION_SDK__`, then use `loadPresentationContext()`, literal `stepName("...")`
+references, `isProcessExecBody`, `isBrowserBody`, and `FlowOutput`. The context's `ctx.params`
+(`Readonly<Record<string, unknown>>`, declared defaults applied) carries the flow's invocation
+parameters — read plain inputs there instead of echoing them through a step's stdout or touching
+`Deno.args`. Template/export also creates or
+merges the sibling `deno.json` import mapping for editor type-checking. The `main.ts` source stays
+machine-agnostic by importing the virtual specifier. The editor map may use a relative target in the
+standard flows layout or an absolute `file://` URL to the local bundled presentation SDK for an
+arbitrary/workspace export. That machine-local resolution belongs only in `deno.json`; the runner
+supplies its own sandbox import map at execution time. Never hard-code the SDK path or file URL in
+`main.ts`.
+
+## Normalize Presentation Observations
+
+Treat the presentation body as a schema-agnostic normalizer over recorded facts, not as a second
+effect runner. Preserve the SDK's `single`, `fan_out`, and `empty_fan_out` distinction. Normalize
+each fan-out item independently; an observed empty fan-out is `[]`, while an absent optional value
+stays absent rather than becoming `""`, `0`, `false`, or `[]`.
+
+Branch on `ctx.step(stepName("literal")).outcome.status` when a step may be failed, skipped, or
+blocked. Use `requireAvailable` for a step that must have completed or have checkpoint-restored
+output; it deliberately throws for condition-skipped, failed, and blocked outcomes. Surface those
+terminal outcomes as typed warnings or errors instead of fabricating a successful payload. For
+flow inputs, narrow `ctx.params` values explicitly (`typeof ctx.params.owner === "string"`) rather
+than coercing absent parameters into fabricated defaults.
+
+Normalize completed bodies by substrate:
+
+- Narrow `process.exec` with `isProcessExecBody`; validate `status.exit` before consuming optional
+  `stdout.text`, `stderr.text`, or file observations.
+- Narrow browser bodies with `isBrowserBody`; switch on `op` and retain bounded page/element facts.
+- Treat other bodies as adapter observations. Accept direct JSON, plain text, JSON encoded in one
+  text block, and the narrowly recognized legacy `{result:{content:[{type:"text",text}]}}`
+  residue. Preserve zero or many valid text blocks as an `adapter_text_blocks` observation without
+  joining or dropping them. Only non-text/malformed blocks or unexpected values become malformed
+  observations with a reason; never guess a payload.
+
+The full concrete normalization pattern lives in `rote guidance typescript flow-creation`; copy it
+and specialize only the final domain projection.
+
 ## Transform Cached Responses
 
 When a transformation can be expressed clearly with jq, prefer `rote query @N '<jq-filter>' -r` and return
