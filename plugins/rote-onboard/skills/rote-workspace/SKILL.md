@@ -125,8 +125,8 @@ For response inspection and transformation, stay inside rote first:
 - Do not pipe `rote query` output into `head`, `tail`, `grep`, `jq`, `python`, `node`, or temp files.
   If a non-rote command is unavoidable, route it through `rote proc run` instead.
 - Do not use raw `grep`, `head`, `sort`, inline Python, temporary files, or shell pipelines to
-  parse rote responses when the result feeds a user artifact, reusable flow, judge, verifier, or
-  later reasoning step.
+  parse rote responses when the result feeds a user artifact, reusable flow, or later reasoning
+  step.
 - Tiny disposable terminal inspection is acceptable only when it does not influence the final
   answer, report, flow body, or verification claim.
 

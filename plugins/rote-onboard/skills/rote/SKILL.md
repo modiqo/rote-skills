@@ -292,7 +292,7 @@ These thoughts mean stop and return to the current lifecycle state:
 | "No installed adapter means direct curl/WebFetch now." | Explore and adapter catalog search come before direct fallback. |
 | "The public API is easy; I can call it with Python, Node, or curl and then hand-write the flow." | Provider/API data goes through flow search, task-routing, catalog install, adapter probes/calls, pending save, then scaffold. |
 | "Single-adapter work does not need workspace discipline." | Adapter probes, calls, and cached responses belong in a rote workspace. |
-| "I need shell output, so raw `gh`/`npm`/`python` is fine." | Use `rote-shell` and `rote proc` when the output should be durable, queryable, replayable, or judged. |
+| "I need shell output, so raw `gh`/`npm`/`python` is fine." | Use `rote-shell` and `rote proc` when the output should be durable, queryable, or replayable. |
 | "The user asked something else, so the old task is gone." | Classify the new request, preserve state, answer or redirect, then resume or close the prior task explicitly. |
 | "One more pagination pass will find a better match." | Fix a probe budget, satisfice, and reserve room for the artifact, save, and release gates. |
 | "I should re-check the type/length of every response before extracting." | Probe structure once per tool, then reuse the known shape. |
@@ -372,7 +372,7 @@ map, and the compact flow search/run reference.
    cached `@N` responses, process evidence, session state, and any existing-flow baseline output.
    Inspect and transform rote responses with `rote query @N`, `rote query schema`, and `rote proc` rather than
    ad hoc `grep`, `head`, inline Python, or temp-file parsing when the result feeds a report, flow,
-   judge, verifier, or later reasoning step.
+   or later reasoning step.
 9. Verify the requested deliverable by reading content, not just checking that a command exited or a
    file exists. If a workspace was used, also run `cd <workspace-path> && rote ls` before the final
    answer — it emits the `[MANDATORY PROTOCOL]` pending-stub warning when a reusable result has not

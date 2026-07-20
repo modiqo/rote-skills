@@ -1,6 +1,6 @@
 {
   "name": "rote-onboard",
-  "version": "0.55.0",
+  "version": "0.56.0",
   "description": "rote skills — day-to-day usage, CLI/shell work, browser automation, first-run setup, adapter create (dry-run-first), adapter config, registry (share + usage), org admin, and update.",
   "author": {
     "name": "Modiqo"

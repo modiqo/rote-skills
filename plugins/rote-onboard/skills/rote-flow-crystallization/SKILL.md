@@ -123,7 +123,8 @@ so capture and run the emitted command unchanged. Never append shape flags or re
 command after compaction or handoff.
 
 Scaffold output is an agent action, not user-facing instructions. If save was already approved, run
-the scaffold command yourself.
+the scaffold command yourself. When the pending state contains browser runtime or session data, run
+`rote guidance browser flow-authoring` before editing the generated TypeScript body.
 
 If the session was interrupted after writing the stub, recover with `rote flow pending list`, inspect
 the relevant workspace name, and rerun `rote flow pending save <workspace-name>` before continuing

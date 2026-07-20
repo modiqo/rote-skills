@@ -15,8 +15,22 @@ terminal.
 
 Use this skill when the user asks to create, edit, lint, release, verify, or publish a reusable rote
 flow, or when `rote-flow-crystallization` returns an approved pending save command. Keep live command
-help authoritative for syntax: `rote grammar export`, `rote grammar deno`, `rote guidance typescript
-essential`, and `rote guidance registry essential`.
+help authoritative for syntax.
+
+## Route The Implementation
+
+Choose the implementation guide before editing the scaffold:
+
+| Workflow concern | Required guidance |
+| --- | --- |
+| Browser navigation, snapshots, clicks, typing, browser auth, or replay | `rote guidance browser flow-authoring` |
+| Cached-response transformation or general TypeScript logic | `rote-typescript-transformations` plus `rote grammar deno` |
+| Shell/process execution | The shell authoring route from `rote-shell` |
+| Registry publication | `rote guidance registry essential` |
+
+Browser TypeScript does not belong to the generic transformation route. Run `rote guidance browser
+flow-authoring`, follow its typed-step, presentation, and legacy-SDK procedure, then return here for tests, lint, release,
+index/search verification, and pending cleanup.
 
 ## Elicit The Reusable Contract
 
@@ -180,8 +194,8 @@ Inspect `rote deno status`, `rote sdk status`, and `rote guidance typescript flo
 
 ## Implement The Flow Body
 
-For TypeScript flow logic, hand off to `rote-typescript-transformations` or follow its rules before
-continuing this lifecycle.
+For browser TypeScript, run `rote guidance browser flow-authoring`. For non-browser TypeScript logic,
+hand off to `rote-typescript-transformations` or follow its rules before continuing this lifecycle.
 
 For flows whose frontmatter declares `metadata.execution_model: steps_with_presentation`, the
 TypeScript body is presentation-only. Import `__ROTE_PRESENTATION_SDK__`, read completed outputs
@@ -316,9 +330,10 @@ Return these fields to `rote`, `rote-flow-crystallization`, or `rote-registry`:
 - Owns: contract elicitation, schema discovery, scaffold, implementation lifecycle, tests, lint,
   release, index/search verification, pending cleanup when applicable, and registry-ready return
   data.
-- Hands off to: `rote-typescript-transformations` for TypeScript flow logic; `rote-registry` for
-  sharing; `rote-flow-run` for final execution verification; `rote-troubleshooting` after repeated
-  unchanged failures.
+- Hands off to: live `rote guidance browser flow-authoring` for browser TypeScript;
+  `rote-typescript-transformations` for non-browser TypeScript logic; `rote-registry` for sharing;
+  `rote-flow-run` for final execution verification; `rote-troubleshooting` after repeated unchanged
+  failures.
 - Returns to: `rote` or `rote-flow-crystallization` with flow path, parameter contract, verification
   status, release state, and next owner.
 - Stop when: the flow is verified, a release/publish approval is needed, a required schema or

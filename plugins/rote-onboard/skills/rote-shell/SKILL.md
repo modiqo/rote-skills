@@ -40,9 +40,14 @@ Do not replace these with ad hoc `command > file`, `tail -f`, or `ps | grep`
 when the evidence should be durable. Rote already stores typed responses,
 artifacts, hashes, offsets, process leases, and command-log provenance.
 
-Hard default: if command output feeds a final answer, user artifact, judge,
-verifier, flow body, or later reasoning step, it is not disposable. Use
-`rote proc` and then query the saved response.
+Hard default: if command output feeds a final answer, user artifact, flow
+body, or later reasoning step, it is not disposable. Use `rote proc` and then
+query the saved response.
+
+Build and dev-loop tooling is the exception, whatever the language toolchain:
+compilers, test runners, formatters, linters, type checkers, package managers,
+and task runners run as plain shell by default. Wrap such a run in `rote proc`
+only after the user agrees it should become durable workspace evidence.
 
 Chaining is acceptable when each meaningful shell process is captured by `rote proc`.
 For example, `rote proc run ... && rote proc run ...` preserves process nodes in the workspace DAG.
@@ -71,7 +76,7 @@ source or the router selected it as fallback after adapter checks.
 - Preconditions: `rote` can run; a task intent and working directory are known; browser/API state
   that must feed the command has been materialized as a saved response, snapshot, slice, or file.
 - Owns: `rote proc` primitive selection, process evidence capture, dependency preflight,
-  background lease handling, shell flow crystallization shape, and shell SDK guidance.
+  background lease handling, process-backed TypeScript flow shape, and shell SDK guidance.
 - Hands off to: `rote-flow-crystallization`, `rote-flow-authoring`, `rote-typescript-transformations`,
   `rote-troubleshooting`, `rote-browse`, and `rote`.
 - Returns to: `rote` or the delegating companion with commands run, response IDs, process leases,
@@ -301,7 +306,7 @@ observation mechanics. The reusable flow should expose semantic actions and
 joins: start work, observe meaningful artifacts or streams, wait for completion,
 then summarize.
 
-Before authoring a TypeScript shell flow, read:
+Before authoring a process-backed TypeScript flow, read:
 
 ```bash
 rote guidance typescript flow-creation
@@ -314,8 +319,8 @@ SDK wrapper contract.
 
 `rote proc run` is for exploration, not reusable flow bodies.
 
-- Shell flows must not call `rote init` internally.
-- Crystallized shell flows must not shell out to `rote proc run`.
+- Process-backed TypeScript flows must not call `rote init` internally.
+- Crystallized TypeScript flows must not shell out to `rote proc run`.
 - During exploration, `rote proc run` records evidence; inside reusable flows, use SDK wrappers or
   `process.exec` steps.
 - Use shell SDK exec only for task commands, not lifecycle bootstrapping.
@@ -382,7 +387,7 @@ Use shell parsing only when it is the real subject of the work:
 rote proc run -- sh -c 'printf "alpha\n" | tr a-z A-Z'
 ```
 
-If parsing transforms evidence for a report, flow, or judge, keep it inside a
+If parsing transforms evidence for a report or flow, keep it inside a
 tracked command and capture the inputs/outputs. Do not rely on terminal
 scrollback, untracked temp files, or raw pipelines as the only record.
 
@@ -563,7 +568,7 @@ Decision rule:
 
 When a task depends on local tools, create or update
 `~/.rote/flows/<name>/deps.toml` before replay. This is not optional for
-crystallized shell flows: if the flow calls `rote.exec({ argv })` for `git`,
+crystallized TypeScript flows: if the flow calls `rote.exec({ argv })` for `git`,
 `gh`, `cargo`, `python`, `node`, `jq`, `rg`, or any other local executable, the
 flow directory must include a matching dependency manifest before the flow is
 marked `released`.

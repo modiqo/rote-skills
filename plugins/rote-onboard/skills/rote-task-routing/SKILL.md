@@ -130,6 +130,15 @@ Use `rote-shell` when the selected substrate is local commands, files, logs, gen
 dependency checks, or process lifecycle. Do not search the adapter catalog just because no adapter
 covers a local CLI task; `rote proc` is the rote-native substrate for that work.
 
+Build and dev-loop tooling is the exception, whatever the language toolchain: compilers, test
+runners, formatters, linters, type checkers, package managers, and task runners run as plain shell
+by default. Their value is the immediate pass/fail signal, and wrapping every iteration in
+`rote proc` adds latency and noise without adding reusable evidence. If a specific build or test
+run should become durable workspace evidence — it feeds a flow, a handoff, or a result the user
+asked to keep — ask the user first with a one-line explanation: `rote proc` makes the output
+queryable and replayable later. A preference the user or project instructions already state
+settles the question without re-asking.
+
 Provider/API access is not shell work. If the task needs provider records, event data, trades,
 tickets, database rows, or other API objects, return to adapter routing and catalog search before
 using `curl`, Python, Node, a provider SDK, or direct MCP tools. Shell routing may transform or
@@ -197,7 +206,7 @@ including the MCP route), verify with `rote adapter info <id>` or `rote adapter 
 `<id>_probe` and `<id>_call` for the required capability before answering.
 
 Do not use catalog install to dodge a repairable installed adapter. A newly installed adjacent
-adapter is a regression when the task or verifier expects the seeded adapter's config to be fixed.
+adapter is a regression when the task expects the installed adapter's config to be fixed.
 
 Only use direct tools after flow search, exploration, and catalog search fail to produce a rote path,
 or after a catalog-installed adapter has been probed and cannot satisfy the request. Tell the user

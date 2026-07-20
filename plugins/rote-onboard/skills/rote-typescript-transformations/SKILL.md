@@ -21,6 +21,18 @@ This is a helper skill, not a lifecycle owner. Return to `rote-flow-authoring` o
 after the transformation is implemented and tested; do not stop here when release, index/search
 verification, pending cleanup, or final presentation is still outstanding.
 
+## Browser Boundary
+
+If the TypeScript body navigates, snapshots, finds, clicks, types, screenshots, restores browser
+auth, or controls browser replay, this skill does not own that SDK surface. Run:
+
+```bash
+rote guidance browser flow-authoring
+```
+
+Then return to `rote-flow-authoring`. Do not search the installed SDK barrel to discover the common
+browser API before checking this version-matched runtime guide.
+
 ## Execution Rules
 
 - Run legacy TypeScript flows, with no frontmatter `steps:` block, through
@@ -138,9 +150,10 @@ Return these fields to `rote-flow-authoring` or `rote-workspace`:
   grammar deno` guidance can be checked or its blocker is known.
 - Owns: TypeScript execution rules, SDK import guidance, deterministic transformation design,
   `FlowOutput` shape, and transformation-specific test expectations.
-- Hands off to: `rote-flow-authoring` for flow lifecycle/release; `rote-workspace` for additional
-  adapter calls or cached response queries; `rote-command-patterns` for command syntax; `rote-troubleshooting`
-  after repeated unchanged failures.
+- Hands off to: live `rote guidance browser flow-authoring` for browser TypeScript;
+  `rote-flow-authoring` for flow lifecycle/release; `rote-workspace` for additional adapter calls or
+  cached response queries; `rote-command-patterns` for command syntax; `rote-troubleshooting` after
+  repeated unchanged failures.
 - Returns to: `rote-flow-authoring` or `rote-workspace` with transformation path, output shape, tests,
   and blockers.
 - Stop when: transformation is tested, jq is sufficient and the owner can continue, required data is
