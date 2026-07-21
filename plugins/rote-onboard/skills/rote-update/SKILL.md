@@ -19,9 +19,8 @@ Two layers most people forget to update together: the **binary** and the **insta
 files**. This skill does both. Determine facts from live commands; if rote isn't on
 PATH, resolve it via the **narrow probe** (check `$HOME/.local/bin/rote` then
 `$HOME/.cargo/bin/rote` — never a deep home-directory search). Clear command access if the current
-environment requires it, and run **one command at a time, sequentially — never parallel**. Use
-[`../rote/references/skill-workflow-map.md`](../rote/references/skill-workflow-map.md) only when a
-caller needs the full companion graph.
+environment requires it, and run **one command at a time, sequentially — never parallel**. Use the
+base `rote` companion skill only when a caller needs the full workflow graph.
 
 ## Handoff Contract
 
@@ -68,13 +67,13 @@ rote ships the skills as part of its own distribution. After the binary update, 
 installed skill copy through rote instead of assuming an external installer:
 
 ```bash
-rote install skill --force
+rote install skill --package '*' --force
 ```
 
 If the user installed skills for a specific provider, preserve that provider choice:
 
 ```bash
-rote install skill --provider <provider> --force
+rote install skill --provider <provider> --package '*' --force
 ```
 
 Use `rote install skill --help` when the supported provider names are unclear. If the current
@@ -100,7 +99,6 @@ version just landed on — still a local binary hitting providers directly, no m
 keep paying as it ages. Skip it if `self-update` errored or deferred to a package manager. e.g. "Updated to {version} — your
 adapters still hit the real APIs directly, no proxy clipping a fee per call. Carry on."
 
-**Related onboard skills** (the full graph lives in
-[`../rote/references/skill-workflow-map.md`](../rote/references/skill-workflow-map.md)):
+**Related setup skills:**
 - **First-run:** `rote-setup` · **New adapter:**
   `rote-adapter-create` · **Tune one:** `rote-adapter-config`

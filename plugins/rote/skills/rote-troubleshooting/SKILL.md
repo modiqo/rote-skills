@@ -103,8 +103,8 @@ Return these fields to the owning workflow skill:
 - Owns: failure classification, no-blind-retry discipline, recovery command selection, route changes,
   and return-to-owner handoff once the cause changes.
 - Hands off to: the owning workflow skill after recovery; `rote-command-patterns` when syntax is the
-  blocker; `rote-adapter-config` when adapter settings must change; `rote-setup` when installation,
-  login, or credentials are the blocker.
+  blocker; `rote-adapter-config` when adapter settings must change; `rote` when installation, login,
+  or credentials are the blocker.
 - Returns to: the skill that encountered the failure with cause, material change, remaining blocker,
   and resume point.
 - Stop when: the cause changes and the owner can retry, a safer route is selected, a targeted user

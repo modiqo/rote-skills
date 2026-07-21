@@ -5,11 +5,27 @@
   },
   "plugins": [
     {
+      "name": "rote",
+      "source": {
+        "source": "local",
+        "path": "./plugins/rote"
+      },
+      "description": "Recommended default package for day-to-day rote workflows, including adapters, registry sharing, and organization management.",
+      "default": true,
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL",
+        "products": ["CODEX"]
+      },
+      "category": "Productivity"
+    },
+    {
       "name": "rote-onboard",
       "source": {
         "source": "local",
         "path": "./plugins/rote-onboard"
       },
+      "description": "Optional companion for the base rote package; adds guided onboarding and update workflows.",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL",

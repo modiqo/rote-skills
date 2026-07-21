@@ -25,5 +25,4 @@ discovery, tool names, or handoff wording.
 ## Discovery Notes
 
 - `rote/SKILL.md` is the active entrypoint for task routing.
-- `INDEX.md` is an installed package map, not required active task context.
 - Load `skill-workflow-map.md` only when the short routing table is not enough.

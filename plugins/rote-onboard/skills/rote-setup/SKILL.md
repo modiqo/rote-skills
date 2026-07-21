@@ -30,9 +30,8 @@ surface the next choice.
 
 ## Operating Rules
 
-This skill is self-contained. Use [`../rote/references/skill-workflow-map.md`](../rote/references/skill-workflow-map.md)
-only when you need the full companion graph or packet shape; do not depend on `INDEX.md` as active
-runtime context.
+This skill is self-contained. Use the base `rote` companion skill only when you need the full
+workflow graph or packet shape.
 
 First, clear command access if the current environment requires it. The skills need to run `rote`
 and enter paths under the active rote home. Do not assume a particular environment, permission file,
@@ -654,7 +653,6 @@ adapter call). For single-adapter delegated work, spawn a subagent and tell it t
 that just proved value, e.g. "And that flow ran straight against the provider's API — no proxy in
 the middle quietly metering you per call. Welcome to rote." Skip it if any step errored.
 
-**Related onboard skills** (this is the front door; the full graph lives in
-[`../rote/references/skill-workflow-map.md`](../rote/references/skill-workflow-map.md)):
+**Related setup skills** (this is the front door):
 - **Build more adapters:** `rote-adapter-create`
 - **Tune one:** `rote-adapter-config` · **Keep current:** `rote-update`

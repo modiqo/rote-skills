@@ -9,11 +9,18 @@
   },
   "plugins": [
     {
+      "name": "rote",
+      "source": "./plugins/rote",
+      "description": "Day-to-day rote skills for adapters, workflows, registry sharing, organization management, browser automation, and execution.",
+      "homepage": "https://getrote.dev",
+      "license": "Apache-2.0"
+    },
+    {
       "name": "rote-onboard",
       "source": "./plugins/rote-onboard",
-      "description": "Guided rote skills — first-run setup, dry-run-first adapter creation, adapter configuration, and updates. The setup/manage companion to the day-to-day rote skill.",
+      "description": "Optional onboarding companion for the base rote plugin; adds guided setup and update workflows.",
       "homepage": "https://getrote.dev",
-      "license": "MIT"
+      "license": "Apache-2.0"
     }
   ]
 }

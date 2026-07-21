@@ -1,0 +1,26 @@
+{
+  "name": "rote",
+  "version": "0.57.0",
+  "description": "rote skills for day-to-day adapters, workflows, registry sharing, organization management, browser automation, and execution.",
+  "author": {
+    "name": "Modiqo"
+  },
+  "homepage": "https://getrote.dev",
+  "license": "Apache-2.0",
+  "keywords": [
+    "rote",
+    "adapters",
+    "mcp",
+    "flows",
+    "registry",
+    "organization",
+    "browser"
+  ],
+  "skills": "./skills/",
+  "sessionStart": "Use rote before direct adapter, MCP, CLI, or browser tool calls when a reusable flow or installed adapter may satisfy the task.",
+  "skillInstructions": "Start with the rote skill for day-to-day work. Install rote-setup only when setup, adapter creation, registry, organization, or update guidance is needed.",
+  "interface": {
+    "displayName": "rote",
+    "category": "Productivity"
+  }
+}

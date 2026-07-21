@@ -34,8 +34,8 @@ Rules:
 - If the environment gates shell commands behind an approval prompt or allowlist, get the `rote`
   command pattern approved up front rather than stalling mid-loop.
 - Run **one command at a time, strictly sequential — never parallel**.
-- Use [`../rote/references/skill-workflow-map.md`](../rote/references/skill-workflow-map.md) only
-  when the caller needs the full companion graph or return contract.
+- Use the base `rote` companion skill only when the caller needs the full workflow graph or return
+  contract.
 
 ## Handoff Contract
 
@@ -221,7 +221,5 @@ composition. Updating auth, a base URL, or keys is only a changed precondition.
 tuned — still the provider's own API, still no proxy taking a cut per call. Keep it lower-key than
 setup or create — config is housekeeping, so don't force it; skip it if a step errored.
 
-**Related onboard skills** (the full graph lives in
-[`../rote/references/skill-workflow-map.md`](../rote/references/skill-workflow-map.md)):
-- **New adapter:** `rote-adapter-create` · **First-run:** `rote-setup` · **Keep current:**
-  `rote-update`
+**Related skills:**
+- **New adapter:** `rote-adapter-create`

@@ -1,0 +1,23 @@
+{
+  "name": "rote-onboard",
+  "version": "0.57.0",
+  "description": "Optional onboarding companion for the base rote plugin, covering guided setup and updates.",
+  "author": {
+    "name": "Modiqo"
+  },
+  "homepage": "https://getrote.dev",
+  "license": "Apache-2.0",
+  "keywords": [
+    "rote",
+    "setup",
+    "adapters",
+    "updates"
+  ],
+  "skills": "./skills/",
+  "sessionStart": "Use rote-setup for setup, adapter creation or configuration, registry sharing, organization administration, and update workflows.",
+  "skillInstructions": "This package is optional companion guidance. Use the base rote package for day-to-day task execution after setup is complete.",
+  "interface": {
+    "displayName": "rote Onboard",
+    "category": "Productivity"
+  }
+}

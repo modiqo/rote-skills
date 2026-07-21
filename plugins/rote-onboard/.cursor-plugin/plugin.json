@@ -1,0 +1,20 @@
+{
+  "name": "rote-onboard",
+  "displayName": "rote Onboard",
+  "description": "Optional onboarding companion for the base rote plugin, covering guided setup and updates.",
+  "version": "0.57.0",
+  "author": {
+    "name": "Modiqo",
+    "url": "https://getrote.dev"
+  },
+  "homepage": "https://getrote.dev",
+  "repository": "https://github.com/modiqo/rote-skills",
+  "license": "Apache-2.0",
+  "keywords": [
+    "rote",
+    "setup",
+    "adapters",
+    "updates"
+  ],
+  "skills": "./skills/"
+}

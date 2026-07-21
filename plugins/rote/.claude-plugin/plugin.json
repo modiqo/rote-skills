@@ -1,0 +1,10 @@
+{
+  "name": "rote",
+  "version": "0.57.0",
+  "description": "rote skills for day-to-day adapters, workflows, registry sharing, organization management, browser automation, and execution.",
+  "author": {
+    "name": "Modiqo"
+  },
+  "homepage": "https://getrote.dev",
+  "license": "Apache-2.0"
+}

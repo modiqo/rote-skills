@@ -1,10 +1,10 @@
 {
   "name": "rote-onboard",
-  "version": "0.56.0",
-  "description": "rote skills — day-to-day usage, CLI/shell work, browser automation, first-run setup, adapter create (dry-run-first), adapter config, registry (share + usage), org admin, and update.",
+  "version": "0.57.0",
+  "description": "Optional onboarding companion for the base rote plugin, covering guided setup and updates.",
   "author": {
     "name": "Modiqo"
   },
   "homepage": "https://getrote.dev",
-  "license": "MIT"
+  "license": "Apache-2.0"
 }

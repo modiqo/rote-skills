@@ -18,7 +18,7 @@ instruction files, or shell/file operation behavior.
 
 - Respect loaded repository instruction files before applying rote-specific guidance.
 - If Gemini uses a runtime instruction file to include skill bootstrap content, keep `rote/SKILL.md`
-  as the active orchestrator and treat `INDEX.md` as package documentation.
+  as the active orchestrator.
 - Platform references are supporting context; load only the reference needed for the current runtime
   issue.
 

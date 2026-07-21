@@ -1,0 +1,23 @@
+{
+  "name": "rote",
+  "displayName": "rote",
+  "description": "rote skills for day-to-day adapters, workflows, registry sharing, organization management, browser automation, and execution.",
+  "version": "0.57.0",
+  "author": {
+    "name": "Modiqo",
+    "url": "https://getrote.dev"
+  },
+  "homepage": "https://getrote.dev",
+  "repository": "https://github.com/modiqo/rote-skills",
+  "license": "Apache-2.0",
+  "keywords": [
+    "rote",
+    "adapters",
+    "mcp",
+    "flows",
+    "registry",
+    "organization",
+    "browser"
+  ],
+  "skills": "./skills/"
+}

@@ -1,0 +1,7 @@
+{
+  "name": "rote",
+  "version": "0.57.0",
+  "description": "Day-to-day rote skills for adapters, workflows, registry sharing, and organization management.",
+  "homepage": "https://getrote.dev",
+  "license": "Apache-2.0"
+}

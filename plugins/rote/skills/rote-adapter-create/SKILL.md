@@ -24,8 +24,8 @@ Build an adapter for any API with the same dry-run-first discipline as rote's gu
 side effects, then drive the choices from what the analysis found.** You hold the dry-run JSON
 in context and ask the user only the questions the analysis can't answer.
 
-Use [`../rote/references/skill-workflow-map.md`](../rote/references/skill-workflow-map.md) when the
-full companion graph or packet shape is needed; this skill contains the active creation rules. On a
+Use the base `rote` companion skill when the full workflow graph or packet shape is needed; this
+skill contains the active creation rules. On a
 fresh run, clear any command/filesystem approvals the current environment requires before the first
 `rote` command.
 
@@ -51,8 +51,8 @@ Core rules:
   satisfied.
 - Owns: spec discovery, dry-run analysis, auth research, base-url and toolset decisions, adapter
   creation, post-create credential/write-guard/sensitivity offers, and readiness probe options.
-- Hands off to: `rote-adapter-config` for tuning; `rote-registry` for sharing; `rote-setup` when this
-  was invoked from onboarding and setup should continue; `rote` for day-to-day use after creation.
+- Hands off to: `rote-adapter-config` for tuning; `rote-registry` for sharing; `rote` for
+  day-to-day use after creation.
 - Returns to: the caller with adapter id, spec source, dry-run summary, auth scheme, selected
   toolsets, create command, post-op choices, `rote adapter info` result, probe result or skip reason,
   and next recommended skill.
@@ -60,14 +60,14 @@ Core rules:
   succeeds or fails with a surfaced error, a credential/human browser action is pending, or another
   skill owns the next step.
 - Completion signal: dry-run result recorded, create/probe status explicit, and a handoff packet
-  emitted when returning to setup, registry, config, or daily use.
+  emitted when returning to registry, config, or daily use.
 
 ## Handoff Packet
 
 Return this packet when handing the created adapter to another skill:
 
 - Origin skill: `rote-adapter-create`.
-- Target skill: `rote-adapter-config`, `rote-registry`, `rote-setup`, or `rote`.
+- Target skill: `rote-adapter-config`, `rote-registry`, or `rote`.
 - Adapter id: `<adapter-id>`.
 - Spec source: catalog id, spec URL, MCP URL, or local file path.
 - Dry-run summary: title, version, base URL, operation/toolset count, auth recommendation.
@@ -75,16 +75,15 @@ Return this packet when handing the created adapter to another skill:
 - Commands run: dry-run command, create command, `rote adapter info <adapter-id>`, and probe
   command if any.
 - Credential state: configured, terminal handoff pending, OAuth browser pending, or not required.
-- Next owner: tuning, registry share, setup continuation, or daily rote use.
+- Next owner: tuning, registry share, or daily rote use.
 
 ---
 
 ## Stage 0 — Discover the spec (catalog → web → local file)
 
-**If the user hasn't already heard the adapter pitch this run** (e.g. they invoked this skill
-directly, not from `rote-setup`), explain that an adapter lets rote talk to an API directly from the
-user's machine — no gateway/SDK middleman, no extra per-call fees, and no new proxy holding their
-data. Skip it if they just came from the setup fork (they've heard it).
+**If the user hasn't already heard the adapter pitch this run**, explain that an adapter lets rote
+talk to an API directly from the user's machine — no gateway/SDK middleman, no extra per-call fees,
+and no new proxy holding their data. Skip it when the caller indicates the pitch was already given.
 
 Ask what API the user wants (prose): "Which API? (e.g. notion, stripe, datadog — or paste a
 spec URL / file path)".
@@ -429,11 +428,7 @@ quietly billing you per call." Skip it if the run was rocky.
 
 ---
 
-## Related onboard skills
+## Related skills
 
-Part of the **rote-onboard** sequence (the full graph lives in
-[`../rote/references/skill-workflow-map.md`](../rote/references/skill-workflow-map.md)):
-- **Next (tune):** `rote-adapter-config` — auth, base URL, write guard,
-  sensitivity.
+- **Next (tune):** `rote-adapter-config` — auth, base URL, write guard, sensitivity.
 - **Next (share):** `rote-registry` — check/push to your orgs, then invite others.
-- **First-run / setup:** `rote-setup` · **Keep current:** `rote-update`

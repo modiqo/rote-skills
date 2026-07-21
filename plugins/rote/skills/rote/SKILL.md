@@ -297,9 +297,7 @@ These thoughts mean stop and return to the current lifecycle state:
 | "One more pagination pass will find a better match." | Fix a probe budget, satisfice, and reserve room for the artifact, save, and release gates. |
 | "I should re-check the type/length of every response before extracting." | Probe structure once per tool, then reuse the known shape. |
 
-`INDEX.md` is package and install-facing documentation. It is useful for sanity-checking the
-bundled set, but active task routing starts here and then moves to a named companion skill or an
-explicit reference.
+Active task routing starts here and then moves to a named companion skill or an explicit reference.
 
 ## Platform Adaptation
 
@@ -344,7 +342,7 @@ map, and the compact flow search/run reference.
 | Command syntax or rote idioms are needed | Prefer `rote grammar <topic>`; invoke the `rote-command-patterns` skill for task-focused patterns. | Live grammar is treated as source of truth. |
 | TypeScript flow transformation detail is needed | Prefer `rote grammar deno`; invoke the `rote-typescript-transformations` skill. | Cached responses and `FlowOutput` shape are preserved. |
 | Repeated failure appears after an unchanged retry | `rote-troubleshooting`. | The cause changes, the route changes, or the blocker is surfaced. |
-| Setup, login, update, org, registry, browser, shell/process, or single-adapter execution is explicit | Invoke the matching skill: `rote-setup`, `rote-update`, `rote-org`, `rote-registry`, `rote-browse`, `rote-shell`, or `rote-using-adapters`. | The specialist skill returns its completion signal or next handoff. |
+| Org, registry, browser, shell/process, or single-adapter execution is explicit | Invoke the matching skill: `rote-org`, `rote-registry`, `rote-browse`, `rote-shell`, or `rote-using-adapters`. | The specialist skill returns its completion signal or next handoff. |
 
 ## Execution State Machine
 
@@ -453,8 +451,8 @@ workspace or artifact location named by the owning skill.
   selection, and standard handoff packet shape.
 - Hands off to: `rote-flow-run`, `rote-task-routing`, `rote-workspace`,
   `rote-flow-crystallization`, `rote-flow-authoring`, `rote-command-patterns`,
-  `rote-typescript-transformations`, `rote-troubleshooting`, `rote-setup`, `rote-update`,
-  `rote-adapter-create`, `rote-adapter-config`, `rote-using-adapters`, `rote-registry`, `rote-org`,
+  `rote-typescript-transformations`, `rote-troubleshooting`, `rote-adapter-create`,
+  `rote-adapter-config`, `rote-using-adapters`, `rote-registry`, `rote-org`,
   `rote-browse`, and `rote-shell`.
 - Returns to: the user when the selected skill or reference completes, or to `rote` when a companion
   reports a partial result that needs another top-level routing decision.

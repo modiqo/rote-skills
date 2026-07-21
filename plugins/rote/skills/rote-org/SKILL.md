@@ -15,9 +15,8 @@ All operations go through `rote registry org <subcommand>`. These commands handl
 Login first: `rote login` (auth is shared with the main rote skill).
 
 Run one org command at a time, read the result before deciding the next action, and never assume
-membership, role, quota, or pending-invite state from memory. Use
-[`../rote/references/skill-workflow-map.md`](../rote/references/skill-workflow-map.md) only when a
-caller needs the full companion graph.
+membership, role, quota, or pending-invite state from memory. Use the base `rote` companion skill
+only when a caller needs the full workflow graph.
 
 Roles: `admin` | `developer` | `reader`. Invite default role: `developer`.
 Slug = URL-safe org identifier (e.g. `my-org`). `--help` calls this `<org>` for invite/members commands and `<slug>` for the rest — same thing.

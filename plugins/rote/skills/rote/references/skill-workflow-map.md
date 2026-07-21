@@ -4,10 +4,8 @@ This reference is the detailed companion graph for the bundled rote skill set. L
 `rote/SKILL.md`'s short routing table is not enough to choose a skill, define a handoff packet, or
 resume a long-running workflow.
 
-`INDEX.md` is package and install-facing documentation. It helps humans and tests sanity-check the
-installed set, but active task context starts at `../SKILL.md` and then moves to named companion
-skills. Workflow references are intentionally not task owners; workflow logic lives in standalone
-skills.
+Active task context starts at `../SKILL.md` and then moves to named companion skills. Workflow
+references are intentionally not task owners; workflow logic lives in standalone skills.
 
 ## Companion Graph
 
@@ -22,15 +20,13 @@ skills.
 | `rote-flow-authoring` | Flow contract elicitation, rote-driven schema discovery, scaffold, implementation, tests, lint, release, index, search verification, pending cleanup, and registry-ready handoff. | `rote-typescript-transformations`, `rote-registry`, `rote-flow-run`, `rote-troubleshooting`. | Caller with flow path, parameter contract, verification status, release state, pending cleanup state, and next owner. | Flow is verified and pending cleanup is complete, release/publish approval is needed, required schema/credential is missing, or troubleshooting owns recovery. |
 | `rote-command-patterns` | Task-focused command idioms after live grammar/guidance, including quoting, cwd, response IDs, registry, and browser command shapes. | `rote-workspace`, `rote-flow-authoring`, `rote-typescript-transformations`, `rote-registry`, `rote-browse`, `rote-troubleshooting`. | Owning skill with command pattern, caveats, live source checked, and resume point. | The owner has enough syntax, live grammar supersedes this guidance, or troubleshooting is needed. |
 | `rote-typescript-transformations` | TypeScript flow logic, cached-response transformation, `FlowOutput` shape, execution rules, SDK import guidance, and transformation tests. | `rote-flow-authoring`, `rote-workspace`, `rote-command-patterns`, `rote-troubleshooting`. | Caller with input response IDs, transformation path, output shape, tests, and blockers. | Transformation is tested, jq is sufficient, required data is missing, or troubleshooting owns recovery. |
-| `rote-troubleshooting` | Repeated-failure diagnosis, no-blind-retry recovery, state inspection, route changes, and return-to-owner handoffs. | Original owning skill, `rote-command-patterns`, `rote-adapter-config`, `rote-setup`. | Owning skill with cause, material change, remaining blocker, and resume point. | Cause changes, route changes, user approval/credential is needed, or no rote path remains. |
-| `rote-setup` | Install, login, first adapters, credential checks, first value proof. | `rote-adapter-create`, `rote-adapter-config`, `rote-registry`, `rote-update`, `rote`. | `rote` with binary path, signed-in identity, adapters, credentials, skill target, proof result, and skipped/blocking setup steps. | CLI-only stop is chosen, setup proof completes, command failure needs a branch decision, or a required human credential/action blocks. |
-| `rote-adapter-create` | Spec discovery, dry-run, auth research, toolset selection, create, post-create choices, and readiness probe. | `rote-adapter-config`, `rote-registry`, `rote-setup`, `rote`. | Caller with adapter id, spec source, dry-run summary, auth/toolset decisions, create/probe result, credential state, and next owner. | Dry-run fails, create/probe completes, credential/browser action is pending, or another skill owns the next step. |
+| `rote-troubleshooting` | Repeated-failure diagnosis, no-blind-retry recovery, state inspection, route changes, and return-to-owner handoffs. | Original owning skill, `rote-command-patterns`, `rote-adapter-config`, `rote`. | Owning skill with cause, material change, remaining blocker, and resume point. | Cause changes, route changes, user approval/credential is needed, or no rote path remains. |
+| `rote-adapter-create` | Spec discovery, dry-run, auth research, toolset selection, create, post-create choices, and readiness probe. | `rote-adapter-config`, `rote-registry`, `rote`. | Caller with adapter id, spec source, dry-run summary, auth/toolset decisions, create/probe result, credential state, and next owner. | Dry-run fails, create/probe completes, credential/browser action is pending, or another skill owns the next step. |
 | `rote-adapter-config` | Existing-adapter show/confirm/apply/re-show loop and honest limits. | `rote-adapter-create`, `rote-troubleshooting`, `rote`. | Caller with adapter id, setting changed, command run, verification output, skipped operation, and pending credential/browser action. | Requested setting is verified, user declines, a credential/browser action blocks, or recreation is required. |
 | `rote-using-adapters` | Delegated single-adapter execution, probe/call/query loop, write guard, pending stub, and return summary. Prefer `rote-workspace` for ordinary main-conversation execution. | `rote`, `rote-workspace`, `rote-flow-crystallization`, `rote-registry`. | `rote` or delegating skill with workspace, response IDs, result, write-guard state, save gate, blockers, and next owner. | Task completes, adapter cannot satisfy it, write approval or credential is missing, or save/release approval is unresolved. |
 | `rote-registry` | Registry auth, org/owner selection, existence checks, dry-run push, visibility, conflicts, usage, and invites. | `rote-org`, `rote-adapter-create`, `rote-flow-crystallization`, `rote-flow-authoring`, `rote`. | Caller with artifact kind/id/path, owner, visibility, dry-run verdict, push or skip reason, version/conflict state, invite results, and next owner. | Artifact is shared or in sync, auth/org/quota blocks, visibility is unconfirmed, or authoring/creation must resume. |
 | `rote-org` | Standalone organization administration, member roles, invites, pending invites, usage, and plan visibility. | `rote-registry`. | Caller with org slug, operation run, before/after member or invite state, role/quota result, permission blocker, and next registry action. | Admin task completes, privileges/quota are insufficient, destructive confirmation is missing, or registry publication should resume. |
 | `rote-browse` | Browser launch choice, page leases, snapshots, slices, waits, human gates, saved auth, replay, and browser flow caveats. | `rote-flow-crystallization`, `rote-flow-authoring`, `rote-registry`, `rote`. | Caller with workspace, lease/session, launch mode, snapshot/page refs, human-gate status, saved-auth state, result, replayability signal, and next owner. | Browser result is delivered, human gate blocks, page lease is unrecoverable, action needs approval, or flow crystallization owns the next step. |
-| `rote-update` | Binary update check, self-update, version confirmation, skill refresh, provider target, and restart guidance. | `rote-setup`, `rote`. | Caller with old/new version when known, update result, skill refresh status, provider target, restart requirement, and manual-update blocker. | Update/check completes, self-update defers to another installer, skill refresh finishes, or restart/manual action is required. |
 
 ## Companion Handoff Requirements
 
@@ -38,14 +34,12 @@ These companion skills use the same contract shape as the standalone workflow sk
 
 | Skill | Handoff contract focus | Packet required | Markdown summary required |
 | --- | --- | --- | --- |
-| `rote-setup` | Install/login/adapters/credentials/proof, then return to daily `rote` use. | No, unless delegating to a workspace/subagent skill. | No. |
-| `rote-adapter-create` | Dry-run/create/probe, with returns to setup, config, registry, or daily use. | Yes, when returning a created adapter or blocked create state. | No. |
+| `rote-adapter-create` | Dry-run/create/probe, with returns to config, registry, or daily use. | Yes, when returning a created adapter or blocked create state. | No. |
 | `rote-adapter-config` | Show/confirm/apply/re-show loop and recreation fallback. | No. | No. |
 | `rote-using-adapters` | Delegated single-adapter work, write guard, response IDs, and save gate. | Yes. | Yes. |
 | `rote-registry` | Artifact share, org target, visibility, conflict, invite, and return data. | No, unless receiving one from creation/authoring. | No. |
 | `rote-org` | Standalone org mutation/read result and registry return. | No. | No. |
 | `rote-browse` | Browser lease/session, human gates, snapshots, saved auth, and replayability. | Yes. | Yes. |
-| `rote-update` | Binary update, skill refresh, version, provider target, and restart guidance. | No. | No. |
 
 ## Standalone Workflow Skills
 
@@ -116,9 +110,7 @@ when work needs to survive handoff or compaction.
 flowchart TD
   Start[User request] --> Orchestrator[rote]
   Orchestrator --> FlowSearch[flow search first]
-  Orchestrator --> Setup[rote-setup]
   Orchestrator --> Browser[rote-browse]
-  Orchestrator --> Update[rote-update]
   FlowSearch --> FullFlow[matched flow fully covers]
   FlowSearch --> PartialFlow[matched flow partially covers]
   FlowSearch --> NoFlow[no matching flow]
@@ -132,9 +124,7 @@ flowchart TD
   TaskRouting --> AdapterCreate[rote-adapter-create]
   TaskRouting --> SingleAdapter[rote-using-adapters]
   TaskRouting --> DirectBlock[explicit fallback or blocker]
-  Setup --> AdapterCreate
-  Setup --> Config[rote-adapter-config]
-  AdapterCreate --> Config
+  AdapterCreate --> Config[rote-adapter-config]
   AdapterCreate --> Registry
   Browser --> Reusable
   Workspace --> Reusable[new reusable result]

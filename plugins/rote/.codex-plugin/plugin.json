@@ -1,0 +1,39 @@
+{
+  "name": "rote",
+  "version": "0.57.0",
+  "description": "rote skills for day-to-day adapters, workflows, registry sharing, organization management, browser automation, and execution.",
+  "author": {
+    "name": "Modiqo",
+    "url": "https://getrote.dev"
+  },
+  "homepage": "https://getrote.dev",
+  "repository": "https://github.com/modiqo/rote-skills",
+  "license": "Apache-2.0",
+  "keywords": [
+    "rote",
+    "adapters",
+    "mcp",
+    "flows",
+    "registry",
+    "organization",
+    "browser"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "rote",
+    "shortDescription": "Day-to-day rote workflows with adapters, registry sharing, organization management, browser automation, and reusable results.",
+    "longDescription": "Use rote before calling MCP servers, provider CLIs, or browser tools directly. The base package routes tasks through flow search, adapter discovery and configuration, workspace execution, browser automation, response reuse, registry sharing, and organization management.",
+    "developerName": "Modiqo",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use rote for this task",
+      "Search for a reusable flow"
+    ],
+    "websiteURL": "https://getrote.dev"
+  }
+}

@@ -24,9 +24,8 @@ rote's guided setup: **check before you push** (don't burn quota re-pushing some
 at the visibility the user chooses, then **turn the push into collaboration** by surfacing org
 members and offering invites.
 
-Use [`../rote/references/skill-workflow-map.md`](../rote/references/skill-workflow-map.md) when the
-full companion graph or standard packet shape is needed; this skill contains the active registry
-rules. On a fresh run, clear command/filesystem access if the current environment requires it.
+Use the base `rote` companion skill when the full workflow graph or standard packet shape is needed;
+this skill contains the active registry rules. On a fresh run, clear command/filesystem access if the current environment requires it.
 
 Core rules:
 - **Determine facts from live `rote registry` commands, never from memory.** (If the rote
@@ -95,11 +94,10 @@ List the orgs the user belongs to (the push targets):
 ```bash
 rote registry org list --json
 ```
-Returns the orgs with `slug` / `name`. If the user is in **none**, offer to create one
-(`rote registry org create --slug <slug> --name "<name>"`) or hand off to the **rote-org** skill;
-without an org there's nowhere to push.
-
-Then run the **existence check** against each candidate org (Stage 2).
+Returns the orgs with `slug` / `name`. Ask which existing org/namespace should own the artifact.
+If the user has no orgs or wants a new one, hand off to **rote-org** to create it; do not create it
+inside this skill. Resume here with the created org slug, then run the **existence check** against
+each candidate org (Stage 2).
 
 ---
 
@@ -310,8 +308,7 @@ This is the usage answer — quota consumption at a glance, no surprises.
 artifact name + org + that it's now shareable without a middleman registry tax. Skip it if the push
 errored or there was nothing to push.
 
-**Related onboard skills** (the full graph lives in
-[`../rote/references/skill-workflow-map.md`](../rote/references/skill-workflow-map.md)):
+**Related setup skills:**
 - **Invoked by:** `rote-adapter-create` (after minting an adapter) and the flow
   crystallize path.
 - **Full org admin:** the **rote-org** skill · **Tune the adapter first:**
