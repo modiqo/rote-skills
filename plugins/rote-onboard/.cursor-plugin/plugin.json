@@ -2,7 +2,7 @@
   "name": "rote-onboard",
   "displayName": "rote Onboard",
   "description": "Optional onboarding companion for the base rote plugin, covering guided setup and updates.",
-  "version": "0.58.0",
+  "version": "0.59.0",
   "author": {
     "name": "Modiqo",
     "url": "https://getrote.dev"
