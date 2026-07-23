@@ -119,28 +119,74 @@ mv "$HOME/.rote" "$HOME/.rote.bak-$(date +%Y%m%d-%H%M%S)"
 Tell the user where the backup is so they can restore adapters/tokens later if wanted. Then
 treat the run as **clean slate** (install → login → fork).
 
-**Install choice** (clean-slate and orphaned-after-backup) — offer the user these options:
+**Install choice** (clean-slate and orphaned-after-backup) — render this block exactly:
+
+```text
+Choose how you want to install:
+
+1. Full CLI installation (recommended, default)
+   Installs the rote CLI and browser runtime for full rote and rote-browse capabilities.
+
+   ROTE_YES=1 ROTE_FULL=1 bash -c "$(curl -fsSL https://getrote.dev/install)"
+
+2. CLI without browser
+   Installs the rote CLI without browser automation. rote-browse and full rote capabilities
+   will not be available. Add them later with `rote setup --full`.
+
+   ROTE_YES=1 ROTE_SKIP_BROWSER=1 bash -c "$(curl -fsSL https://getrote.dev/install)"
+
+3. Editor extension
+   I'll detect VS Code, Cursor, and Antigravity and offer only installed targets.
+
+4. I'll install it myself
+   I'll pause; after you install, run `rote-setup` again.
+
+This downloads and runs remote install code, so I need your explicit approval.
+
+Press Enter for the recommended full installation, or reply with 1, 2, 3, or 4.
+```
+
+Trim surrounding whitespace and match replies case-insensitively. Treat an empty reply as
+Enter. Then interpret replies exactly:
+
+- Enter, `1`, `full`, `full installation`, `Full CLI installation`, `install CLI full`, or
+  `1 and full installation` → Full CLI installation
+- `2`, `CLI-only`, `CLI without browser`, `install CLI without browser`, or
+  `2 and CLI without browser` → CLI without browser
+- `3` or `editor extension` → Editor extension
+- `4` or `install myself` → I'll install it myself
+
+For either CLI selection, show the selected command and ask once: "Approve running the
+selected installer command?" Do not execute either remote command until the user explicitly
+approves it. Choosing the default never counts as approval. Once approved, run the selected
+command as the one allowed compound command. Do not repeat the remote-code warning in an
+option or follow-up approval prompt.
+
+After either CLI profile succeeds, resolve the installed binary before Step 0:
+
+```bash
+command -v rote
+```
+
+If that is empty, check the installer's usual destinations:
+
+```bash
+ls -la "$HOME/.local/bin/rote" "$HOME/.cargo/bin/rote" 2>/dev/null
+```
+
+If either binary exists, retain its absolute path for every later command and continue to
+Step 0. Tell the user it is off PATH and suggest opening a new terminal, sourcing their shell
+profile, or adding its parent directory to PATH. Block only if neither `command -v rote` nor
+an absolute-path check resolves the binary.
 
 **Command convention for the rest of this run:** every step below writes `rote …`. If Step
--1 resolved rote on PATH, run it verbatim. If it resolved only at an absolute path (off
-PATH), substitute that path for the leading `rote` in **every** command (e.g.
-`$HOME/.local/bin/rote whoami`). Pick this once at Step -1 and stay consistent.
+-1 or the post-install check resolved rote on PATH, run it verbatim. If either resolved only
+an absolute path (off PATH), substitute that path for the leading `rote` in **every** command
+(e.g. `$HOME/.local/bin/rote whoami`). Pick this once and stay consistent.
 
-  - **CLI one-liner** (recommended) — installs the `rote` command directly. **Always run
-    it non-interactively** — the installer prompts ("Install Deno runtime? [Y/n]") and a
-    plain `curl … | bash` may fail in non-interactive shells. Set `ROTE_YES=1` (the installer's
-    documented non-interactive switch) and invoke via `bash -c` so the env var is in scope:
-    ```bash
-    ROTE_YES=1 bash -c "$(curl -fsSL https://getrote.dev/install)"
-    ```
-    This is the one allowed piped/compound command — the canonical vendor installer as a
-    single logical step. Tell the user exactly what it does (downloads + runs the rote
-    install script, auto-accepting the runtime prompts) and get explicit confirmation
-    before running it, since it executes remote code. Other useful env vars: `ROTE_RESET=1`
-    (re-run all steps from scratch), `ROTE_FULL=1` (also install the browser runtime).
-  - **Editor extension** — installs the rote extension into a VS Code-family editor
-    (bundles the CLI + panels). Go to **Step -1a (detect editors)** to pick which one.
-  - **I'll install it myself** — pause and tell the user to install, then run `rote-setup` again.
+For **Editor extension**, go to **Step -1a (detect editors)**. It installs the rote extension
+into a VS Code-family editor and preserves the existing editor-specific setup path. For
+**I'll install it myself**, pause until the user installs rote and runs `rote-setup` again.
 
 ### Step -1a — Detect installed editors and install the extension
 
@@ -186,23 +232,13 @@ marketplace page to install manually instead:
 - VS Code → **https://marketplace.visualstudio.com/items?itemName=Modiqo.rote**
 - Cursor / Antigravity (Open VSX) → **https://open-vsx.org/extension/Modiqo/rote**
 
-If **none** of the three editors are detected, say so and steer the user to the **CLI
-one-liner** instead (or installing an editor first). Don't offer an editor that isn't there.
+If **none** of the three editors are detected, say so and return to the **install choice**
+(defaulting to Full CLI installation), or let the user install an editor first. Don't offer
+an editor that isn't there.
 
 After install, the extension's setup wizard provisions the CLI on first launch — tell the
 user to reload/open the editor, then re-verify the binary with `command -v rote` before
 continuing to **Step 0 (login)**.
-
-  After the CLI one-liner finishes, the binary may not be on the current shell's PATH yet
-  (the installer typically drops it in `~/.local/bin`). Re-verify before continuing:
-
-  ```bash
-  command -v rote
-  ```
-
-  If still not found, check `~/.local/bin/rote` directly and tell the user to open a new
-  terminal / `source` their shell profile (or add `~/.local/bin` to PATH). Do not proceed
-  to Step 0 (login) until `command -v rote` resolves.
 
 ---
 
@@ -586,9 +622,8 @@ adapter call). For single-adapter delegated work, spawn a subagent and tell it t
 
 - **One command at a time.** No `&&`, `|`, or `;` chains. Keep each
   success/failure visible on its own. Four allowed compounds are single logical steps: the
-  vendor installer `ROTE_YES=1 bash -c "$(curl -fsSL https://getrote.dev/install)"` (run only
-  after explicit confirmation — it executes remote code); `cd <workspace> && rote …` for
-  adapter probes or calls that require a workspace cwd (see below);
+  selected canonical profile installer from the **Install choice**; `cd <workspace> && rote …`
+  for adapter probes or calls that require a workspace cwd (see below);
   `cd /tmp && rote flow run <name> param=value` for a `steps:` flow whose runner must own the DAG
   workspace (never point that `cd` at an active rote workspace); and
   `cd <flow directory> && rote deno run --allow-all main.ts [args…]` for a legacy no-steps flow
@@ -627,9 +662,10 @@ adapter call). For single-adapter delegated work, spawn a subagent and tell it t
   outside every active rote workspace.
   `--force` skips the "search for existing flows first" gate. Clean up later with
   `rote workspace clean` if desired.
-- **Detect before offering.** Confirm the rote binary (`command -v rote`) before any rote
-  command, and detect installed editors (`command -v code|cursor|antigravity`) before
-  offering the extension path. Never present an install target that isn't there.
+- **Detect before offering.** Resolve the rote binary through `command -v rote` or the
+  supported absolute-path check before any rote command, and detect installed editors
+  (`command -v code|cursor|antigravity`) before offering the extension path. Never present an
+  install target that isn't there.
 - **Detect, don't assume — and never from memory.** Every fact (installed? where? logged
   in?) comes from a live probe in this run, not from recalled notes or a "rote is
   active here" assumption. A stale memory must never short-circuit a probe; if memory and a

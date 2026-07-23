@@ -141,8 +141,11 @@ and never read `Deno.args`.
 ## Scaffold Through Rote
 
 Use the pending save command from `rote-flow-crystallization` when authoring follows a completed
-task. This applies even when the original request already said to save or release the flow: pending
-write and pending save come first, then the emitted scaffold command.
+task. This applies even when the original request already said to save, release, publish, or make the
+workflow reusable: pending write and pending save come first, then the emitted scaffold command.
+`pending save` only prepares that command — run it only after the user has approved saving
+(immediately when authoring follows an already-approved handoff, otherwise after the save question).
+Approval is the single gate both this skill and `rote-flow-crystallization` share.
 
 The emitted scaffold command already encodes the pending artifact's steps + presentation shape. Run it
 unchanged. Never append shape flags, rebuild it from memory, or replace it with a second scaffold
@@ -271,8 +274,8 @@ still missing.
 Before calling the work complete, run the live lint/release path surfaced by rote. Release is a hard
 gate, not a file edit. Execution success and `rote flow validate` do not make a flow discoverable;
 only `rote flow release <name>` performs the local lifecycle transition.
-Never use `rote flow release --force` to satisfy a save/release task. A forced release is a broken
-artifact state for humans to inspect, not an agent completion path.
+Never use `rote flow release --force` to satisfy a save/release/publish task. A forced release is a
+broken artifact state for humans to inspect, not an agent completion path.
 
 Before release, obtain explicit authorization unless the original request already asked to release,
 crystallize, finalize, make discoverable, save as reusable, or publish the flow. After release,

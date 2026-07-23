@@ -119,11 +119,15 @@ rote flow pending save <workspace-name>
 
 `pending save` prints the pre-filled `rote flow template create ...` command; it does not create or
 release the flow. The pending artifact already encodes the default `steps:` plus presentation shape,
-so capture and run the emitted command unchanged. Never append shape flags or reconstruct the
-command after compaction or handoff.
+so capture the emitted command unchanged. Never append shape flags or reconstruct it after
+compaction or handoff.
 
-Scaffold output is an agent action, not user-facing instructions. If save was already approved, run
-the scaffold command yourself. When the pending state contains browser runtime or session data, run
+`pending save` only *prepares* this command; it does not order you to run it. Its output reads
+"Scaffold command prepared. Run it only after the user has approved saving this as a reusable flow
+(ask them if you haven't already)". So run the scaffold command yourself **only after** approval —
+immediately if the user already approved, otherwise after the save question below. Scaffold output
+is an agent action, never user-facing instructions.
+When the pending state contains browser runtime or session data, run
 `rote guidance browser flow-authoring` before editing the generated TypeScript body.
 
 If the session was interrupted after writing the stub, recover with `rote flow pending list`, inspect

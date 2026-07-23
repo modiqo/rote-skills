@@ -48,9 +48,9 @@ Consume this packet from `rote`, `rote-task-routing`, or a generated adapter hel
   calling tools.
 - If resuming, `cd` to the supplied workspace and do not run `rote init` again.
 - Always probe before calling. Tool names and input schemas vary by adapter.
-- Before returning reusable results, write a pending flow stub and route through
-  `rote-flow-crystallization`. Run pending save immediately when the caller or user already approved
-  saving, releasing, or making the workflow reusable.
+- Before returning reusable results, write a pending flow stub, run pending save, and route through
+  `rote-flow-crystallization`. Run the emitted scaffold only after the caller or user approves
+  saving, releasing, publishing, or making the workflow reusable.
 
 ## Auth Shape Check
 
@@ -87,7 +87,7 @@ rote adapter list <id> --json --health
 - Returns to: `rote` or the delegating skill with workspace path, cached response IDs, result,
   write-guard state, reusable-result state, and next recommended skill.
 - Stop when: the task completes, probe shows the adapter cannot satisfy the request, a write guard
-  needs confirmation, a credential is missing, or save/release approval is unresolved.
+  needs confirmation, a credential is missing, or save/release/publish approval is unresolved.
 - Completion signal: handoff summary produced or returned with workspace, response IDs, result,
   save gate, and blocker or next owner.
 
@@ -188,9 +188,9 @@ After approval, re-enter the same workspace and retry the blocked call with
 
 ## Task Completion Protocol
 
-The last required lifecycle command inside the workspace, before reusable result text, is pending
-write. If the original request already approved saving, releasing, or making the workflow reusable,
-run pending save before result text too.
+The last required lifecycle commands inside the workspace, before reusable result text, are pending
+write followed by pending save. Pending save only prepares the scaffold command; it does not require
+save approval.
 
 ```bash
 rote flow pending write <workspace> \
@@ -199,24 +199,24 @@ rote flow pending write <workspace> \
   --response-path "<validated jq path>" \
   --notes "<encoding quirks, caveats, or data shape notes>"
 
-# Run immediately only when save/release/reuse was already requested.
+# Always prepare the scaffold command before returning reusable result text.
 rote flow pending save <workspace>
 ```
 
-Capture the scaffold command printed by `pending save` when you run it. If the user already asked to
-save, release, or make the workflow reusable, treat that as approval and run the scaffold path after
-pending save. Otherwise, keep the workspace name and save command, present the results, and ask:
+Capture the scaffold command printed by `pending save`. If the user already asked to save, release,
+publish, or make the workflow reusable, treat that as approval and run the scaffold path. Otherwise,
+keep the workspace name and captured scaffold command, present the results, and ask:
 
 ```text
 Want to save this as a reusable flow? (yes/no)
 ```
 
 Do not create, release, or discard the flow until the user answers or the original request already
-gave save/release approval. Never skip pending write; never skip pending save after save approval.
+gave save, release, publish, or make-reusable approval. Never skip pending write or pending save.
 
 ## If User Saves The Flow
 
-Run the scaffold command yourself. Parameterize API inputs, not just pagination/output knobs.
+Once the user has approved saving, run the scaffold command yourself. Parameterize API inputs, not just pagination/output knobs.
 For structured filters, add a raw JSON passthrough flag such as `--filter`.
 
 Before release, verify:
