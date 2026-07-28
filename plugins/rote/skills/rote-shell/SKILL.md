@@ -220,7 +220,8 @@ readiness, and use `rote proc status` plus `rote proc stop` instead of raw
 
 For explicit legacy no-steps TypeScript flows, use first-class SDK wrappers instead of
 hand-assembling command arrays. Recorded finite commands default to typed `process.exec` steps via
-workspace export; the SDK surface below is for dynamic behavior the DAG cannot express:
+workspace export; the SDK surface below is for the shell capabilities the step language does not
+cover — PTY interaction, and background leases/streams with concurrent mid-lease work:
 
 | Pattern | SDK call |
 | --- | --- |
@@ -285,20 +286,25 @@ user wants a steps-only report. Adapterless template/frontmatter/pending
 commands still require a real adapter, so do not invent one for process-only
 work. Step syntax quick reference: `rote grammar steps`.
 
-Use an explicit legacy no-steps shell body only when the workflow needs dynamic
-SDK orchestration that the typed DAG cannot express:
+Use an explicit legacy no-steps shell body only when the workflow needs shell
+control flow or runtime interaction the step language does not support, or when
+the user asks for one. On this substrate that means PTY interaction and
+background leases/streams with concurrent mid-lease work; "dynamic" on its own is
+not a trigger. `rote-flow-authoring` owns the general representability test:
 
 | Exploration pattern | Crystallized shape | Author via |
 | --- | --- | --- |
 | One finite command whose output is the fact | Default steps + presentation export with a typed `process.exec` step | No-shape-flag `rote workspace export ~/.rote/flows/<name>/main.ts` |
 | Command writes files that downstream work reads | Default steps + presentation export with declared `process.exec` captures | No-shape-flag `rote workspace export ~/.rote/flows/<name>/main.ts` |
-| Existing file or log is the source of truth | Explicit legacy body with `rote.followFile(path, options)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
-| Long finite job where other useful work can run | Explicit legacy body with `rote.execBackgroundAndJoin(request, async (job) => { ... }, options)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
-| Long service or daemon with readiness | Explicit legacy body with `rote.execBackground({ readyLog, capture })`, then status/follow/stop | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
-| Need to inspect progress from a tracked lease | Explicit legacy body with `job.follow(...)` or `rote.followProcess(...)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
-| Need completion proof from a tracked lease | Explicit legacy body with `job.wait(...)` or `rote.execWait(...)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
+| A moving file or log must be followed to an until/readiness condition (the stream capability) | Explicit legacy body with `rote.followFile(path, options)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
+| Long finite job where other useful work runs mid-lease (the concurrent-work capability) | Explicit legacy body with `rote.execBackgroundAndJoin(request, async (job) => { ... }, options)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
+| Long service or daemon the flow interacts with while it runs | Explicit legacy body with `rote.execBackground({ readyLog, capture })`, then status/follow/stop | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
+| Need to inspect progress mid-lease, inside a justified background escape | Explicit legacy body with `job.follow(...)` or `rote.followProcess(...)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
+| Need completion proof mid-lease, inside a justified background escape — a finite command with no concurrent work is a foreground `process.exec` step with `timeout_ms:` | Explicit legacy body with `job.wait(...)` or `rote.execWait(...)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
 | Terminal behavior is the point | Explicit legacy body with `rote.ptyRun({ argv, input, cols, rows })` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
 | Many independent commands share one shape | declarative `steps:` with `process.exec`, `for_each`, and `max_concurrency` | Export first, then add `for_each`/`max_concurrency` per `rote grammar steps` |
+| The item set is discovered at run time by another command or API call | declarative `steps:` fan-out sourced from the upstream step | NOT a legacy trigger; `rote grammar steps` has the bridge example for a process step's JSON stdout |
+| One finite command needs more than the default 30s step budget | `timeout_ms:` on the `process.exec` step, or per-item fan-out so each item gets its own budget | `rote grammar steps` documents the budget |
 
 Crystallize causality, not waiting. Do not encode heartbeat loops, repeated
 status polling, or sleep/retry scaffolding as business DAG nodes. Those are
@@ -345,6 +351,7 @@ evidence:
 | Need liveness before acting | Lease status | `rote proc status` |
 | Need cleanup | Lease cleanup | `rote proc stop` |
 | Many independent items share a command shape | Fan-out batch | `steps:` with `process.exec`, `for_each`, and `max_concurrency` |
+| Item set discovered at run time by an upstream step | Fan-out over step output | `steps:` with `for_each` sourced from the upstream step — not a legacy trigger; see `rote grammar steps` |
 | API result feeds CLI or CLI result feeds API | Mixed substrate chain | adapter/browser primitive plus `rote proc run` |
 | Browser snapshot/file feeds local CLI | Browser-file bridge | browser snapshot/file plus `rote proc run` |
 | Release, publish, deploy, or global mutation | Guarded mutation | deps check, tool-native dry-run, approval, then foreground unless background is approved |
@@ -701,8 +708,9 @@ When the user says yes, do the full release discipline:
      or `adapter/process`.
    - Explicit steps-only request: use `--with-steps` for a template or `--format steps` for export,
      without a presentation flag.
-   - Explicit legacy shell/no-steps request, or dynamic shell orchestration the DAG cannot express:
-     write `~/.rote/flows/<name>/main.ts` manually with `@rote-frontmatter`, `FlowOutput`, and shell
+   - Explicit legacy shell/no-steps request, or a named shell capability the step language
+     does not support (PTY interaction; background leases/streams with concurrent mid-lease
+     work): write `~/.rote/flows/<name>/main.ts` manually with `@rote-frontmatter`, `FlowOutput`, and shell
      SDK calls. This is the legacy escape, not the default.
 
    Minimal **default steps + presentation** process frontmatter shape — this is what a generalized export

@@ -90,13 +90,24 @@ effects all belong in `steps:`. The body only normalizes and renders the complet
 Use `rote grammar steps` for the step-syntax quick reference, the worked example in
 `rote guidance typescript flow-creation` for the complete assembled artifact, and live
 `rote grammar export` plus `rote flow template create --help` for exact scaffold syntax. Choose an
-explicit escape from the default only when the contract calls for it:
+explicit escape from the default only when the contract calls for it.
+
+The shape test is representability, not a fixed list of blessed reasons. Prefer typed steps whenever
+the workflow fits a finite DAG of dependencies, conditions, fan-out, concurrency, and finite process
+budgets. Reach for a legacy no-steps body only when the workflow needs control flow or runtime
+interaction the current step language does not support, or when the user explicitly asks for one.
+PTY interaction and background leases/streams with concurrent mid-lease work are the known examples,
+not the whole set — adaptive pagination to exhaustion, recursive traversal, data-dependent loop
+termination, runtime tool selection, and stateful session protocols are gaps in the step language
+too. A set whose width is only discovered at run time is *not* one of them: `for_each` resolves
+width from the upstream step's response at run time. When you do escape, name the specific
+capability the step language is missing; if you cannot name one, the workflow is representable.
 
 | Authoring target | Choose when | Artifact marker | Create/export path |
 | --- | --- | --- | --- |
 | Default steps + presentation flow | The reusable workflow has adapter, process, browser, or mixed effects and needs stable human/summary/JSON output. | Frontmatter `steps:` AND `metadata.execution_model: steps_with_presentation`; the TypeScript body is presentation-only. | Use template/export with no shape flags, or run the command emitted by pending save unchanged. |
 | Explicit steps-only DAG | The typed effect plan and runner report are the entire contract; no custom TypeScript rendering is wanted. | Frontmatter `steps:` WITHOUT `metadata.execution_model: steps_with_presentation`. | Request `--with-steps` for a template or `--format steps` for export, without a presentation flag. |
-| Explicit legacy TypeScript, no `steps:` | The workflow is inherently imperative, requires dynamic SDK orchestration that cannot be represented as steps, or the user explicitly requested a plain no-steps body. | No frontmatter `steps:`; effects live in the TypeScript body. | Request `--legacy-body` where live help advertises it — `template create` still requires `--adapter`, so an adapterless shell-only flow has no generator: hand-author it from the legacy example in the rote-shell skill or `rote guidance typescript flow-creation`; run with `rote deno run --allow-all`. |
+| Explicit legacy TypeScript, no `steps:` | The workflow needs control flow or runtime interaction the step language does not support (name it — see the representability test above), or the user explicitly requested a plain no-steps body. | No frontmatter `steps:`; effects live in the TypeScript body. | Request `--legacy-body` where live help advertises it — `template create` still requires `--adapter`, so an adapterless shell-only flow has no generator: hand-author it from the legacy example in the rote-shell skill or `rote guidance typescript flow-creation`; run with `rote deno run --allow-all`. |
 
 These shape defaults do not migrate the adapter contract scheme. Schema v1 remains the default;
 schema v2 is an explicit `--scheme 2` opt-in and must satisfy its own live contract/origin rules.
@@ -134,9 +145,12 @@ steps:
 `$param` substitutes into every step string field — adapter `params:` values and `process.exec`
 `argv` elements alike; an unresolved token passes through as a literal, not an error. `@step{.path}`
 reads a completed step's unwrapped body (never `.result.content[0].text`); `for_each: '$.items'`
-fans a step out over the source step's array with `$item`/`$item_index` bound per element. In the
-presentation body, flow parameters arrive on `ctx.params` — never echo them through a step's stdout
-and never read `Deno.args`.
+fans a step out over the source step's array with `$item`/`$item_index` bound per element. Fan-out
+width is resolved at run time, so a set discovered by an upstream step is NOT a legacy trigger —
+over a process step's JSON stdout use `for_each: '$.stdout.text | fromjson'` (bridge example in
+`rote guidance typescript flow-creation`). A `process.exec` step takes an optional `timeout_ms:`
+budget (default 30s). In the presentation body, flow parameters arrive on `ctx.params` — never
+echo them through a step's stdout and never read `Deno.args`.
 
 ## Scaffold Through Rote
 
@@ -169,7 +183,8 @@ easier to call. If the selected adapter cannot satisfy the capability, stop auth
 For process-only work handed off by `rote-shell`, do not invent an adapter just to satisfy template
 or pending commands: those adapterless paths remain unsupported. Prefer the no-shape-flag workspace
 export over the recorded `rote proc` trace; it emits `process.exec` steps plus presentation. If the
-workflow cannot be represented as steps and an explicit no-steps body is required, author
+representability test above lands on a legacy body — a named gap in the step language, or an
+explicit user request — author
 `~/.rote/flows/<name>/main.ts` with `@rote-frontmatter`, create `deps.toml`, use the shell SDK, run
 dependency preflight, and test that legacy body with `rote deno run --allow-all`.
 
@@ -207,6 +222,12 @@ with `loadPresentationContext()` and literal `stepName("...")` references, and r
 (`Readonly<Record<string, unknown>>`, declared defaults already applied) — that is the sanctioned
 input surface. Do not import the broad SDK, construct `Rote`, run preflight, create a task queue,
 call `fetch`, spawn subprocesses, or read `Deno.args`/`Deno.env` directly from that body.
+
+Live progress belongs to the runner because the presentation body starts only after declared steps
+finish. A request for a spinner or staged progress must not move adapter calls into TypeScript,
+remove `steps:`, or switch the flow to a legacy body. Preserve the DAG and use a runner-owned
+progress surface when available; otherwise state that live presentation progress is not supported
+for this execution model instead of publishing a stepless substitute.
 
 Normalize each observation without assuming a provider schema. Preserve `single`, `fan_out`, and
 `empty_fan_out`; use `requireAvailable` for completed/checkpoint-restored output and branch on the
@@ -310,7 +331,13 @@ as a resume anchor after the released flow is discoverable.
 If the flow should be shared, use `rote guidance registry essential` and `rote grammar registry` for
 the current push syntax. Confirm the target namespace before publishing, then hand off to
 `rote-registry` with flow path, release status, owner/namespace, visibility, dependency notes, and
-the user's publish approval.
+the user's publish approval. A local release alone has no published Play URI. When `rote-registry`
+returns a `play_uri`, `install_command`, resolved run reference, published-reference
+`execution_verification` status and evidence, and visibility-based sharing guidance after
+publication or an already-in-sync check, present and propagate them; do not construct or parse the
+URI in this skill. Treat the Play URI, static execution readiness, and successful execution as
+separate facts: propagate `play_run_eligible`, the execution variant, blockers, and verification
+status, and do not describe an unverified or failed version as successfully playable.
 
 ## Return Fields
 
@@ -321,6 +348,9 @@ Return these fields to `rote`, `rote-flow-crystallization`, or `rote-registry`:
 - Test commands and representative inputs.
 - Lint, release, index, search verification, and pending cleanup output.
 - Registry target, visibility, and publish approval if sharing is requested.
+- Published Play URI, execution readiness, blockers, published-reference execution-verification
+  status and evidence, and visibility-based access guidance returned by `rote-registry` when the
+  flow is published; otherwise none.
 - Next recommended skill: `rote-typescript-transformations`, `rote-registry`, `rote-troubleshooting`,
   or none.
 
@@ -338,7 +368,7 @@ Return these fields to `rote`, `rote-flow-crystallization`, or `rote-registry`:
   `rote-flow-run` for final execution verification; `rote-troubleshooting` after repeated unchanged
   failures.
 - Returns to: `rote` or `rote-flow-crystallization` with flow path, parameter contract, verification
-  status, release state, and next owner.
+  status, release state, verified Play URI and sharing guidance when published, and next owner.
 - Stop when: the flow is verified, a release/publish approval is needed, a required schema or
   credential is missing, or troubleshooting becomes the correct owner.
 - Completion signal: flow draft, release plus index/search verification and pending cleanup when

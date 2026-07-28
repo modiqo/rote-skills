@@ -72,7 +72,12 @@ When work is crystallized, no shape flags means the schema-v1 steps + presentati
 `metadata.execution_model: steps_with_presentation` selects a deprivileged TypeScript renderer.
 Schema v2 remains an explicit `--scheme 2` opt-in. Explicit `--with-steps` (template) or
 `--format steps` (export) is steps-only; `--legacy-body` or a deliberate shell/no-steps route is the
-legacy escape. Every flow containing `steps:` runs with `rote flow run`; only no-steps legacy
+legacy escape: take it only when the workflow needs control flow or runtime interaction the step
+language does not support, or when the user explicitly asks for a no-steps body. Runtime-discovered
+fan-out, conditions, ordering, parallelism, and long finite commands are steps capabilities
+(`for_each`, `execution:`, `depends_on`, `max_concurrency`, `timeout_ms`) — a set whose width is
+only discovered at run time is not a legacy trigger.
+Every flow containing `steps:` runs with `rote flow run`; only no-steps legacy
 TypeScript uses `rote deno run --allow-all`. For the concrete step syntax use `rote grammar steps`;
 the complete assembled artifact lives in `rote guidance typescript flow-creation`.
 
@@ -148,6 +153,7 @@ digraph rote_flow {
     "Index and search verify" [shape=box];
     "Pending discard" [shape=box];
     "Registry decision if sharing requested" [shape=box];
+    "Present verified Play URI and sharing guidance" [shape=box];
     "Final answer" [shape=doublecircle];
 
     "User request" -> "Explicit setup/update/browser/org/registry?";
@@ -181,7 +187,9 @@ digraph rote_flow {
     "Test, lint, release" -> "Index and search verify";
     "Index and search verify" -> "Pending discard";
     "Pending discard" -> "Registry decision if sharing requested";
-    "Registry decision if sharing requested" -> "Final answer";
+    "Registry decision if sharing requested" -> "Final answer" [label="local only"];
+    "Registry decision if sharing requested" -> "Present verified Play URI and sharing guidance" [label="published"];
+    "Present verified Play URI and sharing guidance" -> "Final answer";
 }
 ```
 
@@ -385,6 +393,14 @@ map, and the compact flow search/run reference.
     shape flags to a pending-save command.
 12. After authoring, release with `rote flow release`, rebuild the index, verify search, then clear
     the pending stub with `rote flow pending discard <workspace>`.
+13. When registry publication succeeds or the selected version is already in sync, require
+    `rote-registry` to return the exact `play_uri`, `install_command`, resolved
+    `data.play_inspect.reference`, `data.play_inspect.execution`, published-reference
+    `execution_verification` status and evidence, and visibility-based access guidance. Present the
+    installer URI separately from the resolved `play run` reference. Static eligibility and
+    inspection never substitute for the exact pinned acceptance run; if that run is not authorized
+    or cannot be supplied safe representative inputs, label it unverified. A local release has no
+    published Play URI, and no skill should construct or parse one.
 
 ## Bounded Exploration
 
@@ -438,7 +454,8 @@ workspace or artifact location named by the owning skill.
 - Cached responses: `@N` ids and what each contains
 - Allowed commands: rote commands or flow paths the target may run
 - Stop conditions: unsafe action, missing credential, failed precondition, user approval needed
-- Return fields: result, artifacts, response IDs, save gate, next recommended skill
+- Return fields: result, artifacts, response IDs, save gate, verified Play URI and sharing guidance
+  when published, next recommended skill
 ```
 
 ## Handoff Contract
@@ -460,7 +477,8 @@ workspace or artifact location named by the owning skill.
   approval or credential is missing, or continuing would require unsafe/destructive action the user
   did not request.
 - Completion signal: a selected skill/reference, verified flow result, explicit blocker, or final
-  user-facing answer with any reusable-work save gate resolved.
+  user-facing answer with any reusable-work save gate resolved and any published flow's verified
+  Play URI plus visibility-based sharing guidance presented.
 
 ## Detail References
 

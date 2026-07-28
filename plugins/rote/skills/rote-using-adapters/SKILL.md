@@ -155,7 +155,7 @@ guidance and provenance.
 | 1 | Field extraction, filtering, counts, sorting | `rote query @N '<jq>'` |
 | 2 | Formatting that jq cannot express cleanly | `rote query @N --transform-ts '...'` or `--filter-ts` |
 | 3 | Declarative fan-out, conditions, or reusable orchestration | Default no-shape-flag `rote flow template create`; author `for_each`, conditions, and adapter calls in frontmatter `steps:` |
-| 4 | Truly dynamic imperative orchestration that typed steps cannot express | Explicit `rote flow template create ... --legacy-body` no-steps flow |
+| 4 | API control flow the step language does not support — pagination that must run to exhaustion, data-dependent retry/termination, runtime method selection, or a stateful session/transaction protocol — or an explicit user request | Explicit `rote flow template create ... --legacy-body` no-steps flow |
 
 Start at Tier 1:
 

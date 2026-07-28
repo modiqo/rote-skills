@@ -31,8 +31,11 @@ an explicit user request to save/release/publish a new workflow.
 Do not use this skill for shell-only `rote proc` work unless `rote-shell` explicitly returns here.
 Template and pending commands still require a real adapter, so process-only work uses the
 adapterless workspace-export route instead of inventing one. That export is steps + presentation by default;
-the explicit no-steps legacy TypeScript body is the escape when typed process steps cannot express
-the workflow. An exported artifact is a draft — generalize recorded literals to `$param` and prune
+the explicit no-steps legacy TypeScript body is the escape only when the workflow needs control flow
+or runtime interaction the step language does not support, or when the user asks for it — a set
+discovered at run time is not a legacy trigger, since `for_each` resolves its width from an upstream
+step's response (`rote-flow-authoring` owns the representability test, `rote grammar steps` the
+syntax). An exported artifact is a draft — generalize recorded literals to `$param` and prune
 inferred spurious parameters before lint (`rote-flow-authoring` owns that checklist). The
 run-unchanged rule applies to the pending-save *scaffold command*, never to the exported artifact.
 Mixed shell plus adapter, provider API, or browser workflows use this pending lifecycle. Only
@@ -167,7 +170,13 @@ If the answer is unclear, keep the pending stub and ask again for a yes/no decis
 
 When the saved flow should be shared, do not push directly from this skill. Return the pending stub,
 captured scaffold command, target owner/namespace if known, and approval state to
-`rote-flow-authoring`; after release, that skill hands off to `rote-registry`.
+`rote-flow-authoring`; after release, that skill hands off to `rote-registry`. A local release alone
+has no published Play URI. When the downstream publication path returns a `play_uri`,
+`install_command`, resolved run reference, published-reference `execution_verification` status and
+evidence, and visibility-based sharing guidance, present and propagate them instead of constructing
+or parsing the URI here. Also propagate execution readiness and blockers; a published installer URI
+is not necessarily executable by `play run`, and static eligibility is not proof of successful
+execution.
 
 ## Return Fields
 
@@ -178,6 +187,9 @@ Return these fields to `rote`, `rote-workspace`, `rote-browse`, or `rote-flow-au
 - Pending save command: exact emitted scaffold command or recovery command.
 - Save decision: accepted, declined, unclear, or pre-approved by the original request.
 - Release recommendation: draft only, local release, publish/share, or no release.
+- Published Play URI, execution readiness, blockers, published-reference execution-verification
+  status and evidence, and visibility-based access guidance returned by the downstream registry path
+  when published; otherwise none.
 - Next recommended skill: `rote-flow-authoring`, `rote-registry`, `rote-troubleshooting`, or none.
 
 ## Handoff Contract
@@ -190,7 +202,7 @@ Return these fields to `rote`, `rote-workspace`, `rote-browse`, or `rote-flow-au
 - Hands off to: `rote-flow-authoring` after save approval; `rote-registry` only after an already
   released artifact needs sharing; `rote-troubleshooting` when pending commands fail repeatedly.
 - Returns to: `rote`, `rote-workspace`, `rote-browse`, or the delegating skill with pending state,
-  decision, scaffold command, and next owner.
+  decision, scaffold command, verified Play URI and sharing guidance when published, and next owner.
 - Stop when: the user declines saving, the save decision is unclear and needs input, the pending stub
   is unrecoverable, or authoring becomes the correct owner.
 - Completion signal: pending stub saved or discarded, decision recorded, and next skill or final

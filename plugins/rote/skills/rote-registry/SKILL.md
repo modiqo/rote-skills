@@ -5,10 +5,11 @@ description: >
   schelling-point moment — right after an adapter is first created or a flow is crystallized
   (draft or release) — to check whether the artifact already exists in your orgs, tell you
   whether you need to push, and (after a push) surface org members and offer to invite others
-  for review or use. Also runs standalone for push/share requests, usage/quotas (plan + quota across all
-  your orgs), invites, and member management. Use when the user says "push to registry",
-  "share my adapter/flow", "publish this", "show my usage / quota", "invite someone to my org",
-  or "who's in my org". Determines every fact from live `rote registry` commands
+  for review or use. Also runs standalone for push/share requests, visibility changes, usage/quotas
+  (plan + quota across all your orgs), invites, and member management. Use when the user says
+  "push to registry", "share my adapter/flow", "publish this", "make this public/private",
+  "change visibility", "show my usage / quota", "invite someone to my org", or "who's in my org".
+  Determines every fact from live `rote registry` commands
   — never from memory.
 ---
 
@@ -35,27 +36,35 @@ Core rules:
 - **Auth-gate first.** Every registry op needs a valid session — see Stage 0.
 - **Existence is checked by fingerprint/version, not just name** — re-pushing an identical
   artifact wastes a quota slot. See Stage 2.
-- **Visibility is never silently defaulted.** Public is hard to walk back; always ask.
+- **Visibility is never silently defaulted on push.** Confirm before a public push; published
+  visibility can be flipped later, but already-pulled local copies are unaffected.
 - Secrets discipline: pushing an adapter ships its *config*, not its token values. Confirm
   the user understands before a **public** push.
 
 ## Handoff Contract
 
 - Use when: a newly created adapter or crystallized flow reaches the share point, or the user asks
-  for registry push/share, usage/quota, invite, member, artifact search, or registry collaboration.
+  for registry push/share, a published artifact visibility change, usage/quota, invite, member,
+  artifact search, or registry collaboration.
 - Preconditions: `rote registry whoami --verbose` has authenticated or the login blocker is surfaced;
-  artifact id/path and target owner can be elicited; visibility is confirmed before any push.
+  artifact id/path and target owner can be elicited; visibility is confirmed before any push or
+  in-place visibility change.
 - Owns: registry auth gate, org/owner selection, existence checks, dry-run publish/push, visibility
-  selection, conflict recovery, usage reporting, and invite-at-share-time collaboration.
+  selection and in-place changes, conflict recovery, usage reporting, and invite-at-share-time
+  collaboration.
 - Hands off to: `rote-org` for deeper organization administration; `rote-adapter-create` when the
   artifact is not ready to publish; `rote-flow-crystallization` or `rote-flow-authoring` when a flow
   must be saved/released before push; `rote` for day-to-day routing after sharing.
-- Returns to: the caller with artifact kind/id/path, target org/owner, visibility, dry-run verdict,
-  push result or skip reason, version/conflict state, invite results, and next recommended skill.
-- Stop when: the artifact is shared or confirmed in sync, auth/org permission blocks, visibility is
-  unconfirmed, quota blocks invites/pushes, or the owning creation/authoring skill must resume.
-- Completion signal: registry state verified from live commands, push/share/invite result summarized,
-  and return data includes the artifact, owner, visibility, and any remaining blocker.
+- Returns to: the caller with artifact kind/id/path, target org/owner, visibility or old/new
+  visibility plus changed/no-op status, dry-run verdict, push result or skip reason,
+  version/conflict state, verified Play URI plus visibility-based sharing guidance for a published
+  flow, invite results, and next recommended skill.
+- Stop when: the artifact is shared, confirmed in sync, or has the requested visibility; auth/org
+  permission blocks, visibility is unconfirmed, quota blocks the requested write, or the owning
+  creation/authoring skill must resume.
+- Completion signal: registry state verified from live commands, push/share/visibility/invite result
+  summarized, and return data includes the artifact, owner, visibility, a published flow's verified
+  Play URI and sharing guidance, and any remaining blocker.
 
 ---
 
@@ -66,6 +75,7 @@ path invoke this skill right after minting. The artifact id is known; jump to St
 
 **B. Standalone.** User asks for registry help directly. Present the menu:
 - **Push / share** an adapter or flow → Stage 1
+- **Change visibility** of a published adapter or flow → Stage V
 - **Show usage** (plan + quota across all orgs) → Stage U
 - **Manage org** (members / invites) → Stage 4
 - **Find** an artifact in the registry (`adapter|flow search`) → one-off
@@ -129,16 +139,17 @@ rote registry flow info <slug>/<name> --json
 Summarize the per-org verdict plainly, e.g.:
 > `linear` — **not in `conikee-home`** (push to share) · **in sync in `modiqo`** (nothing to do).
 
-If every org says "in sync," tell the user there's nothing to push and offer Stage 4
-(invite/members) or Stage U (usage) instead.
+If every org says "in sync," tell the user there's nothing to push. For a flow, continue to Stage P
+for each selected owner; then offer Stage 4 (invite/members) or Stage U (usage).
 
 ---
 
 ## Stage 3 — Push (only where needed, at chosen visibility)
 
 For each org where a push is warranted, **ask visibility first** (never default it):
-- **Private** — org-only. For review/use inside the org. Reversible-ish.
-- **Public** — anyone on the registry can pull it. Confirm the user means it; for a public
+- **Private** — org-only. For review/use inside the org. It can be flipped later, but making an
+  artifact private does not revoke already-pulled local copies.
+- **Public** — anyone on the registry can pull it. Confirm before a public push; for a public
   **adapter** push, remind them it ships config (base URL, auth scheme) — not token values, but
   still worth a glance.
 
@@ -176,7 +187,102 @@ rote flow bump <path> [--minor|--major]
 ```
 Then re-run the publish/push. Show the conflict error verbatim before offering the bump.
 
-On success, state what landed where (id, org, visibility, version), then go to Stage 4.
+On success, state what landed where (id, org, visibility, version). For a flow, continue to Stage P;
+for an adapter, go to Stage 4.
+
+---
+
+## Stage P — Present the published Play URI and verify execution readiness
+
+After the non-`--dry-run` flow push succeeds, take `play_uri`, `install_command`,
+`play_reference`, `play_location`, `play_run_eligible`, `play_run_variant`, and any
+`play_run_blockers` from its typed result. When Stage 2 confirms the selected published version is
+already in sync, use the same typed fields from that result.
+
+When `play_location` is `registry_only`, the configured registry has no canonical Play host:
+`play_uri` and `install_command` are intentionally absent. Do not call canonical `play inspect` or
+`play run` for that reference. Report that canonical execution verification is not applicable,
+pull the pinned artifact, and use the compatible local runner returned by the push result. Preserve
+that outcome as `execution_verification: not_applicable` with the reason and exact local command.
+
+For `play_location: canonical`, the pinned `play_uri` is the shareable installer URL and
+`install_command` is its ready-to-run `curl ... | sh` form. Inspect the exact execution reference:
+
+```bash
+rote play inspect <slug>/<flow-name>@<version> --json
+```
+
+Read `data.play_inspect.reference` and `data.play_inspect.execution` from the successful output.
+Present `play_uri` as the Play URI, `install_command` as the installation command, and
+`data.play_inspect.reference` separately as the resolved `rote play run` reference. Only recommend
+the install command when `data.play_inspect.execution.play_run_eligible` is `true`. When it is
+`false`, describe the
+published reference as inspectable but not executable by `play run`, show the reported blockers,
+and recommend the pull command plus the compatible local runner returned by the push result.
+
+Eligibility and inspection are not execution verification. For an eligible Play, resolve
+representative parameters from the flow's tested release contract and run the exact pinned
+reference returned by inspection:
+
+```bash
+rote play run <resolved-reference> <name=value...>
+```
+
+Treat this published-reference run as the final acceptance test; lint, release, push, and
+`play inspect` do not substitute for it. When the Play has write effects, process or browser
+access, credential prompts, or no clearly safe representative inputs, obtain the user's approval
+or a designated test environment before running it. If approval or required inputs are unavailable,
+return `execution_verification: unverified`, state why, and never describe the Play as
+execution-verified or successfully playable. On success, return
+`execution_verification: passed` with the exact command and result summary. On failure, return
+`execution_verification: failed` with the error and keep the Play out of the verified handoff.
+
+Qualify resolution and execution guidance separately:
+
+- **Public** — anyone can resolve the URI. Eligible flows can be run by anyone; flows that declare
+  process or browser privileges can require owner or org membership even when publicly resolvable.
+- **Private** — only an authorized owner or org member can resolve it. For an org-owned flow,
+  continue to Stage 4 to offer an invitation before sharing.
+
+Include the Play location, any Play URI and install command, resolved run reference, execution
+readiness, blockers, execution-verification status and evidence, and access guidance in the return
+data before continuing to Stage 4. Do not construct a URL, parse it out of the command, or hardcode
+a play host; the flow-push result owns the canonical installer URL and `rote play inspect` owns the
+resolved run reference and execution assessment.
+
+If inspection or the acceptance run fails, report the error and do not claim that the Play was
+verified. A local release that was not published has no published Play URI.
+
+---
+
+## Stage V — Change published visibility in place
+
+Use this path when the adapter or flow is already published and the user wants to change who can
+discover or pull it. Confirm the exact `<org/name>` and target visibility if the user did not supply
+both, then run the matching command:
+
+```bash
+rote registry adapter visibility <org/name> <public|private> --json
+rote registry flow visibility <org/name> <public|private> --json
+```
+
+- The change is **bidirectional** (`public` → `private` and `private` → `public`) and happens in
+  place; no re-push or delete is needed, and version history and download counts are preserved.
+- The command is **idempotent**. Asking for the current visibility succeeds and reports
+  `already <visibility>` instead of erroring.
+- A flip toward a visibility tier at capacity fails with `quota_exceeded` in either direction,
+  including `public` → `private` when the private tier is full. Report the error as-is and use
+  Stage U to show the current quota and limit.
+- A not-found response deliberately says `not found (or you are not authorized to change its
+  visibility)`. Report it as-is and do not probe other registry surfaces to reveal whether the
+  artifact exists.
+- A private flip changes registry access immediately, including future pinned or dependency-driven
+  pulls, but already-pulled local copies are unaffected.
+
+On success, report the canonical artifact reference and either `<old> -> <new>` or
+`already <visibility>`. For automation, prefer the boolean `data.result.changed` (`true` means the
+visibility changed; `false` means the request was an idempotent no-op) instead of string-matching
+the human `->` or `already` line.
 
 ---
 
