@@ -172,11 +172,11 @@ When the saved flow should be shared, do not push directly from this skill. Retu
 captured scaffold command, target owner/namespace if known, and approval state to
 `rote-flow-authoring`; after release, that skill hands off to `rote-registry`. A local release alone
 has no published Play URI. When the downstream publication path returns a `play_uri`,
-`install_command`, resolved run reference, published-reference `execution_verification` status and
+`bootstrap_uri`, resolved run reference, published-reference `execution_verification` status and
 evidence, and visibility-based sharing guidance, present and propagate them instead of constructing
 or parsing the URI here. Also propagate execution readiness and blockers; a published installer URI
-is not necessarily executable by `play run`, and static eligibility is not proof of successful
-execution.
+is an advertised transition rather than the Play identity, and static eligibility is not proof of
+successful execution.
 
 ## Return Fields
 

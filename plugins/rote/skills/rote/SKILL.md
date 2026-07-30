@@ -394,13 +394,14 @@ map, and the compact flow search/run reference.
 12. After authoring, release with `rote flow release`, rebuild the index, verify search, then clear
     the pending stub with `rote flow pending discard <workspace>`.
 13. When registry publication succeeds or the selected version is already in sync, require
-    `rote-registry` to return the exact `play_uri`, `install_command`, resolved
+    `rote-registry` to return the exact `play_uri`, `bootstrap_uri`, resolved
     `data.play_inspect.reference`, `data.play_inspect.execution`, published-reference
     `execution_verification` status and evidence, and visibility-based access guidance. Present the
-    installer URI separately from the resolved `play run` reference. Static eligibility and
-    inspection never substitute for the exact pinned acceptance run; if that run is not authorized
-    or cannot be supplied safe representative inputs, label it unverified. A local release has no
-    published Play URI, and no skill should construct or parse one.
+    disclosure-only Play URI, advertised bootstrap transition, and resolved `play run` reference as
+    separate resources. Static eligibility and inspection never substitute for the exact pinned
+    acceptance run; if that run is not authorized or cannot be supplied safe representative inputs,
+    label it unverified. A local release has no published Play URI, and no skill should construct or
+    parse one.
 
 ## Bounded Exploration
 

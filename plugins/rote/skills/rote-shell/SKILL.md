@@ -259,6 +259,13 @@ if (exit.kind !== "code" || exit.code !== 0) {
 const files = await proc.files();        // captured file artifacts ([] unless capture requested)
 ```
 
+For declarative `process.exec`, the child exit status is likewise the DAG's control-plane result.
+If an inline Python, shell, or JavaScript program catches a fatal error, write the diagnostic to
+stderr and exit nonzero or rethrow. A stdout payload such as `{"ok": false}` followed by exit zero
+is successful process data and cannot fail the step. Reserve exit-zero degradation for expected
+optional absence, represented explicitly as success such as
+`{"ok": true, "available": false, "warning": "..."}`.
+
 `rote.execMany` preserves workspace response ordering by running process
 requests serially. For true parallel shell fan-out, generate declarative
 frontmatter `steps:` with `type: process.exec`, `for_each`, and

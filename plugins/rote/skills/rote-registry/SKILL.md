@@ -157,6 +157,22 @@ For each org where a push is warranted, **ask visibility first** (never default 
 depends on is already in the target namespace and hard-fails if one is missing — so the adapters
 have to land first.
 
+Before sharing a flow, inspect every selected adapter's credential contract and catalog entry:
+
+```bash
+rote adapter info <id> --json
+rote adapter catalog info <id> --json
+```
+
+If the adapter requires a static bearer token, API key, username, password, or secret server
+variable, its catalog entry must contain a first-party HTTPS `token_url`. Treat the URL as setup
+guidance only; never fetch it with credentials and never ask the user to paste a credential into
+conversation. If `token_url` is missing, discover the vendor's official token/API-key settings
+page, verify that its host belongs to the vendor, and update the reviewable catalog source before
+continuing. Do not put an unreviewed URL in flow metadata and do not mint or present a Play URI
+until the catalog-backed setup page is available. OAuth/DCR/Google-discovery adapters are exempt:
+rote owns those authorization transitions.
+
 Both push commands accept `--dry-run`: it runs the full preflight (eligibility, visibility,
 version-conflict prediction, and — for flows — dependency reachability) and reports
 `would-create` / `would-push` / `would-skip` **without writing anything**. Use it to verify the
@@ -194,44 +210,63 @@ for an adapter, go to Stage 4.
 
 ## Stage P — Present the published Play URI and verify execution readiness
 
-After the non-`--dry-run` flow push succeeds, take `play_uri`, `install_command`,
+After the non-`--dry-run` flow push succeeds, take `play_uri`, `bootstrap_uri`,
 `play_reference`, `play_location`, `play_run_eligible`, `play_run_variant`, and any
 `play_run_blockers` from its typed result. When Stage 2 confirms the selected published version is
 already in sync, use the same typed fields from that result.
 
 When `play_location` is `registry_only`, the configured registry has no canonical Play host:
-`play_uri` and `install_command` are intentionally absent. Do not call canonical `play inspect` or
+`play_uri` and `bootstrap_uri` are intentionally absent. Do not call canonical `play inspect` or
 `play run` for that reference. Report that canonical execution verification is not applicable,
 pull the pinned artifact, and use the compatible local runner returned by the push result. Preserve
 that outcome as `execution_verification: not_applicable` with the reason and exact local command.
 
-For `play_location: canonical`, the pinned `play_uri` is the shareable installer URL and
-`install_command` is its ready-to-run `curl ... | sh` form. Inspect the exact execution reference:
+For `play_location: canonical`, the pinned `play_uri` is the shareable, disclosure-only Play URI.
+Open it first: its JSON or HTML transparency card describes typed inputs and defaults, exact
+adapter releases, credential acquisition, effects, distribution integrity, and the ordered
+preparation guide. A GET never installs or runs anything. `bootstrap_uri` is a separately
+advertised, confirmation-gated transition for a recipient who intends to run the Play and does not
+yet have rote. Do not replace the Play URI with a `curl ... | sh` command when sharing.
+
+Inspect the exact execution reference:
 
 ```bash
-rote play inspect <slug>/<flow-name>@<version> --json
+rote play inspect <play_uri> --json
 ```
 
 Read `data.play_inspect.reference` and `data.play_inspect.execution` from the successful output.
-Present `play_uri` as the Play URI, `install_command` as the installation command, and
-`data.play_inspect.reference` separately as the resolved `rote play run` reference. Only recommend
-the install command when `data.play_inspect.execution.play_run_eligible` is `true`. When it is
+Present `play_uri` as the URI to share, `bootstrap_uri` as an advertised transition rather than the
+identity of the Play, and `data.play_inspect.reference` separately as the resolved `rote play run`
+reference. Only recommend following the bootstrap transition when
+`data.play_inspect.execution.play_run_eligible` is `true`. When it is
 `false`, describe the
 published reference as inspectable but not executable by `play run`, show the reported blockers,
 and recommend the pull command plus the compatible local runner returned by the push result.
 
 Eligibility and inspection are not execution verification. For an eligible Play, resolve
-representative parameters from the flow's tested release contract and run the exact pinned
-reference returned by inspection:
+representative parameters from the flow's tested release contract. Present the inspection summary
+and the exact pinned command without `--yes` before every acceptance run. For an interactive human,
+run that command unchanged and let `play run` ask before setup. For an agent or other non-interactive
+runner, obtain the user's explicit approval for that exact run before adding `--yes`; never infer
+approval merely because the inputs or effects appear safe. After approval, use `--yes` only to carry
+that consent across the non-interactive boundary:
 
 ```bash
-rote play run <resolved-reference> <name=value...>
+rote play run <resolved-reference> <name=value...> --yes
 ```
 
+`--yes` skips only the initial play/setup confirmation. It does not bypass adapter selection,
+credential acquisition, provider OAuth, or runtime security checks. Preserve the emitted
+remediation when one of those later gates stops the run, change the relevant state, and only then
+retry.
+
+Never automate the interactive `Ready` selector by piping `y`, `yes`, or any other input into
+`play run`. A pipe makes stdin non-interactive and must fail closed. A headless harness carries
+approval only by adding `--yes` after it has presented the exact parameters and obtained the user's
+explicit approval.
+
 Treat this published-reference run as the final acceptance test; lint, release, push, and
-`play inspect` do not substitute for it. When the Play has write effects, process or browser
-access, credential prompts, or no clearly safe representative inputs, obtain the user's approval
-or a designated test environment before running it. If approval or required inputs are unavailable,
+`play inspect` do not substitute for it. If explicit approval or required inputs are unavailable,
 return `execution_verification: unverified`, state why, and never describe the Play as
 execution-verified or successfully playable. On success, return
 `execution_verification: passed` with the exact command and result summary. On failure, return
@@ -239,15 +274,18 @@ execution-verified or successfully playable. On success, return
 
 Qualify resolution and execution guidance separately:
 
-- **Public** — anyone can resolve the URI. Eligible flows can be run by anyone; flows that declare
+- **Public** — share the canonical `play_uri`; anyone can GET its transparency card. Eligible flows can be run by anyone; flows that declare
   process or browser privileges can require owner or org membership even when publicly resolvable.
-- **Private** — only an authorized owner or org member can resolve it. For an org-owned flow,
-  continue to Stage 4 to offer an invitation before sharing.
+- **Private** — the canonical URI reveals its owner and slug even though unauthorized resolution
+  remains indistinguishable from not-found. Prefer an opaque, revocable share URI when the registry
+  returns one; possession identifies the share but never replaces Google/GitHub identity and
+  current organization membership. For an org-owned flow, continue to Stage 4 to offer an
+  invitation before sharing.
 
-Include the Play location, any Play URI and install command, resolved run reference, execution
+Include the Play location, any Play URI and bootstrap transition, resolved run reference, execution
 readiness, blockers, execution-verification status and evidence, and access guidance in the return
-data before continuing to Stage 4. Do not construct a URL, parse it out of the command, or hardcode
-a play host; the flow-push result owns the canonical installer URL and `rote play inspect` owns the
+data before continuing to Stage 4. Do not construct a URL, parse it out of a command, or hardcode
+a play host; the flow-push result owns the canonical Play and bootstrap URIs, and `rote play inspect` owns the
 resolved run reference and execution assessment.
 
 If inspection or the acceptance run fails, report the error and do not claim that the Play was

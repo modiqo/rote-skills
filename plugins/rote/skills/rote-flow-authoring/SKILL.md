@@ -152,6 +152,18 @@ over a process step's JSON stdout use `for_each: '$.stdout.text | fromjson'` (br
 budget (default 30s). In the presentation body, flow parameters arrive on `ctx.params` — never
 echo them through a step's stdout and never read `Deno.args`.
 
+### Preserve Process Failures
+
+For `process.exec`, the child exit status is the DAG's failure signal; stdout is only data. If an
+inline or invoked script catches a fatal error, write an actionable diagnostic to stderr and exit
+nonzero or rethrow. Printing `{"ok": false}` to stdout and returning normally records a successful
+step, so never use an error-shaped payload as a substitute for a failing exit status.
+
+Exit zero for an expected optional degradation only when the output makes that distinction
+explicit, for example `{"ok": true, "available": false, "warning": "..."}`. Classify every broad
+exception handler as fatal or optional instead of converting all exceptions into successful
+process results.
+
 ## Scaffold Through Rote
 
 Use the pending save command from `rote-flow-crystallization` when authoring follows a completed
@@ -284,7 +296,10 @@ The DAG runner takes named `key=value` parameters; the legacy body takes its dec
 argument order.
 
 Whichever runner applies, cover the common case, empty or no-result case, optional defaults, and
-at least one user-provided edge case.
+at least one user-provided edge case. For every process-backed flow, also run a deliberately fatal
+case and confirm that the command exits nonzero, the process step is `FAILED`, and the overall flow
+run fails. If that step has declared dependents, confirm they are `BLOCKED`; unrelated parallel
+steps may still complete.
 
 Release/lint success is not capability proof. Before release, rerun the capability check:
 every required source is backed by a captured response, every adapter id from the routing decision
@@ -332,12 +347,13 @@ If the flow should be shared, use `rote guidance registry essential` and `rote g
 the current push syntax. Confirm the target namespace before publishing, then hand off to
 `rote-registry` with flow path, release status, owner/namespace, visibility, dependency notes, and
 the user's publish approval. A local release alone has no published Play URI. When `rote-registry`
-returns a `play_uri`, `install_command`, resolved run reference, published-reference
+returns a `play_uri`, `bootstrap_uri`, resolved run reference, published-reference
 `execution_verification` status and evidence, and visibility-based sharing guidance after
 publication or an already-in-sync check, present and propagate them; do not construct or parse the
-URI in this skill. Treat the Play URI, static execution readiness, and successful execution as
-separate facts: propagate `play_run_eligible`, the execution variant, blockers, and verification
-status, and do not describe an unverified or failed version as successfully playable.
+URI in this skill. Treat the disclosure-only Play URI, advertised bootstrap transition, static
+execution readiness, and successful execution as separate facts: propagate `play_run_eligible`, the
+execution variant, blockers, and verification status, and do not describe an unverified or failed
+version as successfully playable.
 
 ## Return Fields
 
