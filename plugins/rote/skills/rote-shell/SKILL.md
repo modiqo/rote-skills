@@ -229,7 +229,7 @@ cover — PTY interaction, and background leases/streams with concurrent mid-lea
 | Declared stdin/output files | `await rote.exec({ argv, stdin: { file }, capture: { stdout: { file }, files: [{ label, path }] } })` |
 | Dependency preflight | `await rote.depsCheck({ manifest: "deps.toml" })` |
 | Tracked background job / detach-like work | `await rote.execBackground({ argv, readyLog, readyTimeoutMs, capture })` |
-| Long-running job with useful parallel work | `await rote.execBackgroundAndJoin(request, async (job) => { ... }, { timeoutMs, pollMs, stopOnWorkError })` |
+| Long-running job with useful work to do *while it runs* | `await rote.execBackgroundAndJoin(request, async (job) => { ... }, { timeoutMs, pollMs, stopOnWorkError })` |
 | Lease status | `await rote.execStatus("proc-1")` |
 | Lease wait | `await rote.execWait("proc-1", { timeoutMs: 300_000, pollMs: 500 })` or `await job.wait(...)` |
 | Lease cleanup | `await rote.execStop("proc-1")` |
@@ -267,7 +267,9 @@ optional absence, represented explicitly as success such as
 `{"ok": true, "available": false, "warning": "..."}`.
 
 `rote.execMany` preserves workspace response ordering by running process
-requests serially. For true parallel shell fan-out, generate declarative
+requests serially. For several different independent commands, generate sibling
+`process.exec` steps with no `depends_on` between them; for one command over many
+values, generate declarative
 frontmatter `steps:` with `type: process.exec`, `for_each`, and
 `max_concurrency` so the DAG runner owns the scheduling and provenance.
 
@@ -309,6 +311,7 @@ not a trigger. `rote-flow-authoring` owns the general representability test:
 | Need to inspect progress mid-lease, inside a justified background escape | Explicit legacy body with `job.follow(...)` or `rote.followProcess(...)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
 | Need completion proof mid-lease, inside a justified background escape — a finite command with no concurrent work is a foreground `process.exec` step with `timeout_ms:` | Explicit legacy body with `job.wait(...)` or `rote.execWait(...)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
 | Terminal behavior is the point | Explicit legacy body with `rote.ptyRun({ argv, input, cols, rows })` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
+| Several independent commands run at once | declarative `steps:` with sibling `process.exec` steps, no `depends_on` between them | Export first, then drop the synthesized `depends_on` edges per `rote grammar steps` |
 | Many independent commands share one shape | declarative `steps:` with `process.exec`, `for_each`, and `max_concurrency` | Export first, then add `for_each`/`max_concurrency` per `rote grammar steps` |
 | The item set is discovered at run time by another command or API call | declarative `steps:` fan-out sourced from the upstream step | NOT a legacy trigger; `rote grammar steps` has the bridge example for a process step's JSON stdout |
 | One finite command needs more than the default 30s step budget | `timeout_ms:` on the `process.exec` step, or per-item fan-out so each item gets its own budget | `rote grammar steps` documents the budget |

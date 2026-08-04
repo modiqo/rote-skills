@@ -142,6 +142,11 @@ steps:
     params: { owner: $owner, repo: $repo, pull_number: "@create_pr{.number}" }
 ```
 
+Use sibling steps for different independent effects. Use `for_each` when one operation is applied
+over a set; its `max_concurrency` limits that fan-out, while `--max-concurrency` limits the run.
+Plain concurrency is not a legacy-body trigger. Browser work serializes its layer. See
+`rote grammar steps` for runtime semantics and `rote guidance typescript flow-creation` for examples.
+
 `$param` substitutes into every step string field — adapter `params:` values and `process.exec`
 `argv` elements alike; an unresolved token passes through as a literal, not an error. `@step{.path}`
 reads a completed step's unwrapped body (never `.result.content[0].text`); `for_each: '$.items'`

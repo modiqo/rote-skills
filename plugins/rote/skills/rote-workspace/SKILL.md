@@ -163,8 +163,11 @@ rote flow list
 ```
 
 Preserve the workspace name, cached `@N` response IDs, pending flow name, output artifact path, any
-partial-flow baseline, and any release/index/search verification already completed. Do not start a
-new workspace unless rote state commands show that no prior workspace exists.
+partial-flow baseline, and any release/index/search verification already completed. When recovering
+the same task after compaction, interruption, handoff, or subagent return, reuse the named workspace.
+For an unrelated task, start `rote init <task-specific-name> --seq`; do not select a workspace merely
+because `rote workspace ls` lists one. Export and crystallization consume recorded workspace history,
+so cross-task reuse contaminates the resulting flow.
 
 Before final presentation, run `cd <workspace-path> && rote ls` — it surfaces the workspace's
 `@@` state and emits the `[MANDATORY PROTOCOL]` pending-stub warning when a reusable result has
