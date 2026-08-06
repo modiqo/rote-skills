@@ -13,12 +13,12 @@ Contract — are companion **skills**, never CLI commands (`rote-shell` is not `
 Invoke them through the runtime's skill mechanism; only literal `rote …` commands run in a
 terminal.
 
-Use this skill for no-flow or partial-flow tasks that need adapter calls, response queries, or
+Use this skill for no-play or partial-play tasks that need adapter calls, response queries, or
 transformations. The workspace preserves rote state, cached responses, and model identity for the
 run.
 
-Do not use this skill to improve, rerun, or replace a verified full-flow match. Workspace execution
-starts only when no existing flow covers the request, or when a partial flow leaves explicit
+Do not use this skill to improve, rerun, or replace a verified full-play match. Workspace execution
+starts only when no existing play covers the request, or when a partial play leaves explicit
 uncovered work.
 
 ## Handoff Packet
@@ -27,7 +27,7 @@ Consume this packet from `rote`, `rote-task-routing`, or a delegated skill:
 
 - Origin skill: `rote` or `rote-task-routing`.
 - User intent: the exact result the user requested.
-- Flow baseline: flow output/artifact to preserve, or none.
+- Play baseline: play output/artifact to preserve, or none.
 - Selected route: single adapter, multi-adapter orchestration, or catalog-installed adapter.
 - Requirements: required sources/adapters, capabilities, live observations, output artifact,
   and checks that must survive handoff.
@@ -57,7 +57,7 @@ where requested files such as `./report.md` should land. The rote workspace dire
 responses and adapter state; it is not automatically the user's deliverable directory.
 
 If the user gave a relative artifact path before workspace setup, resolve it against the original
-artifact directory or pass it explicitly to the flow/adapter code.
+artifact directory or pass it explicitly to the play/adapter code.
 
 Create a task-specific workspace with sequential execution enabled:
 
@@ -73,13 +73,13 @@ logical step:
 cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<workspace-name> && rote <command…>
 ```
 
-Keep rote commands one at a time. Read `@@status`, `@@next`, `@@flows`, cached `@N` responses, and
+Keep rote commands one at a time. Read `@@status`, `@@next`, `@@plays`, cached `@N` responses, and
 errors before the next command.
 
 ## 2. Set Model Identity When Known
 
 Set the model once in the workspace immediately after `rote init` and before `rote init-session`,
-adapter probes, adapter calls, or flow crystallization:
+adapter probes, adapter calls, or play crystallization:
 
 ```bash
 rote model set <model> --provider <provider> --confirmed-current
@@ -111,7 +111,7 @@ to underscores in the command name. Probe first, read the exact tool name and in
 that tool with JSON arguments. Add `-s` or `--session` when the operation needs session state.
 
 Use cached `@N` response IDs instead of copying large JSON between commands. If a response suggests
-a flow through `@@flows`, pause adapter exploration and return to `rote-flow-run`.
+a play through `@@plays`, pause adapter exploration and return to `rote-flow-run`.
 
 For response inspection and transformation, stay inside rote first:
 
@@ -121,14 +121,14 @@ For response inspection and transformation, stay inside rote first:
   Run `rote ls`, `rote query schema @N`, and retry against `@` when the latest response is likely intended.
   Use `rote guidance query essential` for cached response parsing patterns.
 - Use `rote proc run` through `rote-shell` for local programs that meaningfully transform,
-  validate, sort, join, or format data for the final artifact or future flow.
+  validate, sort, join, or format data for the final artifact or future play.
 - Do not pipe `rote query` output into `head`, `tail`, `grep`, `jq`, `python`, `node`, or temp files.
   If a non-rote command is unavoidable, route it through `rote proc run` instead.
 - Do not use raw `grep`, `head`, `sort`, inline Python, temporary files, or shell pipelines to
-  parse rote responses when the result feeds a user artifact, reusable flow, or later reasoning
+  parse rote responses when the result feeds a user artifact, reusable play, or later reasoning
   step.
 - Tiny disposable terminal inspection is acceptable only when it does not influence the final
-  answer, report, flow body, or verification claim.
+  answer, report, play body, or verification claim.
 
 ## 4. Inspect and Recover State Through Rote
 
@@ -143,8 +143,8 @@ rote ls
 rote workspace inspect meta
 rote workspace inspect variables
 rote adapter list
-rote flow pending list
-rote flow list
+rote play pending list
+rote play list
 rote sdk status
 rote deno status
 ```
@@ -157,26 +157,26 @@ cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<workspace-name>
 rote ls
 rote workspace inspect meta
 rote workspace inspect variables
-rote flow pending list
+rote play pending list
 rote adapter list
-rote flow list
+rote play list
 ```
 
-Preserve the workspace name, cached `@N` response IDs, pending flow name, output artifact path, any
-partial-flow baseline, and any release/index/search verification already completed. When recovering
+Preserve the workspace name, cached `@N` response IDs, pending play name, output artifact path, any
+partial-play baseline, and any release/index/search verification already completed. When recovering
 the same task after compaction, interruption, handoff, or subagent return, reuse the named workspace.
 For an unrelated task, start `rote init <task-specific-name> --seq`; do not select a workspace merely
 because `rote workspace ls` lists one. Export and crystallization consume recorded workspace history,
-so cross-task reuse contaminates the resulting flow.
+so cross-task reuse contaminates the resulting play.
 
 Before final presentation, run `cd <workspace-path> && rote ls` — it surfaces the workspace's
 `@@` state and emits the `[MANDATORY PROTOCOL]` pending-stub warning when a reusable result has
-no pending flow yet. Then verify the requirements in prose or with rote queries:
+no pending play yet. Then verify the requirements in prose or with rote queries:
 
-- Every required capability has evidence from the selected adapter, flow, browser capture, or
+- Every required capability has evidence from the selected adapter, play, browser capture, or
   `rote proc` result.
 - The output artifact includes every required source, not only the easiest successful response.
-- Any baseline flow output remains labeled and preserved when the task is a superflow.
+- Any baseline play output remains labeled and preserved when the task is a superplay.
 - Any adapter repair has been followed by a rerun of the failed probe/call.
 - Reusable work has either entered the pending save lifecycle or is explicitly not reusable.
   Run reuse triage before marking a save gate `not applicable`.
@@ -207,7 +207,7 @@ return:
 - User intent: ...
 - Workspace path: ...
 - Artifact directory: ...
-- Flow baseline: ...
+- Play baseline: ...
 - Requirements: ...
 - Commands run: ...
 - Cached responses: ...
@@ -230,8 +230,8 @@ index, search verification, and pending cleanup without asking again.
 One-off describes the current need; reusable describes the procedure. Do not use one-off user intent
 as the reason to skip the save gate.
 
-This save gate applies to new workspace output, not to unchanged reuse of an existing released flow.
-If the only available result is a verified full-flow artifact, return it to `rote` with save gate
+This save gate applies to new workspace output, not to unchanged reuse of an existing released play.
+If the only available result is a verified full-play artifact, return it to `rote` with save gate
 `not applicable`.
 
 If the result is not reusable, return the workspace path, response IDs, and user-visible artifact to
@@ -243,11 +243,11 @@ If the result is not reusable, return the workspace path, response IDs, and user
 - Use when: routed work needs adapter calls, cached response queries, transformations, workspace
   state, or subagent re-entry.
 - Preconditions: `rote-task-routing` or an equivalent owner has selected workspace execution and
-  provided the user intent, route decision, artifact directory, and any flow baseline to preserve.
+  provided the user intent, route decision, artifact directory, and any play baseline to preserve.
 - Owns: workspace init/entry, model identity when known, sequential rote command execution, cached
   response preservation, requirement preservation, rote-native state recovery, subagent
   workspace re-entry, and workspace handoff summaries.
-- Hands off to: `rote-flow-run` when `@@flows` suggests a usable flow; `rote-flow-crystallization`
+- Hands off to: `rote-flow-run` when `@@plays` suggests a usable play; `rote-flow-crystallization`
   when output is reusable or might be reusable; `rote-troubleshooting` after repeated unchanged
   failures; `rote-registry` when a completed reusable artifact is ready to share.
 - Returns to: `rote` or the delegating skill with workspace path, commands run, cached response IDs,

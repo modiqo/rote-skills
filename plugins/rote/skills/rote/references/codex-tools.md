@@ -18,13 +18,13 @@ rules affect the next action.
 - Installed Codex targets may include rules that allow `rote *` and `~/.rote/flows/*`; still read
   command output before assuming a step succeeded.
 - If sandboxing blocks a command, do not widen the request to the whole home directory. Request the
-  specific `rote` command, workspace path, or flow path.
+  specific `rote` command, workspace path, or play path.
 - Do not use destructive commands unless the user explicitly requested that destructive action.
 
 ## Filesystem Constraints
 
-- Prefer paths returned by `rote init`, `rote workspace inspect`, `rote flow search --json`, or
-  `rote flow list --json`.
+- Prefer paths returned by `rote init`, `rote workspace inspect`, `rote play search --json`, or
+  `rote play list --json`.
 - When a workflow says to write a handoff summary, write it through the available file-editing tool
   in the named workspace or artifact path.
 - If the runtime cannot load another skill directly, continue from the current context but keep the

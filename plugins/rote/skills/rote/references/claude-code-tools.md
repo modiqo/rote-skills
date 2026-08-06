@@ -17,12 +17,12 @@ permissions, or subagent behavior.
 
 ## Rote Command Discipline
 
-- Run dependent rote commands sequentially; do not batch `rote flow search`, `rote explore`, and
+- Run dependent rote commands sequentially; do not batch `rote play search`, `rote explore`, and
   cached-response queries in parallel.
-- Prefer the `workdir` tool parameter over `cd ... && ...` unless a flow reference explicitly says a
+- Prefer the `workdir` tool parameter over `cd ... && ...` unless a play reference explicitly says a
   compound command is one logical execution step.
 - If a command needs permissions, request the smallest approval that covers the current rote command
-  or flow path.
+  or play path.
 
 ## Filesystem Expectations
 

@@ -1,6 +1,6 @@
 ---
 name: rote-browse
-description: "Use for browser automation through rote: browsing websites, attaching to active Chrome or Edge sessions, Gmail or other logged-in sites, headed/headless exploration, snapshots, readiness waits, page slices, ref rebasing, and crystallizing browser flows. Prefer rote browser primitives over direct Playwright calls."
+description: "Use for browser automation through rote: browsing websites, attaching to active Chrome or Edge sessions, Gmail or other logged-in sites, headed/headless exploration, snapshots, readiness waits, page slices, ref rebasing, and crystallizing browser plays. Prefer rote browser primitives over direct Playwright calls."
 ---
 
 # rote-browse
@@ -19,7 +19,7 @@ Load the smallest live guide that owns the current state:
 ```bash
 rote guidance browser essential        # launch, observe, interact, recover refs
 rote guidance browser auth             # login, CAPTCHA, MFA, saved sessions
-rote guidance browser flow-authoring   # crystallize and implement TypeScript replay
+rote guidance browser play-authoring   # crystallize and implement TypeScript replay
 ```
 
 Runtime guidance is authoritative for commands and SDK examples. This skill chooses the route and
@@ -30,13 +30,13 @@ preserves the browser handoff.
 1. **Choose launch shape.** If unspecified, ask headed/headless, attached/new session, then tab/window.
 2. **Explore safely.** Follow the runtime guide's wait → snapshot → targeted query → action loop.
 3. **Verify the result.** Read fresh page state or the requested artifact, not only command status.
-4. **Classify replayability.** Decide one-off, private recall, or portable flow candidate.
+4. **Classify replayability.** Decide one-off, private recall, or portable play candidate.
 5. **Hand off reusable work.** Use `rote-flow-crystallization`; after save approval, use
-   `rote guidance browser flow-authoring` and `rote-flow-authoring`.
+   `rote guidance browser play-authoring` and `rote-flow-authoring`.
 
-Do not start with generic flow search when the user explicitly invoked browser automation. After the
-launch shape is chosen, a reusable browser flow may be offered as an option, but do not silently
-replace the requested browser session with a saved flow.
+Do not start with generic play search when the user explicitly invoked browser automation. After the
+launch shape is chosen, a reusable browser play may be offered as an option, but do not silently
+replace the requested browser session with a saved play.
 
 ## Launch Choice
 
@@ -72,11 +72,11 @@ origin, account context where relevant, and active lease.
 
 Stop and ask for human action for credentials, MFA, CAPTCHA, device approval, payment, destructive
 actions, or account consent. Never store passwords, cookies, tokens, payment data, or authenticated
-page contents in flow code, notes, logs, or chat.
+page contents in play code, notes, logs, or chat.
 
 For authenticated replay, follow the auth runtime guide to save session state before
 crystallization. Pending save infers the session dependency. For direct authoring, follow
-`rote guidance browser flow-authoring` instead of constructing frontmatter here.
+`rote guidance browser play-authoring` instead of constructing frontmatter here.
 
 ## Reusable Browser Work
 
@@ -93,7 +93,7 @@ from snapshots, slices, screenshots, actions, and notes. Preserve only what repl
 - Opaque saved-auth profile identifier and status, human gates, and portability limits.
 
 Then hand off to `rote-flow-crystallization`. If saving is approved, run the emitted scaffold and
-`rote guidance browser flow-authoring` before editing the TypeScript body. `rote-flow-authoring`
+`rote guidance browser play-authoring` before editing the TypeScript body. `rote-flow-authoring`
 resumes for tests, lint, release, index/search verification, and pending cleanup.
 
 ## Handoff Summary
@@ -122,7 +122,7 @@ Return:
   replay is required.
 - Owns: launch choice, page lease, waits, snapshots, slices, ref recovery, and human gates.
 - Hands off to: `rote-flow-crystallization` for reusable captured work; `rote-flow-authoring` after
-  approval and browser flow guidance; `rote-registry` for validated sharing; `rote` when substrate
+  approval and browser play guidance; `rote-registry` for validated sharing; `rote` when substrate
   routing changes.
 - Stop when: the result is verified, human action is required, the target cannot be recovered, an
   unsafe action lacks approval, or crystallization becomes the next owner.

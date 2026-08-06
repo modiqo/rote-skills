@@ -12,7 +12,7 @@ affect the next step.
 | Inspect files | Use the available file-read and search tools before shell-based inspection. |
 | Edit files | Use the patch/edit operation; keep edits limited to files named by the active workflow. |
 | Dispatch a subagent | Use Antigravity's agent delegation if available; otherwise continue inline with the packet. |
-| Ask for approval | Request only the blocked command, workspace path, flow path, or network action. |
+| Ask for approval | Request only the blocked command, workspace path, play path, or network action. |
 
 ## Runtime Rules
 
@@ -20,7 +20,7 @@ affect the next step.
   workspace dependencies.
 - Treat command output as authoritative. Read `@@status`, `@@next`, `@@mandatory`, warnings, and
   cached response IDs before continuing.
-- Use absolute paths returned by rote when entering workspaces or flow directories.
+- Use absolute paths returned by rote when entering workspaces or play directories.
 
 ## Skill Context
 

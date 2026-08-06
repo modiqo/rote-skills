@@ -1,6 +1,6 @@
 ---
 name: rote-shell
-description: "Use for CLI and shell work through rote when command output, files, logs, process state, dependency checks, mixed API/browser evidence, or crystallized CLI flows must be remembered, queried, replayed, or shared."
+description: "Use for CLI and shell work through rote when command output, files, logs, process state, dependency checks, mixed API/browser evidence, or crystallized CLI plays must be remembered, queried, replayed, or shared."
 ---
 
 # rote-shell
@@ -11,7 +11,7 @@ Invoke them through the runtime's skill mechanism; only literal `rote …` comma
 terminal.
 
 Use rote for shell and CLI work when the result should become workspace memory:
-commands, outputs, files, logs, process lifecycle, dependencies, and flow replay.
+commands, outputs, files, logs, process lifecycle, dependencies, and play replay.
 Raw shell is still fine for tiny inspection commands, but work that matters
 should pass through rote so it can be queried, audited, and crystallized.
 
@@ -34,13 +34,13 @@ Choose the narrowest rote primitive that preserves evidence:
 - terminal-sensitive command: `rote proc pty run -- <program> [args...]`
 - dependency preflight: `rote deps check deps.toml`
 - legacy TypeScript replay: `rote deno run --allow-all ~/.rote/flows/<name>/main.ts`
-- declarative or presentation replay: `rote flow run ~/.rote/flows/<name>/main.ts param=value`
+- declarative or presentation replay: `rote play run ~/.rote/flows/<name>/main.ts param=value`
 
 Do not replace these with ad hoc `command > file`, `tail -f`, or `ps | grep`
 when the evidence should be durable. Rote already stores typed responses,
 artifacts, hashes, offsets, process leases, and command-log provenance.
 
-Hard default: if command output feeds a final answer, user artifact, flow
+Hard default: if command output feeds a final answer, user artifact, play
 body, or later reasoning step, it is not disposable. Use `rote proc` and then
 query the saved response.
 
@@ -52,7 +52,7 @@ only after the user agrees it should become durable workspace evidence.
 Chaining is acceptable when each meaningful shell process is captured by `rote proc`.
 For example, `rote proc run ... && rote proc run ...` preserves process nodes in the workspace DAG.
 Do not promote raw pipes or chained lifecycle commands as the default route. Adapter setup,
-workspace init/session setup, pending-flow lifecycle, release, index, and registry operations are
+workspace init/session setup, pending-play lifecycle, release, index, and registry operations are
 clearer as separate commands unless the runtime explicitly prints a combined command.
 
 ## Adapter-First Boundary
@@ -61,7 +61,7 @@ clearer as separate commands unless the runtime explicitly prints a combined com
 such as records, tickets, PRs, issues, markets, trades, CRM rows, calendar
 events, or database objects, return to `rote-task-routing` and use adapter
 search/install/probe/call first. Do not fetch provider REST endpoints through
-`curl`, Python, Node, a custom SDK, or inline HTTP scripts unless flow search,
+`curl`, Python, Node, a custom SDK, or inline HTTP scripts unless play search,
 explore, catalog search, and adapter probes have failed to produce a rote path.
 
 Shell work starts after routing selects local command evidence, or after
@@ -72,17 +72,17 @@ source or the router selected it as fallback after adapter checks.
 ## Handoff Contract
 
 - Use when: local CLI commands, files, logs, process lifecycle, dependency checks, generated
-  artifacts, or shell-derived flow replay need rote memory.
+  artifacts, or shell-derived play replay need rote memory.
 - Preconditions: `rote` can run; a task intent and working directory are known; browser/API state
   that must feed the command has been materialized as a saved response, snapshot, slice, or file.
 - Owns: `rote proc` primitive selection, process evidence capture, dependency preflight,
-  background lease handling, process-backed TypeScript flow shape, and shell SDK guidance.
+  background lease handling, process-backed TypeScript play shape, and shell SDK guidance.
 - Hands off to: `rote-flow-crystallization`, `rote-flow-authoring`, `rote-typescript-transformations`,
   `rote-troubleshooting`, `rote-browse`, and `rote`.
 - Returns to: `rote` or the delegating companion with commands run, response IDs, process leases,
   captured artifacts, result, reusability signal, cleanup state, and next recommended skill.
 - Stop when: the shell result is delivered, dependency provisioning needs user approval, a process
-  cleanup or credential prompt blocks, browser/API ownership is required, or reusable flow authoring
+  cleanup or credential prompt blocks, browser/API ownership is required, or reusable play authoring
   takes over.
 - Completion signal: queried process evidence, captured files/artifacts, resolved background
   leases, dependency check status, and a save gate of pending, accepted, discarded, or not
@@ -138,7 +138,7 @@ profiles", "Gmail in browser", or otherwise asks for live web UI state, stop
 shell routing and invoke `/rote-browse`.
 
 Do not satisfy browser intent with `rote proc run`, raw Playwright, native web
-search, WebFetch, `open`, `curl`, or a saved non-browser flow unless the user
+search, WebFetch, `open`, `curl`, or a saved non-browser play unless the user
 explicitly switches substrate. Native search may help discover a URL only when
 the user asked for search/discovery or the browser route cannot identify a URL;
 it is not a substitute for browsing and extracting the page with rote.
@@ -146,9 +146,9 @@ it is not a substitute for browsing and extracting the page with rote.
 Browse intent has precedence over the domain noun. For example, "browse my
 calendar", "browse Gmail", "browse HubSpot", or "browse Salesforce" means the
 user wants browser-state access even though those domains may also have APIs.
-You may still run `rote flow search "<intent>"` first, but only use an
-adapter/flow if it is installed, healthy, and completes the request. If the
-adapter/flow is missing, stale, unauthenticated, or fails setup, do not ask the
+You may still run `rote play search "<intent>"` first, but only use an
+adapter/play if it is installed, healthy, and completes the request. If the
+adapter/play is missing, stale, unauthenticated, or fails setup, do not ask the
 user to build an adapter before trying the browser route. Hand off to
 `/rote-browse` and use an existing headed browser when the task depends on the
 user's logged-in profile.
@@ -218,7 +218,7 @@ readiness, and use `rote proc status` plus `rote proc stop` instead of raw
 
 ## TypeScript SDK Pattern Map
 
-For explicit legacy no-steps TypeScript flows, use first-class SDK wrappers instead of
+For explicit legacy no-steps TypeScript plays, use first-class SDK wrappers instead of
 hand-assembling command arrays. Recorded finite commands default to typed `process.exec` steps via
 workspace export; the SDK surface below is for the shell capabilities the step language does not
 cover — PTY interaction, and background leases/streams with concurrent mid-lease work:
@@ -239,7 +239,7 @@ cover — PTY interaction, and background leases/streams with concurrent mid-lea
 | Authored ordered fan-out | `await rote.execMany(requests, { stopOnError: false })` |
 
 Use `rote.shell().<method>` when you want the shell namespace explicitly; the
-top-level `rote.<method>` forms are convenience aliases for authored flows.
+top-level `rote.<method>` forms are convenience aliases for authored plays.
 
 Do not invent SDK methods for deferred roadmap items. There is no
 `rote.detach`, persistent PTY `send`, or direct OS-pipe stream handle yet. The
@@ -279,12 +279,12 @@ process, file, or explicit stream work to do while the lease runs. The callback
 creates normal semantic DAG evidence; the final `proc wait` is the join point.
 Do not generate heartbeat or polling loops as DAG work.
 `rote.execBackground(...)` already prints the lease and poll commands to
-stderr. Do not duplicate that announcement in crystallized flows. Use
-`announce: false` only for deliberately quiet flows.
+stderr. Do not duplicate that announcement in crystallized plays. Use
+`announce: false` only for deliberately quiet plays.
 
 ## Crystallization Router
 
-When the user asks to turn recorded shell exploration into a reusable flow, use
+When the user asks to turn recorded shell exploration into a reusable play, use
 `rote workspace export <path>` with no shape flags first. The default artifact is
 schema-v1 steps + presentation: typed `process.exec` effects in `steps:` plus a
 `steps_with_presentation` body. The export is a draft synthesized from one
@@ -307,7 +307,7 @@ not a trigger. `rote-flow-authoring` owns the general representability test:
 | Command writes files that downstream work reads | Default steps + presentation export with declared `process.exec` captures | No-shape-flag `rote workspace export ~/.rote/flows/<name>/main.ts` |
 | A moving file or log must be followed to an until/readiness condition (the stream capability) | Explicit legacy body with `rote.followFile(path, options)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
 | Long finite job where other useful work runs mid-lease (the concurrent-work capability) | Explicit legacy body with `rote.execBackgroundAndJoin(request, async (job) => { ... }, options)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
-| Long service or daemon the flow interacts with while it runs | Explicit legacy body with `rote.execBackground({ readyLog, capture })`, then status/follow/stop | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
+| Long service or daemon the play interacts with while it runs | Explicit legacy body with `rote.execBackground({ readyLog, capture })`, then status/follow/stop | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
 | Need to inspect progress mid-lease, inside a justified background escape | Explicit legacy body with `job.follow(...)` or `rote.followProcess(...)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
 | Need completion proof mid-lease, inside a justified background escape — a finite command with no concurrent work is a foreground `process.exec` step with `timeout_ms:` | Explicit legacy body with `job.wait(...)` or `rote.execWait(...)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
 | Terminal behavior is the point | Explicit legacy body with `rote.ptyRun({ argv, input, cols, rows })` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
@@ -318,26 +318,26 @@ not a trigger. `rote-flow-authoring` owns the general representability test:
 
 Crystallize causality, not waiting. Do not encode heartbeat loops, repeated
 status polling, or sleep/retry scaffolding as business DAG nodes. Those are
-observation mechanics. The reusable flow should expose semantic actions and
+observation mechanics. The reusable play should expose semantic actions and
 joins: start work, observe meaningful artifacts or streams, wait for completion,
 then summarize.
 
-Before authoring a process-backed TypeScript flow, read:
+Before authoring a process-backed TypeScript play, read:
 
 ```bash
-rote guidance typescript flow-creation
+rote guidance typescript play-creation
 ```
 
 That guide owns frontmatter, `deps.toml`, FlowOutput, release QA, and the shell
 SDK wrapper contract.
 
-### Flow Runtime Boundary
+### Play Runtime Boundary
 
-`rote proc run` is for exploration, not reusable flow bodies.
+`rote proc run` is for exploration, not reusable play bodies.
 
-- Process-backed TypeScript flows must not call `rote init` internally.
-- Crystallized TypeScript flows must not shell out to `rote proc run`.
-- During exploration, `rote proc run` records evidence; inside reusable flows, use SDK wrappers or
+- Process-backed TypeScript plays must not call `rote init` internally.
+- Crystallized TypeScript plays must not shell out to `rote proc run`.
+- During exploration, `rote proc run` records evidence; inside reusable plays, use SDK wrappers or
   `process.exec` steps.
 - Use shell SDK exec only for task commands, not lifecycle bootstrapping.
 
@@ -370,7 +370,7 @@ evidence:
 | Command needs ongoing human interaction | Foreground or defer | persistent PTY attach is not shipped |
 
 `--dry-run`, `--resume`, `--force-resume`, and `--max-concurrency` are DAG
-runner controls for frontmatter `steps:` flows. They are not universal
+runner controls for frontmatter `steps:` plays. They are not universal
 `rote proc run` flags. For a single command, use the tool's own dry-run/check mode
 when available.
 
@@ -404,7 +404,7 @@ Use shell parsing only when it is the real subject of the work:
 rote proc run -- sh -c 'printf "alpha\n" | tr a-z A-Z'
 ```
 
-If parsing transforms evidence for a report or flow, keep it inside a
+If parsing transforms evidence for a report or play, keep it inside a
 tracked command and capture the inputs/outputs. Do not rely on terminal
 scrollback, untracked temp files, or raw pipelines as the only record.
 
@@ -541,7 +541,7 @@ Do not pass secrets through `--input`; terminal echo may record them in the
 transcript. Do not use PTY for persistent REPLs or long human-driven sessions
 until start/send/snapshot/stop support exists.
 
-In a legacy flow body, `rote.ptyRun` returns the same evidence, typed:
+In a legacy play body, `rote.ptyRun` returns the same evidence, typed:
 
 ```typescript
 const proc = await rote.ptyRun({ argv: ["sh", "-c", "test -t 1 && echo interactive || echo piped"], cols: 100, rows: 30 });
@@ -554,7 +554,7 @@ Request fields are `argv`, `input` or `stdinFile` (not both), `cols`, `rows`,
 and `timeoutMs`. There is **no `cwd` option** — the command runs in the
 executor's current directory, which is the workspace directory once
 `Rote.workspace()` is open. Pass directories to the tool itself (`git -C
-"$root"`, `sh -c 'cd "$1" && …' sh "$dir"`) instead of relying on the flow's
+"$root"`, `sh -c 'cd "$1" && …' sh "$dir"`) instead of relying on the play's
 launch directory. Lint mode stubs `proc.exit()` (`{ kind: "code", code: 0 }`)
 and `proc.transcript.text()` (`""`), so PTY reads need no `isLintMode()` guard.
 
@@ -567,7 +567,7 @@ Treat release and publish commands as high risk. For examples like
 4. Prefer foreground for final irreversible publish steps unless the user
    explicitly approves tracked background execution.
 5. If background execution is approved, capture stdout/stderr to files, follow
-   process streams, and keep the flow `draft` until completion evidence is
+   process streams, and keep the play `draft` until completion evidence is
    captured.
 6. Do not stop a release/publish process unless the user asks; interruption can
    leave external state partially mutated.
@@ -585,9 +585,9 @@ Decision rule:
 
 When a task depends on local tools, create or update
 `~/.rote/flows/<name>/deps.toml` before replay. This is not optional for
-crystallized TypeScript flows: if the flow calls `rote.exec({ argv })` for `git`,
+crystallized TypeScript plays: if the play calls `rote.exec({ argv })` for `git`,
 `gh`, `cargo`, `python`, `node`, `jq`, `rg`, or any other local executable, the
-flow directory must include a matching dependency manifest before the flow is
+play directory must include a matching dependency manifest before the play is
 marked `released`.
 
 ```toml
@@ -618,19 +618,19 @@ rote deps check deps.toml
 ```
 
 Do not auto-install tools into global locations unless the user approved that
-specific provisioning policy. A crystallized flow should declare dependencies
+specific provisioning policy. A crystallized play should declare dependencies
 so the target environment can check or provision them before work begins.
 
 If `rote deps check deps.toml` reports missing required tools, stop and elicit
 an install decision from the user before continuing. Show the missing tool,
-why the flow needs it, and the lowest-risk install scope available. Prefer
+why the play needs it, and the lowest-risk install scope available. Prefer
 project-local or rote-managed installs over global package manager installs.
 Only install globally when the user explicitly approves that scope.
 
 Use this shape:
 
 ```text
-The flow needs these missing tools before replay:
+The play needs these missing tools before replay:
 - gh: required for GitHub PR and Actions checks
 
 I can install/provision them using one of these scopes:
@@ -638,7 +638,7 @@ I can install/provision them using one of these scopes:
 - user/global package manager: broader machine mutation; requires explicit approval
 
 Do you want me to install/provision the missing tools, or should I leave the
-flow in draft until you install them?
+play in draft until you install them?
 ```
 
 After any approved install or user-managed install, rerun:
@@ -648,7 +648,7 @@ cd ~/.rote/flows/<name>
 rote deps check deps.toml
 ```
 
-Never mark the flow `released` while required dependencies are still missing.
+Never mark the play `released` while required dependencies are still missing.
 
 ## Mixed Workflows
 
@@ -663,7 +663,7 @@ rote query @2 '.stdout.text' -r
 ```
 
 The `$owner`/`$repo` above are exploration-time shell/workspace substitutions. In a crystallized
-flow's `steps:`, `$param` tokens are resolved by the DAG runner from the flow's declared
+play's `steps:`, `$param` tokens are resolved by the DAG runner from the play's declared
 `parameters:` — a different mechanism with the same spelling. Recorded `rote proc run` commands
 carry no tokens at all (literal argv), which is why exported drafts need the literals generalized.
 
@@ -683,20 +683,20 @@ After a CLI workflow produces the requested result, run the reuse triage before 
 answer — one verified run is enough to classify; a workflow that has already worked twice is
 simply a stronger save candidate. Before presenting, run `cd <workspace-path> && rote ls`: it
 surfaces the workspace's `@@` state and the `[MANDATORY PROTOCOL]` pending-stub warning when a
-reusable result has no pending flow yet. The canonical replay command depends on the flow's
+reusable result has no pending play yet. The canonical replay command depends on the play's
 execution model.
 
-Explicit legacy TypeScript flows with no `steps:` use rote's bundled Deno:
+Explicit legacy TypeScript plays with no `steps:` use rote's bundled Deno:
 
 ```bash
 rote deno run --allow-all ~/.rote/flows/<name>/main.ts
 ```
 
-Every flow containing frontmatter `steps:`, including the default
-`steps_with_presentation` artifact, uses the flow runner:
+Every play containing frontmatter `steps:`, including the default
+`steps_with_presentation` artifact, uses the play runner:
 
 ```bash
-rote flow run ~/.rote/flows/<name>/main.ts param=value
+rote play run ~/.rote/flows/<name>/main.ts param=value
 ```
 
 ## Crystallization Workflow
@@ -706,10 +706,10 @@ When the user says yes, do the full release discipline:
 1. Choose the correct crystallization path:
 
    - Process-only recorded workspace: use `rote workspace export <path>` with no shape flags. It
-     emits the default steps + presentation `process.exec` flow without a fake adapter. Then generalize the
+     emits the default steps + presentation `process.exec` play without a fake adapter. Then generalize the
      draft: recorded argv is literal, so substitute `$param` tokens for recorded values and prune
-     inferred `parameters:` entries that are not part of the contract. Do not run `rote flow
-     pending save`, `rote flow template create`, or `rote flow frontmatter`; those commands still
+     inferred `parameters:` entries that are not part of the contract. Do not run `rote play
+     pending save`, `rote play template create`, or `rote play frontmatter`; those commands still
      require a real `--adapter`.
    - Mixed adapter/process/browser workspace: use pending save or direct template/export. Run the
      pending-save command unchanged; it already encodes the steps + presentation shape and recorded dependencies.
@@ -725,7 +725,7 @@ When the user says yes, do the full release discipline:
 
    Minimal **default steps + presentation** process frontmatter shape — this is what a generalized export
    looks like and the shape to copy for the default path (full worked example:
-   `rote guidance typescript flow-creation`):
+   `rote guidance typescript play-creation`):
 
    ```typescript
    /**
@@ -834,30 +834,30 @@ When the user says yes, do the full release discipline:
    > `tier`, `created_at`, and `rote_version` (only `workspace` is optional),
    > and `metadata:` requires its own `rote_version` — the provenance copy is
    > a separate field, not a substitute; omitting either fails parsing.
-   > A missing `author` fails `rote deno run <flow>` with a generic
+   > A missing `author` fails `rote deno run <play>` with a generic
    > "configuration error"; the real cause ("provenance: missing field
-   > `author`") shows only in `rote flow index --rebuild` stderr. The
+   > `author`") shows only in `rote play index --rebuild` stderr. The
    > `created_at` / `rote_version` in the example are placeholders — use a real
    > timestamp and your current `rote --version`.
    >
-   > **Surviving `rote flow lint`:** lint runs the body in lint mode against a
+   > **Surviving `rote play lint`:** lint runs the body in lint mode against a
    > synthetic workspace. Shell SDK reads are lint-aware (`proc.stdout.text()`
    > → `""`, `proc.exit()` → `{kind:"code",code:0}`, `proc.files()` → `[]`), so
    > no `isLintMode()` guard is needed. But: (a) parsing must tolerate empty
    > captured output (e.g. `text.split(...)` on `""`), (b) resolve relative path
    > args against `Deno.cwd()` *before* `Rote.workspace()` switches the cwd, and
-   > (c) give parameters defaults — lint runs the flow with no arguments.
+   > (c) give parameters defaults — lint runs the play with no arguments.
 
 2. Create `~/.rote/flows/<name>/main.ts`.
-3. For default steps + presentation and explicit steps-only flows, put the replay graph in frontmatter `steps:`.
+3. For default steps + presentation and explicit steps-only plays, put the replay graph in frontmatter `steps:`.
    The default presentation body only reads completed observations through
-   `__ROTE_PRESENTATION_SDK__`. For explicit legacy SDK flows, use TypeScript shell primitives for process
+   `__ROTE_PRESENTATION_SDK__`. For explicit legacy SDK plays, use TypeScript shell primitives for process
    work: `rote.exec`, `rote.execBackground`, `rote.execStatus`,
    `rote.execStop`, `rote.followFile`, `rote.followProcess`, `rote.ptyRun`,
    `rote.depsCheck`, and `rote.execMany`. Use adapter handles from
    `runPreflight(...)` for adapter work.
 4. Create `~/.rote/flows/<name>/deps.toml` for every local tool or required
-   input file. For shell-only flows, prefer a real `deps.toml` file over
+   input file. For shell-only plays, prefer a real `deps.toml` file over
    frontmatter-only dependency prose so replay can run `rote deps check`.
 5. Keep frontmatter parameters, usage text, and the flag parser in lockstep.
    If frontmatter names use underscores, the parser must accept those exact
@@ -865,13 +865,13 @@ When the user says yes, do the full release discipline:
    `--github-repo` parser unless both forms work.
 6. Start with `metadata.status: draft`. Do not set `released` until dependency
    preflight and replay QA have passed.
-7. Test the draft with at least three distinct inputs. For the default steps + presentation flow and every other
-   flow containing `steps:`:
+7. Test the draft with at least three distinct inputs. For the default steps + presentation play and every other
+   play containing `steps:`:
 
    ```bash
-   rote flow run ~/.rote/flows/<name>/main.ts param=<input-a>
-   rote flow run ~/.rote/flows/<name>/main.ts param=<input-b>
-   rote flow run ~/.rote/flows/<name>/main.ts param=<input-c>
+   rote play run ~/.rote/flows/<name>/main.ts param=<input-a>
+   rote play run ~/.rote/flows/<name>/main.ts param=<input-b>
+   rote play run ~/.rote/flows/<name>/main.ts param=<input-c>
    ```
 
    Only for an explicit legacy TypeScript body with no `steps:`:
@@ -890,29 +890,29 @@ When the user says yes, do the full release discipline:
    If dependency preflight fails, ask the user whether to provision missing
    required tools, with the install scope and side effects stated plainly. Do
    not continue release QA until dependency preflight passes or the user says
-   to keep the flow as `draft`.
+   to keep the play as `draft`.
 
 8. Use the right QA gate for the execution shape.
 
-   Declarative `steps:` DAG flows:
+   Declarative `steps:` DAG plays:
 
    ```bash
-   rote flow validate ~/.rote/flows/<name>/main.ts
-   rote flow run ~/.rote/flows/<name>/main.ts --dry-run param=value
-   rote flow run ~/.rote/flows/<name>/main.ts param=value
-   rote flow run ~/.rote/flows/<name>/main.ts --resume latest param=value
+   rote play validate ~/.rote/flows/<name>/main.ts
+   rote play run ~/.rote/flows/<name>/main.ts --dry-run param=value
+   rote play run ~/.rote/flows/<name>/main.ts param=value
+   rote play run ~/.rote/flows/<name>/main.ts --resume latest param=value
    ```
 
-   `rote flow lint` gates `rote flow release` for every shape — release runs
-   lint and refuses on failure. For pure `steps:` DAG flows the body checks are
+   `rote play lint` gates `rote play release` for every shape — release runs
+   lint and refuses on failure. For pure `steps:` DAG plays the body checks are
    largely vacuous (the DAG runner bypasses the TypeScript body), but the gate
    still applies; for `steps_with_presentation`, lint is the presentation body
    contract check and should run before release.
 
-   Authored SDK flows:
+   Authored SDK plays:
 
    ```bash
-   rote flow lint <name>
+   rote play lint <name>
    rote deno run --allow-all ~/.rote/flows/<name>/main.ts --help
    rote deno run --allow-all ~/.rote/flows/<name>/main.ts <known-good-input>
    ```
@@ -920,29 +920,29 @@ When the user says yes, do the full release discipline:
    In both shapes, loop until hardcoded paths, missing dependency declarations,
    mismatched parameters, raw shell leaks, and output-format issues are fixed.
 
-9. Mark release only after QA passes. Use `rote flow release <name>` for the
+9. Mark release only after QA passes. Use `rote play release <name>` for the
    lifecycle transition (it runs the lint gate; do not edit frontmatter
    `status` by hand), then verify search:
 
    ```bash
-   rote flow release <name>
-   rote flow index --rebuild
-   rote flow search "<name or relevant keywords>"
+   rote play release <name>
+   rote play index --rebuild
+   rote play search "<name or relevant keywords>"
    ```
 
 10. If a pending workspace stub was used, discard it after release:
 
    ```bash
-   rote flow pending discard <workspace>
+   rote play pending discard <workspace>
    ```
 
-Do not claim a shell-derived flow is released from memory. The release claim
+Do not claim a shell-derived play is released from memory. The release claim
 must point back to `rote deps check deps.toml`, command output, saved responses,
-and successful replay commands for the flow's execution model.
+and successful replay commands for the play's execution model.
 
 ## Step Reference Rules For Mixed DAGs
 
-In `steps:` flows, `@step{.path}` resolves against the unwrapped step response body, not the
+In `steps:` plays, `@step{.path}` resolves against the unwrapped step response body, not the
 persisted `@N` envelope on disk. For example:
 
 ```text
@@ -958,5 +958,5 @@ Do not pass large adapter/browser payloads through argv when a file bridge or a
 small scalar projection is clearer.
 
 `$param` tokens resolve in the same fields (`argv` elements, adapter `params:` values, stdin and
-capture paths) from the flow's declared `parameters:`. An unresolved `$name` passes through as a
+capture paths) from the play's declared `parameters:`. An unresolved `$name` passes through as a
 literal, and `$item`/`$item_index` are reserved for `for_each` fan-out.

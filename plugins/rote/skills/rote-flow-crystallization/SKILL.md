@@ -1,8 +1,8 @@
 ---
 name: rote-flow-crystallization
 description: >
-  Preserve reusable results from rote workspace, browser, or manual workflow work as pending flows.
-  Use for pending write/save gates, save-or-discard decisions, and handoffs to flow authoring or
+  Preserve reusable results from rote workspace, browser, or manual workflow work as pending plays.
+  Use for pending write/save gates, save-or-discard decisions, and handoffs to play authoring or
   registry sharing.
 ---
 
@@ -14,7 +14,7 @@ Invoke them through the runtime's skill mechanism; only literal `rote …` comma
 terminal.
 
 Use this skill after workspace, browser, or manual execution produces a result that may be worth
-saving as a reusable rote flow. The pending lifecycle is mandatory for reusable results: write the
+saving as a reusable rote play. The pending lifecycle is mandatory for reusable results: write the
 pending stub first, run or record the pending save command second, then resolve save or discard.
 
 A workflow is reusable when it has parameterizable inputs, repeatable adapter/browser/shell steps, a
@@ -22,10 +22,10 @@ stable output shape, and likely value for future agents. Do not treat a one-off 
 non-reusable. If reusable or plausibly reusable, run this skill before final presentation: pending
 write, pending save, then save/discard decision.
 
-Do not use this skill after unchanged execution of an existing released flow that fully satisfied
-the user request. That workflow is already reusable; verify and present the flow output instead.
+Do not use this skill after unchanged execution of an existing released play that fully satisfied
+the user request. That workflow is already reusable; verify and present the play output instead.
 Use this skill only when the run created new or changed workflow knowledge: adapter exploration,
-browser steps, manual transformations, a composed superflow built around a partial-flow baseline, or
+browser steps, manual transformations, a composed superplay built around a partial-play baseline, or
 an explicit user request to save/release/publish a new workflow.
 
 Do not use this skill for shell-only `rote proc` work unless `rote-shell` explicitly returns here.
@@ -42,29 +42,29 @@ Mixed shell plus adapter, provider API, or browser workflows use this pending li
 workflows with no adapter, provider API, or browser state stay on the shell-only authoring route.
 
 If the user already asked to save, release, publish, or make the workflow reusable, treat that as
-save approval. Do not ask again, and do not skip `rote flow pending write` or `rote flow pending
+save approval. Do not ask again, and do not skip `rote play pending write` or `rote play pending
 save`.
 
 ## Pending Write Gate
 
-Before presenting the final answer, create a pending flow stub that captures the repeatable steps,
+Before presenting the final answer, create a pending play stub that captures the repeatable steps,
 inputs, adapter ids, cached response paths, and output shape from the completed run. Use live rote
 guidance for exact syntax when uncertain: `rote grammar export` or `rote guidance agent essential`.
 
 Precondition check before `pending write`:
 
 - New workspace, browser, or manual steps produced the result; or
-- A partial existing flow was combined with additional uncovered work; or
+- A partial existing play was combined with additional uncovered work; or
 - The user explicitly asked to save, release, publish, or make a new workflow reusable.
 
-If none of these are true and the result came from a verified full-flow match, return to the caller
+If none of these are true and the result came from a verified full-play match, return to the caller
 with save gate `not applicable`.
 
 Typical shape:
 
 ```bash
-rote flow pending write <workspace-name> \
-  --name <suggested-flow-name> \
+rote play pending write <workspace-name> \
+  --name <suggested-play-name> \
   --adapter <adapter-id> \
   --description "<one-sentence purpose>" \
   --query '<validated jq query>' \
@@ -80,24 +80,24 @@ Capture shell/process dependencies in notes, `deps.toml`, or TypeScript SDK shel
 The stub should preserve:
 
 - The user's original intent.
-- Any partial existing flow that was reused as a baseline, including its flow name, parameters,
-  output artifact, source labels, and provenance that the composed superflow must preserve.
+- Any partial existing play that was reused as a baseline, including its play name, parameters,
+  output artifact, source labels, and provenance that the composed superplay must preserve.
 - The adapter calls, browser actions, or transformations that produced the result.
 - Exact adapter ids selected for each capability. These ids are binding input to authoring unless
   the route is explicitly changed through `rote-task-routing`.
 - Parameter candidates and values that must not be hard-coded.
-- A concise result shape that a future flow can return.
+- A concise result shape that a future play can return.
 - Auth, data-shape, and environment assumptions that affect reuse.
 
-When crystallizing a partial-flow composition, the reusable unit is the new superflow, not a
-one-off edited report. The stub should describe how to invoke or reproduce the baseline flow output
+When crystallizing a partial-play composition, the reusable unit is the new superplay, not a
+one-off edited report. The stub should describe how to invoke or reproduce the baseline play output
 and how the uncovered work is merged around it. Do not replace the baseline with hand-written
-content that merely resembles the earlier flow output.
+content that merely resembles the earlier play output.
 
 For long-running work, interruption, or handoff, confirm the stub is recoverable:
 
 ```bash
-rote flow pending list
+rote play pending list
 ```
 
 If the session resumed after compaction or an interruption, also inspect workspace state before
@@ -109,32 +109,32 @@ resolve the active workspace from cwd — run them from inside the workspace dir
 rote ls
 rote workspace inspect meta
 rote workspace inspect variables
-rote flow pending list
+rote play pending list
 ```
 
 ## Pending Save Gate
 
-After the stub exists, run `rote flow pending save` before answering the user:
+After the stub exists, run `rote play pending save` before answering the user:
 
 ```bash
-rote flow pending save <workspace-name>
+rote play pending save <workspace-name>
 ```
 
-`pending save` prints the pre-filled `rote flow template create ...` command; it does not create or
-release the flow. The pending artifact already encodes the default `steps:` plus presentation shape,
+`pending save` prints the pre-filled `rote play template create ...` command; it does not create or
+release the play. The pending artifact already encodes the default `steps:` plus presentation shape,
 so capture the emitted command unchanged. Never append shape flags or reconstruct it after
 compaction or handoff.
 
 `pending save` only *prepares* this command; it does not order you to run it. Its output reads
-"Scaffold command prepared. Run it only after the user has approved saving this as a reusable flow
+"Scaffold command prepared. Run it only after the user has approved saving this as a reusable play
 (ask them if you haven't already)". So run the scaffold command yourself **only after** approval —
 immediately if the user already approved, otherwise after the save question below. Scaffold output
 is an agent action, never user-facing instructions.
 When the pending state contains browser runtime or session data, run
-`rote guidance browser flow-authoring` before editing the generated TypeScript body.
+`rote guidance browser play-authoring` before editing the generated TypeScript body.
 
-If the session was interrupted after writing the stub, recover with `rote flow pending list`, inspect
-the relevant workspace name, and rerun `rote flow pending save <workspace-name>` before continuing
+If the session was interrupted after writing the stub, recover with `rote play pending list`, inspect
+the relevant workspace name, and rerun `rote play pending save <workspace-name>` before continuing
 the save decision.
 
 ## Save Or Discard Decision
@@ -147,7 +147,7 @@ Use this shape:
 ```text
 Result: <brief task result>
 
-I can save this as a reusable rote flow for next time. Save it? (yes/no)
+I can save this as a reusable rote play for next time. Save it? (yes/no)
 ```
 
 Do not combine the save question with unrelated follow-ups. Do not infer consent from silence,
@@ -160,15 +160,15 @@ and optional registry sharing.
 If the user says no, discard the pending stub through rote rather than deleting files directly:
 
 ```bash
-rote flow pending discard <workspace-name>
+rote play pending discard <workspace-name>
 ```
 
 If the answer is unclear, keep the pending stub and ask again for a yes/no decision. On resume, use
-`rote flow pending list` to recover the stub and continue from the save question.
+`rote play pending list` to recover the stub and continue from the save question.
 
 ## Registry Handoff
 
-When the saved flow should be shared, do not push directly from this skill. Return the pending stub,
+When the saved play should be shared, do not push directly from this skill. Return the pending stub,
 captured scaffold command, target owner/namespace if known, and approval state to
 `rote-flow-authoring`; after release, that skill hands off to `rote-registry`. A local release alone
 has no published Play URI. When the downstream publication path returns a `play_uri`,

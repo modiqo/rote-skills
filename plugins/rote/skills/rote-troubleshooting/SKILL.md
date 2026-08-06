@@ -23,21 +23,21 @@ failing command unchanged.
 
 Use this skill after two failures in the same class even if the exact command changed. Same-class
 failures include wrong cwd/workspace, wrong endpoint, missing auth, bad jq/query, wrong adapter
-capability, flow lint/runtime errors, and process evidence not being captured.
+capability, play lint/runtime errors, and process evidence not being captured.
 
 ## Recovery Loop
 
 1. Name the owning skill that failed and the exact command or gate that failed.
 2. Read the previous output again, including structured markers and cached response IDs.
 3. Classify the failure with the patterns below or live `rote guidance`.
-4. Change one material input: arguments, adapter configuration, auth, cwd, workspace, flow code,
+4. Change one material input: arguments, adapter configuration, auth, cwd, workspace, play code,
    environment, approval, or route owner.
 5. Return to the owning skill once the cause changes or the route changes.
 
 Stop and ask one targeted question only when a missing credential, destructive approval, or model
 identity cannot be inferred.
 
-Troubleshooting is not a terminal state. After changing config, route, cwd, SDK state, or flow code,
+Troubleshooting is not a terminal state. After changing config, route, cwd, SDK state, or play code,
 return to the owner with the failed command or gate to rerun. Do not final-answer from this skill
 unless the result is a blocker that prevents any safe rote path.
 
@@ -46,7 +46,7 @@ unless the result is a blocker that prevents any safe rote path.
 | Symptom | Recovery |
 | --- | --- |
 | Missing model identity | In the workspace, run `rote model set <model> --provider <provider> --confirmed-current` when the current model/provider is known. If unknown, skip rather than fabricate unless the command requires it. |
-| Wrong flow path shape | Rerun `rote flow search "<intent>" --json` and use the returned `path` verbatim. Do not construct flow paths by hand. |
+| Wrong play path shape | Rerun `rote play search "<intent>" --json` and use the returned `path` verbatim. Do not construct play paths by hand. |
 | Wrong endpoint form | Run `rote inventory`, then use endpoint names exactly as shown. Adapter sessions usually use `adapter/<id>`; shorthand commands use the adapter id with hyphens converted to underscores. |
 | Adapter auth mismatch | Compare `rote adapter catalog info <id>`, `rote adapter info <id>`, and `rote adapter keys <id>`. Leave the workspace for adapter auth updates when rote says to. |
 | Adapter base URL mismatch | Inspect installed adapter config before catalog install. If the installed provider-equivalent adapter has the wrong base URL, route to `rote-adapter-config`, repair it, then rerun the original probe/call. |
@@ -54,7 +54,7 @@ unless the result is a blocker that prevents any safe rote path.
 | Catalog-search drift | Run `rote adapter catalog search "<intent>"` before direct MCP, WebFetch, curl, or scripts when no installed adapter fits. |
 | Capability mismatch | Return to `rote-task-routing`, name the missing operation, and search or inspect adapters by capability. Do not keep using an adapter that only provides adjacent metadata. |
 | jq pitfalls | Quote jq filters with single quotes, use `-r` only for raw strings, and check `rote grammar query`. Inspect whether the cached response is an error envelope before changing filters. |
-| Flow lint or release failures | Change flow code, frontmatter, arguments, cwd, or environment before retrying. Never edit frontmatter `status` directly. |
+| Play lint or release failures | Change play code, frontmatter, arguments, cwd, or environment before retrying. Never edit frontmatter `status` directly. |
 | `rote deno run` runtime or config failures | Inspect `rote deno status`, `rote sdk status`, `rote grammar deno`, cwd, `ROTE_HOME`, import map, and SDK install state. Repair with `rote deno install`, `rote sdk install`, or `rote sdk upgrade` as appropriate. Do not switch to raw `deno`, `$ROTE_HOME/bin/deno`, or `/tmp/.../bin/deno`; that bypasses rote runtime setup, SDK imports, and provenance. If generated code imports from `$HOME/.rote` while `ROTE_HOME` is set elsewhere, fix the import to honor `ROTE_HOME` and rerun through `rote deno run`. |
 | Shell expansion prompts | Quote user-provided strings and jq filters. Run one rote command at a time so prompts and errors are visible. |
 | Untracked process evidence | Switch to `rote-shell`: rerun through `rote proc run`, capture files/stdout/stderr, and query the saved response before using the result in an artifact or completion claim. |
@@ -69,7 +69,7 @@ up:
 - Workspace/cached-response failures: `rote workspace ls`, then from inside the workspace
   `rote ls`, `rote workspace inspect meta`, `rote workspace inspect variables`.
 - Adapter failures: `rote adapter list`.
-- Flow lifecycle failures: `rote flow pending list`, `rote flow list`.
+- Play lifecycle failures: `rote play pending list`, `rote play list`.
 - Runtime/SDK failures: `rote sdk status`, `rote deno status`.
 
 For cached response errors, inspect the response before changing transformation code:
@@ -96,7 +96,7 @@ Return these fields to the owning workflow skill:
 
 ## Handoff Contract
 
-- Use when: a rote command, workflow gate, flow lifecycle, workspace operation, browser route, or
+- Use when: a rote command, workflow gate, play lifecycle, workspace operation, browser route, or
   registry operation fails repeatedly or would otherwise be retried unchanged.
 - Preconditions: the failing owner, command/gate, previous output, and attempted inputs are known or
   can be recovered from conversation, workspace state, or rote commands.

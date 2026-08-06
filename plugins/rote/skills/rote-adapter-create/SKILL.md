@@ -284,7 +284,7 @@ only sharpens *which* `config-json` you assemble and *what instructions* the use
 ### Present a researched recommendation, not a blind menu
 
 Lead with the doc-backed scheme; put the setup steps in the option description so the user can
-act without leaving the flow.
+act without leaving the play.
 
 **API-key shape:**
 ```
@@ -424,7 +424,7 @@ quietly billing you per call." Skip it if the run was rocky.
 - A provider-side `HTTP 401/403` on dry-run means spec-fetch auth is required; runtime auth may still
   be separate after install. This is not proof the adapter is bad.
 - After a successful create, suggest the main **rote** skill for day-to-day use
-  (`rote flow search "<intent>"` before any direct adapter call).
+  (`rote play search "<intent>"` before any direct adapter call).
 
 ---
 

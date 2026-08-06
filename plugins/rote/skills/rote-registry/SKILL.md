@@ -2,12 +2,12 @@
 name: rote-registry
 description: >
   Share rote artifacts to the registry and manage the org around them. Triggers at the
-  schelling-point moment — right after an adapter is first created or a flow is crystallized
+  schelling-point moment — right after an adapter is first created or a play is crystallized
   (draft or release) — to check whether the artifact already exists in your orgs, tell you
   whether you need to push, and (after a push) surface org members and offer to invite others
   for review or use. Also runs standalone for push/share requests, visibility changes, usage/quotas
   (plan + quota across all your orgs), invites, and member management. Use when the user says
-  "push to registry", "share my adapter/flow", "publish this", "make this public/private",
+  "push to registry", "share my adapter/play", "publish this", "make this public/private",
   "change visibility", "show my usage / quota", "invite someone to my org", or "who's in my org".
   Determines every fact from live `rote registry` commands
   — never from memory.
@@ -20,7 +20,7 @@ Contract — are companion **skills**, never CLI commands (`rote-shell` is not `
 Invoke them through the runtime's skill mechanism; only literal `rote …` commands run in a
 terminal.
 
-Take a freshly-minted adapter or flow and get it into the registry with the same discipline as
+Take a freshly-minted adapter or play and get it into the registry with the same discipline as
 rote's guided setup: **check before you push** (don't burn quota re-pushing something already there), push
 at the visibility the user chooses, then **turn the push into collaboration** by surfacing org
 members and offering invites.
@@ -43,7 +43,7 @@ Core rules:
 
 ## Handoff Contract
 
-- Use when: a newly created adapter or crystallized flow reaches the share point, or the user asks
+- Use when: a newly created adapter or crystallized play reaches the share point, or the user asks
   for registry push/share, a published artifact visibility change, usage/quota, invite, member,
   artifact search, or registry collaboration.
 - Preconditions: `rote registry whoami --verbose` has authenticated or the login blocker is surfaced;
@@ -53,32 +53,32 @@ Core rules:
   selection and in-place changes, conflict recovery, usage reporting, and invite-at-share-time
   collaboration.
 - Hands off to: `rote-org` for deeper organization administration; `rote-adapter-create` when the
-  artifact is not ready to publish; `rote-flow-crystallization` or `rote-flow-authoring` when a flow
+  artifact is not ready to publish; `rote-flow-crystallization` or `rote-flow-authoring` when a play
   must be saved/released before push; `rote` for day-to-day routing after sharing.
 - Returns to: the caller with artifact kind/id/path, target org/owner, visibility or old/new
   visibility plus changed/no-op status, dry-run verdict, push result or skip reason,
   version/conflict state, verified Play URI plus visibility-based sharing guidance for a published
-  flow, invite results, and next recommended skill.
+  play, invite results, and next recommended skill.
 - Stop when: the artifact is shared, confirmed in sync, or has the requested visibility; auth/org
   permission blocks, visibility is unconfirmed, quota blocks the requested write, or the owning
   creation/authoring skill must resume.
 - Completion signal: registry state verified from live commands, push/share/visibility/invite result
-  summarized, and return data includes the artifact, owner, visibility, a published flow's verified
+  summarized, and return data includes the artifact, owner, visibility, a published play's verified
   Play URI and sharing guidance, and any remaining blocker.
 
 ---
 
 ## Two entry modes
 
-**A. Hand-off (the schelling point).** `rote-adapter-create` (Stage 6) and the flow-crystallize
+**A. Hand-off (the schelling point).** `rote-adapter-create` (Stage 6) and the play-crystallize
 path invoke this skill right after minting. The artifact id is known; jump to Stage 1 with it.
 
 **B. Standalone.** User asks for registry help directly. Present the menu:
-- **Push / share** an adapter or flow → Stage 1
-- **Change visibility** of a published adapter or flow → Stage V
+- **Push / share** an adapter or play → Stage 1
+- **Change visibility** of a published adapter or play → Stage V
 - **Show usage** (plan + quota across all orgs) → Stage U
 - **Manage org** (members / invites) → Stage 4
-- **Find** an artifact in the registry (`adapter|flow search`) → one-off
+- **Find** an artifact in the registry (`adapter|play search`) → one-off
 
 ---
 
@@ -89,14 +89,14 @@ rote registry whoami --verbose
 ```
 - Authenticated → note the email; continue.
 - Not authenticated → `rote registry login` (or `rote login --provider google|github`). It's a
-  browser flow — tell the user to finish in the browser, then re-run `whoami` before proceeding.
+  browser play — tell the user to finish in the browser, then re-run `whoami` before proceeding.
 
 ---
 
 ## Stage 1 — Which orgs, and is the artifact already there?
 
 **This is where the "hub" concept first appears — give the hub What/Value beat before asking
-where to push.** Explain that the hub is where a working flow or adapter becomes reusable by the
+where to push.** Explain that the hub is where a working play or adapter becomes reusable by the
 team or community: one proven lesson saved so everyone stops rediscovering it, with deterministic
 token savings across the org. Then proceed.
 
@@ -128,9 +128,9 @@ rote registry adapter info <slug>/<id> --json
     sync; no push needed.** Say so — don't waste a quota slot re-pushing identical content.
   - fingerprint differs, or local version > remote version → **local is ahead; push to update.**
 
-For a **flow** named `<name>`:
+For a **play** named `<name>`:
 ```bash
-rote registry flow info <slug>/<name> --json
+rote registry play info <slug>/<name> --json
 ```
 - Errors / empty → **push needed**.
 - Present → compare published version to local; if local is newer → **push to update**, else
@@ -139,7 +139,7 @@ rote registry flow info <slug>/<name> --json
 Summarize the per-org verdict plainly, e.g.:
 > `linear` — **not in `conikee-home`** (push to share) · **in sync in `modiqo`** (nothing to do).
 
-If every org says "in sync," tell the user there's nothing to push. For a flow, continue to Stage P
+If every org says "in sync," tell the user there's nothing to push. For a play, continue to Stage P
 for each selected owner; then offer Stage 4 (invite/members) or Stage U (usage).
 
 ---
@@ -153,11 +153,11 @@ For each org where a push is warranted, **ask visibility first** (never default 
   **adapter** push, remind them it ships config (base URL, auth scheme) — not token values, but
   still worth a glance.
 
-**Order matters: push the adapters first, then the flow.** A flow push verifies every adapter it
+**Order matters: push the adapters first, then the play.** A play push verifies every adapter it
 depends on is already in the target namespace and hard-fails if one is missing — so the adapters
 have to land first.
 
-Before sharing a flow, inspect every selected adapter's credential contract and catalog entry:
+Before sharing a play, inspect every selected adapter's credential contract and catalog entry:
 
 ```bash
 rote adapter info <id> --json
@@ -169,12 +169,12 @@ variable, its catalog entry must contain a first-party HTTPS `token_url`. Treat 
 guidance only; never fetch it with credentials and never ask the user to paste a credential into
 conversation. If `token_url` is missing, discover the vendor's official token/API-key settings
 page, verify that its host belongs to the vendor, and update the reviewable catalog source before
-continuing. Do not put an unreviewed URL in flow metadata and do not mint or present a Play URI
+continuing. Do not put an unreviewed URL in play metadata and do not mint or present a Play URI
 until the catalog-backed setup page is available. OAuth/DCR/Google-discovery adapters are exempt:
 rote owns those authorization transitions.
 
 Both push commands accept `--dry-run`: it runs the full preflight (eligibility, visibility,
-version-conflict prediction, and — for flows — dependency reachability) and reports
+version-conflict prediction, and — for plays — dependency reachability) and reports
 `would-create` / `would-push` / `would-skip` **without writing anything**. Use it to verify the
 artifact and report the status to the user, then re-run the *same command without `--dry-run`* to
 actually push to the hub.
@@ -186,10 +186,10 @@ rote registry adapter publish <id> <slug>             # push for real
 ```
 Add `--private` for a private push (omit for public).
 
-**Flow** (auto-archives + walks dependencies). Push the flow's `main.ts` path:
+**Play** (auto-archives + walks dependencies). Push the play's `main.ts` path:
 ```bash
-rote registry flow push <path-to-flow>/main.ts <slug> --dry-run   # verify deps + report
-rote registry flow push <path-to-flow>/main.ts <slug>             # push for real
+rote registry play push <path-to-play>/main.ts <slug> --dry-run   # verify deps + report
+rote registry play push <path-to-play>/main.ts <slug>             # push for real
 ```
 Add `--private` for private.
 
@@ -199,18 +199,18 @@ version", offer a semver bump and retry:
 rote adapter bump <id> [--minor|--major]   # default: patch
 ```
 ```bash
-rote flow bump <path> [--minor|--major]
+rote play bump <path> [--minor|--major]
 ```
 Then re-run the publish/push. Show the conflict error verbatim before offering the bump.
 
-On success, state what landed where (id, org, visibility, version). For a flow, continue to Stage P;
+On success, state what landed where (id, org, visibility, version). For a play, continue to Stage P;
 for an adapter, go to Stage 4.
 
 ---
 
 ## Stage P — Present the published Play URI and verify execution readiness
 
-After the non-`--dry-run` flow push succeeds, take `play_uri`, `bootstrap_uri`,
+After the non-`--dry-run` play push succeeds, take `play_uri`, `bootstrap_uri`,
 `play_reference`, `play_location`, `play_run_eligible`, `play_run_variant`, and any
 `play_run_blockers` from its typed result. When Stage 2 confirms the selected published version is
 already in sync, use the same typed fields from that result.
@@ -244,7 +244,7 @@ published reference as inspectable but not executable by `play run`, show the re
 and recommend the pull command plus the compatible local runner returned by the push result.
 
 Eligibility and inspection are not execution verification. For an eligible Play, resolve
-representative parameters from the flow's tested release contract. Present the inspection summary
+representative parameters from the play's tested release contract. Present the inspection summary
 and the exact pinned command without `--yes` before every acceptance run. For an interactive human,
 run that command unchanged and let `play run` ask before setup. For an agent or other non-interactive
 runner, obtain the user's explicit approval for that exact run before adding `--yes`; never infer
@@ -274,18 +274,18 @@ execution-verified or successfully playable. On success, return
 
 Qualify resolution and execution guidance separately:
 
-- **Public** — share the canonical `play_uri`; anyone can GET its transparency card. Eligible flows can be run by anyone; flows that declare
+- **Public** — share the canonical `play_uri`; anyone can GET its transparency card. Eligible plays can be run by anyone; plays that declare
   process or browser privileges can require owner or org membership even when publicly resolvable.
 - **Private** — the canonical URI reveals its owner and slug even though unauthorized resolution
   remains indistinguishable from not-found. Prefer an opaque, revocable share URI when the registry
   returns one; possession identifies the share but never replaces Google/GitHub identity and
-  current organization membership. For an org-owned flow, continue to Stage 4 to offer an
+  current organization membership. For an org-owned play, continue to Stage 4 to offer an
   invitation before sharing.
 
 Include the Play location, any Play URI and bootstrap transition, resolved run reference, execution
 readiness, blockers, execution-verification status and evidence, and access guidance in the return
 data before continuing to Stage 4. Do not construct a URL, parse it out of a command, or hardcode
-a play host; the flow-push result owns the canonical Play and bootstrap URIs, and `rote play inspect` owns the
+a play host; the play-push result owns the canonical Play and bootstrap URIs, and `rote play inspect` owns the
 resolved run reference and execution assessment.
 
 If inspection or the acceptance run fails, report the error and do not claim that the Play was
@@ -295,13 +295,13 @@ verified. A local release that was not published has no published Play URI.
 
 ## Stage V — Change published visibility in place
 
-Use this path when the adapter or flow is already published and the user wants to change who can
+Use this path when the adapter or play is already published and the user wants to change who can
 discover or pull it. Confirm the exact `<org/name>` and target visibility if the user did not supply
 both, then run the matching command:
 
 ```bash
 rote registry adapter visibility <org/name> <public|private> --json
-rote registry flow visibility <org/name> <public|private> --json
+rote registry play visibility <org/name> <public|private> --json
 ```
 
 - The change is **bidirectional** (`public` → `private` and `private` → `public`) and happens in
@@ -327,7 +327,7 @@ the human `->` or `already` line.
 ## Stage 4 — Turn the push into collaboration (members + invite)
 
 Right after a successful push, offer to invite others to the org you just pushed into so they can
-review or use the new artifact. The flow is: **ask → snapshot who's already there → collect a set
+review or use the new artifact. The play is: **ask → snapshot who's already there → collect a set
 of emails → dedup → pick role(s) → invite each sequentially → report**.
 
 ### 4a — Ask first
@@ -372,14 +372,14 @@ The role determines what the invitee can do. Present all three choices (default
 
 | Role | Can do | Use for |
 |------|--------|---------|
-| **reader** | Pull/use artifacts in the org. Cannot push or manage. | Teammates who only consume flows/adapters. |
-| **developer** | reader **+ push/update** adapters and flows. Cannot manage members or org settings. | Collaborators who contribute artifacts. |
+| **reader** | Pull/use artifacts in the org. Cannot push or manage. | Teammates who only consume plays/adapters. |
+| **developer** | reader **+ push/update** adapters and plays. Cannot manage members or org settings. | Collaborators who contribute artifacts. |
 | **admin** | developer **+ manage the org**: invite/remove members, change roles, manage artifacts and visibility. | Co-maintainers you fully trust. |
 
 > **Admin caveat — call this out before granting it.** An admin can invite and remove *other*
 > members (including downgrading peers), change anyone's role, and delete/re-publish the org's
 > artifacts. It's near-total control short of deleting the org itself (owner-only). Grant it only
-> to people you'd trust to run the org; for someone who just needs to contribute flows,
+> to people you'd trust to run the org; for someone who just needs to contribute plays,
 > **developer** is the right default. Don't default to admin to "save a step."
 
 **Seat check first.** From Stage U's `limit.members - current.members`, compute remaining seats.
@@ -424,7 +424,7 @@ Render a per-org table — for each metric show `current / limit` (render `null`
 **∞ / unlimited**), the plan, and which feature flags are on. Flag anything near a non-null
 limit (e.g. ≥80%) so the user sees pressure before they hit it. Example row:
 
-> **conikee-home** · plan `org_admin` · members 1/∞ · private adapters 3/∞ · private flows
+> **conikee-home** · plan `org_admin` · members 1/∞ · private adapters 3/∞ · private plays
 > 2/∞ · public 0 · features: audit ✓, verification ✓
 
 This is the usage answer — quota consumption at a glance, no surprises.
@@ -437,8 +437,8 @@ This is the usage answer — quota consumption at a glance, no surprises.
   quota — surfacing "already in sync" is a feature, not a non-answer.
 - **`adapter publish` vs `adapter push`:** `publish` packs then pushes (the normal path);
   `push` uploads an already-packed `.adapt`. Prefer `publish` for a freshly-minted adapter.
-- **Flow drafts vs releases:** the crystallize hand-off fires for both. A draft push shares
-  work-in-progress for review; a release push shares the finished flow. Same commands; the
+- **Play drafts vs releases:** the crystallize hand-off fires for both. A draft push shares
+  work-in-progress for review; a release push shares the finished play. Same commands; the
   user's intent (review vs use) just shapes the invite framing in Stage 4.
 - For deeper org administration (create/delete orgs, change roles, remove members, manage
   pending invites at length), hand off to the **rote-org** skill — this skill covers the
@@ -453,7 +453,7 @@ artifact name + org + that it's now shareable without a middleman registry tax. 
 errored or there was nothing to push.
 
 **Related setup skills:**
-- **Invoked by:** `rote-adapter-create` (after minting an adapter) and the flow
+- **Invoked by:** `rote-adapter-create` (after minting an adapter) and the play
   crystallize path.
 - **Full org admin:** the **rote-org** skill · **Tune the adapter first:**
   `rote-adapter-config`

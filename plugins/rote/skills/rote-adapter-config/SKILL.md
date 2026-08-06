@@ -19,9 +19,9 @@ dry-run-first pipeline), this is a **menu of discrete operations**, each a small
 `rote adapter config` subcommand. Every operation below runs through the specific `rote adapter …`
 / `rote token …` / `rote oauth …` commands shown.
 
-When this skill is invoked from a failed workspace, flow, or adapter call, it is a repair subroutine.
+When this skill is invoked from a failed workspace, play, or adapter call, it is a repair subroutine.
 It must return to the owner after the config change; it does not complete the user's task by itself.
-Repair is not complete until the owner reruns the failed probe/call or flow gate.
+Repair is not complete until the owner reruns the failed probe/call or play gate.
 
 Rules:
 
@@ -202,7 +202,7 @@ rote adapter bump <id> [--minor|--major]
 
 ## Repair Return Packet
 
-When called because an adapter probe/call, flow run, or workspace gate failed, return:
+When called because an adapter probe/call, play run, or workspace gate failed, return:
 
 - Owner skill and workspace, if known.
 - Adapter id and setting changed.

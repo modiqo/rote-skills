@@ -25,8 +25,8 @@ the workflow.
 - Use `rote grammar query` for cached response addressing and jq flags.
 - Use `rote grammar adapters` and `rote guidance adapters essential` before adapter probes, calls,
   sessions, or batches.
-- Use `rote grammar deno` and `rote guidance typescript essential` before TypeScript flow execution.
-- Use `rote grammar export` before flow scaffolding, pending flow work, lint, release, or index
+- Use `rote grammar deno` and `rote guidance typescript essential` before TypeScript play execution.
+- Use `rote grammar export` before play scaffolding, pending play work, lint, release, or index
   commands.
 - Use `rote grammar registry` and `rote guidance registry essential` before pushes, pulls, namespace
   selection, or publish steps.
@@ -44,7 +44,7 @@ rote <adapter_id>_call <operation> '<args-json>'
 
 Convert hyphenated adapter IDs to underscores in the command name. Read the full probe response,
 copy the exact operation name and required JSON shape, then call through rote. Read `@@next`,
-`@@mandatory`, `@@flows`, warnings, and cached response ids before continuing.
+`@@mandatory`, `@@plays`, warnings, and cached response ids before continuing.
 
 ## Response Querying
 
@@ -86,7 +86,7 @@ processes directly.
 
 For browser automation, hand off to `rote-browse` and use `rote guidance browser essential` for live
 browser conventions. Keep browser-derived data flowing through rote workspace state before
-crystallizing a reusable flow.
+crystallizing a reusable play.
 
 For registry publishing, use live registry guidance and grammar, confirm the target namespace and
 artifact, then hand off to `rote-registry`. If organization administration is needed, hand off to
@@ -110,7 +110,7 @@ Return these fields to the owning skill:
   why live command help is unavailable.
 - Owns: command-pattern lookup, live-surface precedence, quoting/cwd caveats, and return of exact
   command shapes to the owning skill.
-- Hands off to: `rote-workspace` for adapter execution, `rote-flow-authoring` for flow lifecycle
+- Hands off to: `rote-workspace` for adapter execution, `rote-flow-authoring` for play lifecycle
   commands, `rote-typescript-transformations` for TypeScript execution detail, `rote-registry` for
   publish/pull commands, `rote-browse` for browser commands, and `rote-troubleshooting` for repeated
   failures.

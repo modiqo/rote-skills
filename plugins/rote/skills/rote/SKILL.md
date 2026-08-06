@@ -2,14 +2,14 @@
 name: rote
 description: >
   Use rote before direct adapter, MCP, browser, registry, or workflow automation calls. This is
-  the entrypoint orchestrator for the rote skill set: it searches for reusable flows first,
+  the entrypoint orchestrator for the rote skill set: it searches for reusable plays first,
   decides when a companion skill owns the work, and loads platform references only when the
   current runtime needs tool-specific instructions.
 ---
 
 # rote - Entrypoint Orchestrator
 
-Use `rote` first when a task may involve adapters, flows, browser automation, local shell or
+Use `rote` first when a task may involve adapters, plays, browser automation, local shell or
 process work that should be remembered, registry work, setup/update actions, or reusable workflow
 state. This skill owns the first routing decision; the narrower companion skills own their
 specialist workflows.
@@ -23,8 +23,8 @@ skills through the runtime's skill mechanism; only literal `rote …` commands r
 If there is any reasonable chance the task needs rote, load and follow this skill before direct
 MCP calls, provider CLIs, browser automation, registry commands, or custom scripts.
 
-- Start day-to-day work with `rote flow search "<intent>"`; a reusable flow may already exist.
-- When search does not return a verified full-flow match, invoke the `rote-task-routing` skill
+- Start day-to-day work with `rote play search "<intent>"`; a reusable play may already exist.
+- When search does not return a verified full-play match, invoke the `rote-task-routing` skill
   before `rote-shell`, `rote-flow-authoring`, raw HTTP, native CLIs, or custom scripts unless the
   user's request is explicitly only local CLI/files/logs/process work.
 - When rote commands fail repeatedly, invoke the `rote-troubleshooting` skill and fix the cause.
@@ -33,7 +33,7 @@ MCP calls, provider CLIs, browser automation, registry commands, or custom scrip
 - If a companion skill is the better owner, invoke that skill deliberately instead of continuing
   from general prose.
 - Run rote commands one at a time, read each result fully, and obey `@@status`, `@@next`,
-  `@@mandatory`, `@@flows`, cached response IDs, warnings, and errors before choosing the next
+  `@@mandatory`, `@@plays`, cached response IDs, warnings, and errors before choosing the next
   command. Captured shell chains such as `rote proc run ... && rote proc run ...` belong to
   `rote-shell`; use them only when each meaningful process is captured as its own `rote proc`
   response in the workspace DAG.
@@ -45,10 +45,10 @@ MCP calls, provider CLIs, browser automation, registry commands, or custom scrip
   `rote adapter info`, dry-run the candidate repair with `rote adapter set <id> base_url <url>
   --dry-run`, then apply and probe/call the installed adapter through rote.
 - A successful `--dry-run` is analysis only, not setup completion. Do not answer or proceed as if an
-  adapter, flow, registry push, or runtime action exists until the non-dry-run command has run and
+  adapter, play, registry push, or runtime action exists until the non-dry-run command has run and
   the installed/released/published state is verified.
 - `[MANDATORY PROTOCOL] no pending stub` is a hard final-answer stop. Do not present reusable results
-  until `rote flow pending write` and `rote flow pending save` have run.
+  until `rote play pending write` and `rote play pending save` have run.
 - For reusable multi-source work, confirm each required source is backed by a captured `@N`
   response before presenting or releasing; release/lint success is not provider proof.
 - Use `rote how`, `rote start`, `rote guidance agent essential`, `rote guidance adapters
@@ -56,7 +56,7 @@ MCP calls, provider CLIs, browser automation, registry commands, or custom scrip
 
 ## Reuse Triage Gate
 
-After rote work that was not unchanged execution of an existing released flow, classify the procedure
+After rote work that was not unchanged execution of an existing released play, classify the procedure
 before final answer. Do not treat a one-off user request as non-reusable. One-off describes the
 current need; reusable describes whether the procedure has parameterizable inputs, repeatable
 adapter/browser/shell steps, a stable output shape, and future agent value.
@@ -65,7 +65,7 @@ If reusable or plausibly reusable, invoke the `rote-flow-crystallization` skill 
 presentation:
 pending write, pending save, then save/discard decision. If not reusable, briefly record why.
 
-## Default Flow Shape
+## Default Play Shape
 
 When work is crystallized, no shape flags means the schema-v1 steps + presentation model: adapter,
 `process.exec`, and browser effects live in frontmatter `steps:`, while
@@ -77,18 +77,18 @@ language does not support, or when the user explicitly asks for a no-steps body.
 fan-out, conditions, ordering, parallelism, and long finite commands are steps capabilities
 (`for_each`, `execution:`, `depends_on`, `max_concurrency`, `timeout_ms`) — a set whose width is
 only discovered at run time is not a legacy trigger.
-Every flow containing `steps:` runs with `rote flow run`; only no-steps legacy
+Every play containing `steps:` runs with `rote play run`; only no-steps legacy
 TypeScript uses `rote deno run --allow-all`. For the concrete step syntax use `rote grammar steps`;
-the complete assembled artifact lives in `rote guidance typescript flow-creation`.
+the complete assembled artifact lives in `rote guidance typescript play-creation`.
 
 ## Requirements Across Interruptions
 
-For long, interrupted, partial-flow, or reusable work, note the requirements before execution
+For long, interrupted, partial-play, or reusable work, note the requirements before execution
 starts:
 
 - Required sources/adapters and the capability each one must provide.
 - Required live observations, output artifact, and verification checks.
-- Constraints that must survive compaction, interruption, and superflow composition.
+- Constraints that must survive compaction, interruption, and superplay composition.
 
 After compaction, a user interruption, or a handoff, reread that note before the next command. Do
 not substitute adjacent data for a missing capability: provider metadata is not live activity, event
@@ -104,7 +104,7 @@ When the user sends a new message mid-task, classify it before acting:
 - Independent side question: answer briefly, then resume from the requirements note.
 - Ambiguous relationship: ask one clarifying question.
 
-Before answering or switching, write down the current gate, workspace/flow name, cached response ids,
+Before answering or switching, write down the current gate, workspace/play name, cached response ids,
 pending stub state, artifact path, and exact next rote command. After the side question or
 correction, repeat that resume point and continue unless the user explicitly closes the original
 task. Decide by semantic relationship, not fixed phrases such as "hold on".
@@ -123,20 +123,20 @@ If the user asks to save, release, publish, make reusable, or crystallize a work
 approval for the save/release path. It does not waive pending write, pending save, scaffold, test,
 release, index, search, or cleanup states.
 
-## Skill Flow
+## Skill Play
 
 ```dot
 digraph rote_flow {
     "User request" [shape=doublecircle];
     "Explicit setup/update/browser/org/registry?" [shape=diamond];
     "Invoke specialist" [shape=box];
-    "Run rote flow search <intent>" [shape=box];
-    "Full flow match?" [shape=diamond];
-    "Partial flow match?" [shape=diamond];
-    "Run matched flow" [shape=box];
-    "Run partial flow as baseline" [shape=box];
-    "Preserve baseline for superflow" [shape=box];
-    "Full flow reuse terminal" [shape=doublecircle];
+    "Run rote play search <intent>" [shape=box];
+    "Full play match?" [shape=diamond];
+    "Partial play match?" [shape=diamond];
+    "Run matched play" [shape=box];
+    "Run partial play as baseline" [shape=box];
+    "Preserve baseline for superplay" [shape=box];
+    "Full play reuse terminal" [shape=doublecircle];
     "Route uncovered work" [shape=box];
     "Run rote explore <intent>" [shape=box];
     "Substrate route" [shape=box];
@@ -158,23 +158,23 @@ digraph rote_flow {
 
     "User request" -> "Explicit setup/update/browser/org/registry?";
     "Explicit setup/update/browser/org/registry?" -> "Invoke specialist" [label="yes"];
-    "Explicit setup/update/browser/org/registry?" -> "Run rote flow search <intent>" [label="no"];
+    "Explicit setup/update/browser/org/registry?" -> "Run rote play search <intent>" [label="no"];
     "Invoke specialist" -> "Verify requested artifact/content";
-    "Run rote flow search <intent>" -> "Full flow match?";
-    "Full flow match?" -> "Run matched flow" [label="yes"];
-    "Full flow match?" -> "Partial flow match?" [label="no"];
-    "Run matched flow" -> "Verify requested artifact/content";
-    "Partial flow match?" -> "Run partial flow as baseline" [label="yes"];
-    "Partial flow match?" -> "Run rote explore <intent>" [label="no"];
-    "Run partial flow as baseline" -> "Preserve baseline for superflow";
-    "Preserve baseline for superflow" -> "Route uncovered work";
+    "Run rote play search <intent>" -> "Full play match?";
+    "Full play match?" -> "Run matched play" [label="yes"];
+    "Full play match?" -> "Partial play match?" [label="no"];
+    "Run matched play" -> "Verify requested artifact/content";
+    "Partial play match?" -> "Run partial play as baseline" [label="yes"];
+    "Partial play match?" -> "Run rote explore <intent>" [label="no"];
+    "Run partial play as baseline" -> "Preserve baseline for superplay";
+    "Preserve baseline for superplay" -> "Route uncovered work";
     "Route uncovered work" -> "Run rote explore <intent>";
     "Run rote explore <intent>" -> "Substrate route";
     "Substrate route" -> "Execute in rote workspace" [label="adapter/API"];
     "Substrate route" -> "Execute via rote-shell" [label="local CLI/files/logs"];
     "Execute in rote workspace" -> "Verify requested artifact/content";
     "Execute via rote-shell" -> "Verify requested artifact/content";
-    "Verify requested artifact/content" -> "Full flow reuse terminal" [label="verified full flow"];
+    "Verify requested artifact/content" -> "Full play reuse terminal" [label="verified full play"];
     "Verify requested artifact/content" -> "Reusable result?" [label="workspace/browser/manual result"];
     "Reusable result?" -> "Final answer" [label="no"];
     "Reusable result?" -> "Pending write" [label="yes"];
@@ -199,7 +199,7 @@ When multiple rote skills could apply, use this order:
 
 ### Substrate Router: Adapter vs Browser vs Shell
 
-After the initial flow search, choose the substrate that best matches the user's intent. Do not
+After the initial play search, choose the substrate that best matches the user's intent. Do not
 force all tasks through adapters, browser automation, or shell.
 
 | Intent signal | Route |
@@ -211,13 +211,13 @@ force all tasks through adapters, browser automation, or shell.
 | Browser snapshot/file feeds a local CLI | Keep one workspace, use the `rote-browse` skill first, then `rote-shell` on the saved evidence. |
 
 Provider/API data is not shell work merely because `curl`, Python, Node, or a public REST endpoint
-can fetch it. After flow search, route through `rote-task-routing`; if no installed adapter fits,
+can fetch it. After play search, route through `rote-task-routing`; if no installed adapter fits,
 search/install from the adapter catalog before direct fallback.
 
 Browser routing rule:
 
 - Browser words outrank domain nouns. "Browse my calendar" routes to `rote-browse` after the
-  initial flow search, even though calendar data can be an adapter task. Use an adapter/flow only if
+  initial play search, even though calendar data can be an adapter task. Use an adapter/play only if
   it is already installed, healthy, and completes the request. If it is missing, stale,
   unauthenticated, or fails setup, switch to browser attach instead of asking the user to build an
   adapter first.
@@ -238,24 +238,24 @@ substrate.
 Shell/process routing rule:
 
 - The `rote-shell` skill owns durable local CLI, files, logs, background processes, dependency
-  manifests, and shell-derived flow crystallization — but not provider/API data collection: use
+  manifests, and shell-derived play crystallization — but not provider/API data collection: use
   adapters for typed provider calls, and `rote proc` only for local command evidence or
   transformations selected by the router. Its command model and raw-shell boundary live in that
   skill, not here.
 
-1. `rote` first for any day-to-day rote, adapter, MCP, flow, workspace, or reusable workflow task.
-2. Explicit lifecycle specialists before flow search only when the user directly asks for setup,
+1. `rote` first for any day-to-day rote, adapter, MCP, play, workspace, or reusable workflow task.
+2. Explicit lifecycle specialists before play search only when the user directly asks for setup,
    update, browser automation, shell/process work, registry, org administration, adapter creation,
    or adapter configuration.
-3. `rote-flow-run` before workspace exploration when search or `@@flows` returns a usable flow.
-4. `rote-task-routing` only to choose the next route after no full flow match or after a partial
-   flow baseline is preserved. Never route the same work again after a verified full flow match.
+3. `rote-flow-run` before workspace exploration when search or `@@plays` returns a usable play.
+4. `rote-task-routing` only to choose the next route after no full play match or after a partial
+   play baseline is preserved. Never route the same work again after a verified full play match.
 5. `rote-shell` only when the user explicitly asked for local CLI/files/logs/process work or
    `rote-task-routing` selected the shell substrate.
 6. `rote-workspace` for adapter probes, calls, cached response queries, transformations, and
    multi-adapter execution.
 7. `rote-flow-crystallization` for new reusable workspace, browser, or manual results before final
-   presentation; unchanged reuse of an existing released flow is already reusable and skips this
+   presentation; unchanged reuse of an existing released play is already reusable and skips this
    gate. Process-only crystallization stays in `rote-shell`: its recorded workspace uses the
    adapterless export path plus `deps.toml`, because template/pending still require a real adapter.
 8. `rote-flow-authoring` only after direct authoring intent or an approved pending save command.
@@ -265,15 +265,15 @@ Shell/process routing rule:
 
 ## Skill Types
 
-- **Rigid states:** flow search, flow provenance preservation, workspace execution, pending
-  write/save, scaffold, tests, release, index, search verification, pending discard, and full-flow
+- **Rigid states:** play search, play provenance preservation, workspace execution, pending
+  write/save, scaffold, tests, release, index, search verification, pending discard, and full-play
   reuse termination. Follow these exactly.
 - **Flexible states:** wording, artifact formatting, adapter choice after routing, parameter naming,
   and registry visibility recommendations. Adapt these to the user request and live rote output.
 
 ## User Instructions
 
-The user may name the desired result, adapter, flow, output file, or release target. That narrows the
+The user may name the desired result, adapter, play, output file, or release target. That narrows the
 path; it does not skip lifecycle states. If the user asks for a direct adapter/MCP/browser/shell
 action, route through rote unless they explicitly forbid rote.
 
@@ -283,22 +283,22 @@ These thoughts mean stop and return to the current lifecycle state:
 
 | Thought | Reality |
 | --- | --- |
-| "I know which adapter to use, so I can skip flow search." | Search is the entry gate for day-to-day rote work. |
-| "A partial flow is just a draft; I can rewrite it." | Run it as a reusable baseline, preserve its output/provenance, and build a new composed superflow around it. |
-| "A full flow answered it, but I should explore adapters to improve it." | Stop after verifying the requested artifact. Existing released flow reuse is terminal unless the user asked for a new artifact or edit. |
+| "I know which adapter to use, so I can skip play search." | Search is the entry gate for day-to-day rote work. |
+| "A partial play is just a draft; I can rewrite it." | Run it as a reusable baseline, preserve its output/provenance, and build a new composed superplay around it. |
+| "A full play answered it, but I should explore adapters to improve it." | Stop after verifying the requested artifact. Existing released play reuse is terminal unless the user asked for a new artifact or edit. |
 | "The report looks right, so verification is done." | Verify the requested artifact content and required rote lifecycle evidence. |
 | "Rote warned `[MANDATORY PROTOCOL] no pending stub`, but I can answer now." | Stop. For workspace, browser, manual, or mixed shell/API work that produced reusable results, run pending write and pending save before final text. |
 | "The user asked for a one-off report, so no save gate." | Wrong. Run reuse triage. One-off request intent does not imply one-off workflow value. |
 | "The provider is right, so any adapter for it is enough." | Match the requested capability: metadata, search, trades, live volume, files, and workflow state are different capabilities. |
 | "I ran pending write; that is enough." | Pending write anchors context; pending save emits the scaffold command. |
 | "The user said save, so pending save is unnecessary." | Save approval starts pending save; it never skips it. |
-| "Running an existing released flow produced a reusable result, so I need pending write." | No. Pending write is for new or changed workflow knowledge, not unchanged reuse of an existing flow. |
-| "The flow is released, so the pending stub can stay." | Release is followed by index, search verification, then pending discard. |
-| "I can edit `status: released` by hand." | Use `rote flow release`; it is the lint-gated lifecycle transition. |
+| "Running an existing released play produced a reusable result, so I need pending write." | No. Pending write is for new or changed workflow knowledge, not unchanged reuse of an existing play. |
+| "The play is released, so the pending stub can stay." | Release is followed by index, search verification, then pending discard. |
+| "I can edit `status: released` by hand." | Use `rote play release`; it is the lint-gated lifecycle transition. |
 | "After compaction, I remember the state." | Recover with rote workspace, response, and pending-state commands before continuing. |
 | "After compaction, the immediate next task is all that matters." | Reread the requirements note and preserve every required source, live observation, artifact, and verification check. |
 | "No installed adapter means direct curl/WebFetch now." | Explore and adapter catalog search come before direct fallback. |
-| "The public API is easy; I can call it with Python, Node, or curl and then hand-write the flow." | Provider/API data goes through flow search, task-routing, catalog install, adapter probes/calls, pending save, then scaffold. |
+| "The public API is easy; I can call it with Python, Node, or curl and then hand-write the play." | Provider/API data goes through play search, task-routing, catalog install, adapter probes/calls, pending save, then scaffold. |
 | "Single-adapter work does not need workspace discipline." | Adapter probes, calls, and cached responses belong in a rote workspace. |
 | "I need shell output, so raw `gh`/`npm`/`python` is fine." | Use `rote-shell` and `rote proc` when the output should be durable, queryable, or replayable. |
 | "The user asked something else, so the old task is gone." | Classify the new request, preserve state, answer or redirect, then resume or close the prior task explicitly. |
@@ -330,44 +330,44 @@ short routing table is not enough.
 
 ## Top-Level Skill Routing
 
-Start day-to-day rote tasks with `rote flow search "<intent>"`, then invoke the narrow skill that
+Start day-to-day rote tasks with `rote play search "<intent>"`, then invoke the narrow skill that
 owns the next state. Explicit setup, update, browser, shell/process, registry, org, adapter-create, or
 adapter-config requests may start in that specialist skill, but those specialists still return to
 this lifecycle before final presentation when reusable workflow state is involved. Workflow logic
 lives in standalone skills; `rote/references/` is only for platform mapping, the optional workflow
-map, and the compact flow search/run reference.
+map, and the compact play search/run reference.
 
 | Branch | Invoke or load | Completion expectation |
 | --- | --- | --- |
-| Existing flow fully covers the request | `rote-flow-run`. | Flow output is verified and delivered; stop unless the user asked for edits, a new artifact, or publication work. |
-| Existing flow covers a baseline or partial result | `rote-flow-run`, then `rote-task-routing`. | Baseline output is kept intact while uncovered work is routed. |
+| Existing play fully covers the request | `rote-flow-run`. | Play output is verified and delivered; stop unless the user asked for edits, a new artifact, or publication work. |
+| Existing play covers a baseline or partial result | `rote-flow-run`, then `rote-task-routing`. | Baseline output is kept intact while uncovered work is routed. |
 | Local CLI, files, logs, commands, or process state is the selected substrate | `rote-shell`. | Shell work uses `rote proc`/`rote deps`, records evidence, and returns result plus reusable-work signal. |
-| No flow matched, installed adapter can help | `rote-task-routing`, then `rote-workspace`. | Adapter work runs in a rote workspace with cached response IDs preserved. |
+| No play matched, installed adapter can help | `rote-task-routing`, then `rote-workspace`. | Adapter work runs in a rote workspace with cached response IDs preserved. |
 | No installed adapter matched | Search `rote adapter catalog search "<intent>"`; use `rote-adapter-create` if the user supplied or accepts an adapter spec. | Useful catalog hits are inspected or installed before out-of-band fallback. |
 | Workspace, browser, or manual work produced new reusable results | `rote-flow-crystallization`. | Pending write and pending save happen before final presentation; save/discard state is resolved. |
-| Shell/process work produced reusable results | `rote-shell`, then `rote-flow-authoring` or `rote-flow-crystallization` only when the shell skill returns that handoff. | Recorded process-only work uses no-shape-flag workspace export for the default steps + presentation flow; adapter-requiring pending/template commands are not used. |
-| User asks to create, edit, lint, release, or publish a flow | `rote-flow-authoring`. | The flow lifecycle reaches scaffold, tests, lint, release, index/search verification, cleanup, publish, or a clear blocker. |
+| Shell/process work produced reusable results | `rote-shell`, then `rote-flow-authoring` or `rote-flow-crystallization` only when the shell skill returns that handoff. | Recorded process-only work uses no-shape-flag workspace export for the default steps + presentation play; adapter-requiring pending/template commands are not used. |
+| User asks to create, edit, lint, release, or publish a play | `rote-flow-authoring`. | The play lifecycle reaches scaffold, tests, lint, release, index/search verification, cleanup, publish, or a clear blocker. |
 | Command syntax or rote idioms are needed | Prefer `rote grammar <topic>`; invoke the `rote-command-patterns` skill for task-focused patterns. | Live grammar is treated as source of truth. |
-| TypeScript flow transformation detail is needed | Prefer `rote grammar deno`; invoke the `rote-typescript-transformations` skill. | Cached responses and `FlowOutput` shape are preserved. |
+| TypeScript play transformation detail is needed | Prefer `rote grammar deno`; invoke the `rote-typescript-transformations` skill. | Cached responses and `FlowOutput` shape are preserved. |
 | Repeated failure appears after an unchanged retry | `rote-troubleshooting`. | The cause changes, the route changes, or the blocker is surfaced. |
 | Org, registry, browser, shell/process, or single-adapter execution is explicit | Invoke the matching skill: `rote-org`, `rote-registry`, `rote-browse`, `rote-shell`, or `rote-using-adapters`. | The specialist skill returns its completion signal or next handoff. |
 
 ## Execution State Machine
 
-1. State the intent in one phrase and run `rote flow search "<intent>"`, except when an explicit
+1. State the intent in one phrase and run `rote play search "<intent>"`, except when an explicit
    setup/update/browser/shell/org/registry/adapter-create/adapter-config request already names a
    specialist.
-2. If a flow fully covers the request, run it through the `rote-flow-run` skill, using the
-   `rote flow info <name-or-path> --json` command for the canonical path and parameter contract, verify the
+2. If a play fully covers the request, run it through the `rote-flow-run` skill, using the
+   `rote play info <name-or-path> --json` command for the canonical path and parameter contract, verify the
    requested artifact content, and stop. Do not explore adapters, initialize a workspace, rewrite the
    artifact, or enter pending write/save unless the user explicitly asked to edit, create a separate
    enhanced artifact, save a new workflow, release, or publish.
-3. If a flow covers only part of the request, run it as the baseline. Preserve the raw baseline
+3. If a play covers only part of the request, run it as the baseline. Preserve the raw baseline
    output, provenance, sentinels, source labels, and markers as source material for a new composed
-   superflow. Route only the uncovered work, then save/release the reusable composition if requested
+   superplay. Route only the uncovered work, then save/release the reusable composition if requested
    or approved. Do not replace the baseline with a hand-written lookalike report.
-4. If no flow matched or uncovered work remains, run `rote explore "<intent>"` and obey any
-   `@@flows` suggestions before adapter work.
+4. If no play matched or uncovered work remains, run `rote explore "<intent>"` and obey any
+   `@@plays` suggestions before adapter work.
 5. Choose the substrate. Route local CLI/files/log/process work to `rote-shell`; route adapter/API
    work through task selection before workspace work.
 6. If a generated `rote-<adapter-id>` subagent is the right owner, dispatch it before entering the
@@ -375,9 +375,9 @@ map, and the compact flow search/run reference.
 7. If no installed adapter covers adapter/API work, search the adapter catalog before direct
    fallback. Tell the user what rote checked when falling back.
 8. Execute adapter work through the workspace path and shell work through `rote-shell`, preserving
-   cached `@N` responses, process evidence, session state, and any existing-flow baseline output.
+   cached `@N` responses, process evidence, session state, and any existing-play baseline output.
    Inspect and transform rote responses with `rote query @N`, `rote query schema`, and `rote proc` rather than
-   ad hoc `grep`, `head`, inline Python, or temp-file parsing when the result feeds a report, flow,
+   ad hoc `grep`, `head`, inline Python, or temp-file parsing when the result feeds a report, play,
    or later reasoning step.
 9. Verify the requested deliverable by reading content, not just checking that a command exited or a
    file exists. If a workspace was used, also run `cd <workspace-path> && rote ls` before the final
@@ -387,12 +387,12 @@ map, and the compact flow search/run reference.
 10. Before presenting new reusable results from workspace, browser, or manual work, run
    `rote-flow-crystallization`: pending write, pending save, then save/discard decision. If
    save/release was already requested, continue to authoring without asking again. Do not run this
-   gate for unchanged reuse of an existing flow.
+   gate for unchanged reuse of an existing play.
 11. For reusable shell/process work, let `rote-shell` choose adapterless workspace export, a mixed
     pending/template route, or an explicit legacy no-steps body. Never invent an adapter or append
     shape flags to a pending-save command.
-12. After authoring, release with `rote flow release`, rebuild the index, verify search, then clear
-    the pending stub with `rote flow pending discard <workspace>`.
+12. After authoring, release with `rote play release`, rebuild the index, verify search, then clear
+    the pending stub with `rote play pending discard <workspace>`.
 13. When registry publication succeeds or the selected version is already in sync, require
     `rote-registry` to return the exact `play_uri`, `bootstrap_uri`, resolved
     `data.play_inspect.reference`, `data.play_inspect.execution`, published-reference
@@ -425,7 +425,7 @@ keyword:
 
 - **Same task refinement:** incorporate the new constraint into the active lifecycle and continue.
 - **Blocking correction or priority switch:** stop the current action at a safe boundary, preserve
-  workspace/flow/process state, and follow the new instruction.
+  workspace/play/process state, and follow the new instruction.
 - **Independent side question:** capture a recoverable handoff summary if there is active rote
   state, answer the side question, then return to the previous lifecycle and say which gate is being
   resumed.
@@ -449,11 +449,11 @@ workspace or artifact location named by the owning skill.
 - Origin skill: `rote`
 - Target skill: `rote-...`
 - User intent: ...
-- Current state: flow search result, adapter/workspace state, or registry/setup state
+- Current state: play search result, adapter/workspace state, or registry/setup state
 - Preconditions satisfied: commands already run, approvals granted, credentials verified
 - Workspace path: ... or none
 - Cached responses: `@N` ids and what each contains
-- Allowed commands: rote commands or flow paths the target may run
+- Allowed commands: rote commands or play paths the target may run
 - Stop conditions: unsafe action, missing credential, failed precondition, user approval needed
 - Return fields: result, artifacts, response IDs, save gate, verified Play URI and sharing guidance
   when published, next recommended skill
@@ -461,11 +461,11 @@ workspace or artifact location named by the owning skill.
 
 ## Handoff Contract
 
-- Use when: a user request may touch rote adapters, flows, workspaces, registry state, browser
+- Use when: a user request may touch rote adapters, plays, workspaces, registry state, browser
   automation, shell/process work, setup/update, or reusable workflow authoring.
 - Preconditions: a rote task intent can be stated; if command execution is needed, the current
   runtime can run `rote` or surface the exact permission/installation blocker.
-- Owns: the initial rote rule, flow-search-first gate, top-level skill selection, platform-reference
+- Owns: the initial rote rule, play-search-first gate, top-level skill selection, platform-reference
   selection, and standard handoff packet shape.
 - Hands off to: `rote-flow-run`, `rote-task-routing`, `rote-workspace`,
   `rote-flow-crystallization`, `rote-flow-authoring`, `rote-command-patterns`,
@@ -474,11 +474,11 @@ workspace or artifact location named by the owning skill.
   `rote-browse`, and `rote-shell`.
 - Returns to: the user when the selected skill or reference completes, or to `rote` when a companion
   reports a partial result that needs another top-level routing decision.
-- Stop when: a full flow output satisfies the request, a companion skill takes ownership, a required
+- Stop when: a full play output satisfies the request, a companion skill takes ownership, a required
   approval or credential is missing, or continuing would require unsafe/destructive action the user
   did not request.
-- Completion signal: a selected skill/reference, verified flow result, explicit blocker, or final
-  user-facing answer with any reusable-work save gate resolved and any published flow's verified
+- Completion signal: a selected skill/reference, verified play result, explicit blocker, or final
+  user-facing answer with any reusable-work save gate resolved and any published play's verified
   Play URI plus visibility-based sharing guidance presented.
 
 ## Detail References
@@ -489,12 +489,12 @@ only when the full companion graph or handoff packet shape is needed.
 
 | If you are about to... | Start here |
 | --- | --- |
-| Run a matched existing flow | Invoke the `rote-flow-run` skill. |
+| Run a matched existing play | Invoke the `rote-flow-run` skill. |
 | Choose among day-to-day rote branches | Invoke the `rote-task-routing` skill. |
 | Execute adapter calls in a workspace | Invoke the `rote-workspace` skill. |
 | Execute local CLI/files/logs/process work | Invoke the `rote-shell` skill. |
 | Ask whether to save a result | Invoke the `rote-flow-crystallization` skill. |
-| Build, lint, release, or publish a reusable flow | Invoke the `rote-flow-authoring` skill. |
+| Build, lint, release, or publish a reusable play | Invoke the `rote-flow-authoring` skill. |
 | Look up command idioms | Invoke the `rote-command-patterns` skill, with live `rote grammar <topic>` as source of truth. |
 | Transform cached responses with TypeScript | Invoke the `rote-typescript-transformations` skill. |
 | Diagnose common rote workflow failures | Invoke the `rote-troubleshooting` skill. |
@@ -507,11 +507,11 @@ only when the full companion graph or handoff packet shape is needed.
 - `rote guidance adapters essential` - adapter probe and call patterns.
 - `rote guidance browser essential` - browser automation patterns.
 - `rote guidance shell essential` - `rote proc`, process leases, stream capture, deps, and shell
-  flow crystallization patterns.
-- `rote flow info <name-or-path> --json` - canonical single-flow record: absolute path plus ordered
-  parameters. Use it after choosing a flow from search, instead of filtering a search array
+  play crystallization patterns.
+- `rote play info <name-or-path> --json` - canonical single-play record: absolute path plus ordered
+  parameters. Use it after choosing a play from search, instead of filtering a search array
   client-side.
-- `rote flow list` - inventory released local flows; do not use an empty search query as inventory.
+- `rote play list` - inventory released local plays; do not use an empty search query as inventory.
 - `rote grammar query`, `rote grammar steps`, `rote grammar deno`, `rote grammar export`, and
   related topics - current command syntax (`steps` covers the frontmatter `steps:` plane: step kinds,
   `$param` substitution, `@step{…}` references, `for_each`).

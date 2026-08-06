@@ -1,7 +1,7 @@
 ---
 name: rote-task-routing
 description: >
-  Choose the next rote execution path after flow search does not fully cover a request. Use for
+  Choose the next rote execution path after play search does not fully cover a request. Use for
   explore/catalog gates, shell/process routing, subagent-before-workspace decisions, single-adapter
   versus multi-adapter routing, and fallback boundaries.
 ---
@@ -13,10 +13,10 @@ Contract — are companion **skills**, never CLI commands (`rote-shell` is not `
 Invoke them through the runtime's skill mechanism; only literal `rote …` commands run in a
 terminal.
 
-Use this skill after `rote flow search "<intent>"` finds no runnable full match, or after
+Use this skill after `rote play search "<intent>"` finds no runnable full match, or after
 `rote-flow-run` returns a partial baseline that must be combined with additional work.
 
-Do not use this skill after `rote-flow-run` verifies a full match. A verified full-flow result has no
+Do not use this skill after `rote-flow-run` verifies a full match. A verified full-play result has no
 uncovered work, so adapter exploration, catalog search, workspace setup, and fallback routing are
 out of scope unless the user adds a new requirement.
 
@@ -38,7 +38,7 @@ browser session, or local process evidence.
 - If an installed adapter covers the provider but not the operation, keep searching.
 - If an installed adapter covers the provider and operation but has a broken base URL, stale auth,
   or wrong config, repair it before replacing it.
-- If a partial flow covers a baseline, route only the missing capability.
+- If a partial play covers a baseline, route only the missing capability.
 - If the catalog has several plausible provider adapters, run the Catalog Ambiguity Gate before
   installing or calling.
 - Do not report provider metadata as live activity, event details as trades, or CLI scrollback as
@@ -86,7 +86,7 @@ rote explore "<intent>"
 
 Read the full response before acting:
 
-- If `@@flows` names a usable existing flow, hand off to `rote-flow-run`.
+- If `@@plays` names a usable existing play, hand off to `rote-flow-run`.
 - If the uncovered work is local CLI, files, logs, build/test/release checks, generated artifacts,
   or process lifecycle, hand off to `rote-shell`.
 - If the response identifies one installed adapter, choose the single-adapter branch.
@@ -110,14 +110,14 @@ after no installed adapter can satisfy the capability or after repair is not pos
 If an installed `rote-<adapter-id>` subagent exists and the task is scoped to that adapter, dispatch
 it before any workspace calls start.
 
-The handoff packet should include the user's goal, flow-search result, explore result, any baseline
+The handoff packet should include the user's goal, play-search result, explore result, any baseline
 artifact from `rote-flow-run`, and whether reusable output must pass through the save gate.
 
-If the incoming artifact came from a full-flow match, return to `rote` instead of routing. Only
-partial-flow baselines can be carried forward.
+If the incoming artifact came from a full-play match, return to `rote` instead of routing. Only
+partial-play baselines can be carried forward.
 
-For a partial-flow baseline, preserve it as reusable source material for a composed superflow:
-record the baseline flow name, parameters, output artifact, provenance, and the exact uncovered
+For a partial-play baseline, preserve it as reusable source material for a composed superplay:
+record the baseline play name, parameters, output artifact, provenance, and the exact uncovered
 requirements. The next execution owner should augment that baseline, not recreate a similar report
 from scratch.
 
@@ -134,7 +134,7 @@ Build and dev-loop tooling is the exception, whatever the language toolchain: co
 runners, formatters, linters, type checkers, package managers, and task runners run as plain shell
 by default. Their value is the immediate pass/fail signal, and wrapping every iteration in
 `rote proc` adds latency and noise without adding reusable evidence. If a specific build or test
-run should become durable workspace evidence — it feeds a flow, a handoff, or a result the user
+run should become durable workspace evidence — it feeds a play, a handoff, or a result the user
 asked to keep — ask the user first with a one-line explanation: `rote proc` makes the output
 queryable and replayable later. A preference the user or project instructions already state
 settles the question without re-asking.
@@ -151,7 +151,7 @@ default steps + presentation artifact; template/pending commands still require a
 one.
 
 Do not use shell routing as an excuse for raw, untracked parsing of rote responses. If the local
-command consumes adapter/browser/flow evidence, route it through `rote-shell` and `rote proc` with
+command consumes adapter/browser/play evidence, route it through `rote-shell` and `rote proc` with
 declared inputs/outputs so the transformation remains queryable and reusable.
 
 ## Gate 3: Single Adapter Without Subagent
@@ -173,7 +173,7 @@ For multi-source requests, classify each source before work starts:
 
 - Must use rote: the user explicitly says to use rote/adapters for that source, or the selected
   reusable workflow depends on that source.
-- Direct one-off: only after flow search, explore, and catalog search do not produce a useful rote
+- Direct one-off: only after play search, explore, and catalog search do not produce a useful rote
   path, and the source is simple, public, unrelated to the reusable workflow, and not worth
   crystallizing.
 - Needs catalog search: no installed adapter fits, but the source is part of the repeatable workflow.
@@ -184,7 +184,7 @@ coverage.
 
 ## Gate 5: Catalog Before Fallback
 
-When no installed adapter or flow covers the task, run:
+When no installed adapter or play covers the task, run:
 
 ```bash
 rote adapter catalog search "<intent>"
@@ -208,7 +208,7 @@ including the MCP route), verify with `rote adapter info <id>` or `rote adapter 
 Do not use catalog install to dodge a repairable installed adapter. A newly installed adjacent
 adapter is a regression when the task expects the installed adapter's config to be fixed.
 
-Only use direct tools after flow search, exploration, and catalog search fail to produce a rote path,
+Only use direct tools after play search, exploration, and catalog search fail to produce a rote path,
 or after a catalog-installed adapter has been probed and cannot satisfy the request. Tell the user
 what rote checked and why fallback is necessary.
 
@@ -216,11 +216,11 @@ what rote checked and why fallback is necessary.
 
 Return these fields to `rote` or the selected owner:
 
-- Selected route: flow, adapter subagent, `rote-workspace`, `rote-using-adapters`, `rote-shell`,
+- Selected route: play, adapter subagent, `rote-workspace`, `rote-using-adapters`, `rote-shell`,
   catalog install, or fallback.
-- Explore result: relevant `@@status`, `@@next`, `@@flows`, installed adapter, or blocker.
+- Explore result: relevant `@@status`, `@@next`, `@@plays`, installed adapter, or blocker.
 - Catalog result: query used, hits inspected, installed adapter, or reason no hit fits.
-- Baseline preservation: flow output/artifact that must remain intact.
+- Baseline preservation: play output/artifact that must remain intact.
 - Requirements: required sources/adapters, missing capabilities, live observations, artifact,
   and verification checks.
 - Workspace or shell preconditions: workspace name suggestion, working directory, adapter ids, local
@@ -230,15 +230,15 @@ Return these fields to `rote` or the selected owner:
 
 ## Handoff Contract
 
-- Use when: flow search did not fully cover the request, or a matched flow produced only a baseline
+- Use when: play search did not fully cover the request, or a matched play produced only a baseline
   for additional rote work.
-- Preconditions: `rote` or `rote-flow-run` has provided the user intent, flow-search outcome, and any
+- Preconditions: `rote` or `rote-flow-run` has provided the user intent, play-search outcome, and any
   baseline output that must be preserved.
 - Owns: explore-first routing, shell/process routing, subagent-before-workspace decisions,
   single-adapter versus multi-adapter selection, catalog search before fallback, and explicit route
-  return fields. Does not own adapter execution, shell execution, flow authoring, or final
+  return fields. Does not own adapter execution, shell execution, play authoring, or final
   presentation.
-- Hands off to: `rote-flow-run` for `@@flows`; `rote-shell` for local CLI/files/logs/process work;
+- Hands off to: `rote-flow-run` for `@@plays`; `rote-shell` for local CLI/files/logs/process work;
   `rote-workspace` for adapter workspace execution; `rote-using-adapters` for delegated
   single-adapter work; `rote-adapter-create` when catalog/spec work is needed; `rote-troubleshooting`
   when route selection repeatedly fails unchanged.

@@ -25,5 +25,5 @@ instruction files, or shell/file operation behavior.
 ## Command Discipline
 
 - Preserve rote's one-command-at-a-time rule even when the runtime can launch multiple shell calls.
-- Prefer rote-reported absolute paths for workspaces and flow directories.
+- Prefer rote-reported absolute paths for workspaces and play directories.
 - If a command fails unchanged twice, route to troubleshooting instead of repeating it.

@@ -48,7 +48,7 @@ Consume this packet from `rote`, `rote-task-routing`, or a generated adapter hel
   calling tools.
 - If resuming, `cd` to the supplied workspace and do not run `rote init` again.
 - Always probe before calling. Tool names and input schemas vary by adapter.
-- Before returning reusable results, write a pending flow stub, run pending save, and route through
+- Before returning reusable results, write a pending play stub, run pending save, and route through
   `rote-flow-crystallization`. Run the emitted scaffold only after the caller or user approves
   saving, releasing, publishing, or making the workflow reusable.
 
@@ -75,14 +75,14 @@ rote adapter list <id> --json --health
 - Use when: `rote` or a router selected exactly one installed adapter to satisfy a delegated task,
   especially in a subagent or adapter-specific helper.
 - Preconditions: the caller supplied adapter id, user intent, any existing workspace, and stop
-  conditions; flow search has either been checked or explicitly delegated back to `rote` before new
+  conditions; play search has either been checked or explicitly delegated back to `rote` before new
   adapter exploration.
 - Owns: delegated single-adapter workspace entry, probe/call/query sequence, cached response
-  preservation, write-guard handling, pending flow stub creation, and return summary for the main
+  preservation, write-guard handling, pending play stub creation, and return summary for the main
   conversation. Does not own release/index/search cleanup.
 - Hands off to: `rote` when no installed adapter matches or the top-level route must change;
   `rote-workspace` when broader multi-adapter workspace orchestration is needed; `rote-registry`
-  after a saved flow is ready to share; `rote-flow-crystallization` when the caller owns the save
+  after a saved play is ready to share; `rote-flow-crystallization` when the caller owns the save
   gate.
 - Returns to: `rote` or the delegating skill with workspace path, cached response IDs, result,
   write-guard state, reusable-result state, and next recommended skill.
@@ -99,19 +99,19 @@ Run the protocol check first:
 rote start
 ```
 
-If this is a delegated subagent task, do not run flow search again. The caller already selected the
+If this is a delegated subagent task, do not run play search again. The caller already selected the
 single-adapter route; resume that route and continue directly to sequential workspace commands.
 
 If this is a fresh top-level task:
 
 ```bash
-rote flow search "<task intent>"
+rote play search "<task intent>"
 ```
 
-If a flow matches, stop adapter exploration and run the flow using the main `rote` skill's flow
+If a play matches, stop adapter exploration and run the play using the main `rote` skill's play
 execution rules.
 
-If no flow matches, create and enter a workspace:
+If no play matches, create and enter a workspace:
 
 ```bash
 rote init <adapter-id>-task --seq
@@ -154,8 +154,8 @@ guidance and provenance.
 |------|------|-----|
 | 1 | Field extraction, filtering, counts, sorting | `rote query @N '<jq>'` |
 | 2 | Formatting that jq cannot express cleanly | `rote query @N --transform-ts '...'` or `--filter-ts` |
-| 3 | Declarative fan-out, conditions, or reusable orchestration | Default no-shape-flag `rote flow template create`; author `for_each`, conditions, and adapter calls in frontmatter `steps:` |
-| 4 | API control flow the step language does not support — pagination that must run to exhaustion, data-dependent retry/termination, runtime method selection, or a stateful session/transaction protocol — or an explicit user request | Explicit `rote flow template create ... --legacy-body` no-steps flow |
+| 3 | Declarative fan-out, conditions, or reusable orchestration | Default no-shape-flag `rote play template create`; author `for_each`, conditions, and adapter calls in frontmatter `steps:` |
+| 4 | API control flow the step language does not support — pagination that must run to exhaustion, data-dependent retry/termination, runtime method selection, or a stateful session/transaction protocol — or an explicit user request | Explicit `rote play template create ... --legacy-body` no-steps play |
 
 Start at Tier 1:
 
@@ -193,14 +193,14 @@ write followed by pending save. Pending save only prepares the scaffold command;
 save approval.
 
 ```bash
-rote flow pending write <workspace> \
-  --name <suggested-flow-name> \
+rote play pending write <workspace> \
+  --name <suggested-play-name> \
   --adapter <adapter-id> \
   --response-path "<validated jq path>" \
   --notes "<encoding quirks, caveats, or data shape notes>"
 
 # Always prepare the scaffold command before returning reusable result text.
-rote flow pending save <workspace>
+rote play pending save <workspace>
 ```
 
 Capture the scaffold command printed by `pending save`. If the user already asked to save, release,
@@ -208,13 +208,13 @@ publish, or make the workflow reusable, treat that as approval and run the scaff
 keep the workspace name and captured scaffold command, present the results, and ask:
 
 ```text
-Want to save this as a reusable flow? (yes/no)
+Want to save this as a reusable play? (yes/no)
 ```
 
-Do not create, release, or discard the flow until the user answers or the original request already
+Do not create, release, or discard the play until the user answers or the original request already
 gave save, release, publish, or make-reusable approval. Never skip pending write or pending save.
 
-## If User Saves The Flow
+## If User Saves The Play
 
 Once the user has approved saving, run the scaffold command yourself. Parameterize API inputs, not just pagination/output knobs.
 For structured filters, add a raw JSON passthrough flag such as `--filter`.
@@ -223,21 +223,21 @@ Before release, verify:
 
 ```text
 [ ] Adapter effects declared in frontmatter steps: (endpoint/method/params with $param tokens);
-    only an explicit --legacy-body flow calls adapters from the TypeScript body
+    only an explicit --legacy-body play calls adapters from the TypeScript body
 [ ] FlowOutput wired in the presentation body (legacy: in the imperative body):
     new FlowOutput(); out.human(...); out.summary(...); out.result({...})
-[ ] Presentation body reads flow inputs from ctx.params, not Deno.args or step stdout
+[ ] Presentation body reads play inputs from ctx.params, not Deno.args or step stdout
 [ ] Frontmatter parameters match the named key=value contract (legacy: CLI flags)
 [ ] Tests cover at least three distinct inputs, including one default-only run
-[ ] rote flow lint <name> exits 0
+[ ] rote play lint <name> exits 0
 ```
 
 Then use the release command; never edit `main.ts` to flip status manually:
 
 ```bash
-rote flow release <name>
-rote flow index --rebuild
-rote flow pending discard <workspace>
+rote play release <name>
+rote play index --rebuild
+rote play pending discard <workspace>
 ```
 
 ## Handoff Summary
@@ -263,9 +263,9 @@ follow-up:
 - Completion signal: task result delivered, approval requested, or next owner named
 ```
 
-## TypeScript Flow Boundary
+## TypeScript Play Boundary
 
-In the default steps + presentation flow, registered adapter effects belong in frontmatter `steps:`. The
+In the default steps + presentation play, registered adapter effects belong in frontmatter `steps:`. The
 `steps_with_presentation` body imports only `__ROTE_PRESENTATION_SDK__` and reads typed recorded
 observations plus `ctx.params`; it must not call adapters, `fetch`, Deno file APIs, or
 subprocesses. An adapter step is `endpoint` + `method` + `params` with `$param` substitution:
@@ -279,7 +279,7 @@ steps:
 ```
 
 Step syntax quick reference: `rote grammar steps`; complete worked example:
-`rote guidance typescript flow-creation`.
+`rote guidance typescript play-creation`.
 
 Only inside an explicitly scaffolded `--legacy-body` with no `steps:` use these imperative APIs:
 

@@ -5,7 +5,7 @@ description: >
   Google/GitHub (every experience is identity-gated). Then forks: stop at just the CLI, pull
   curated powerpack adapters, or build adapters from the built-in catalog. Then offers a menu
   of remaining onboarding steps (adapters, credentials, OAuth, install skill, explore) and
-  ends by running one live flow to prove value. Use when the user says "set up rote", "rote
+  ends by running one live play to prove value. Use when the user says "set up rote", "rote
   setup", "onboard me to rote",
   "get rote working", "install and configure rote", or is a first-timer
   who needs hand-holding through `rote login`, API connection, and installing adapters.
@@ -54,11 +54,11 @@ the live probe wins.
 ## Handoff Contract
 
 - Use when: the user needs guided first-run setup, installation repair, login, starter adapters,
-  credentials, skill installation, or a first value-proof flow.
+  credentials, skill installation, or a first value-proof play.
 - Preconditions: command access for `rote` can be requested or the binary/install blocker can be
   stated; every setup fact will be determined from live probes in this run.
 - Owns: binary/state probing, install branch selection, login gate, starter adapter and credential
-  setup, agent skill installation, and optional first value-proof flow.
+  setup, agent skill installation, and optional first value-proof play.
 - Hands off to: `rote-adapter-create` for building a new adapter; `rote-adapter-config` for tuning an
   existing adapter; `rote-registry` when a newly useful artifact should be shared; `rote-update` when
   an existing binary should be refreshed before setup continues; `rote` for day-to-day use after
@@ -66,9 +66,9 @@ the live probe wins.
 - Returns to: `rote` with installed binary path, signed-in identity, installed adapters, credential
   state, skill-install target, value-proof result, and any skipped or blocked setup steps.
 - Stop when: the user chooses to stop at CLI-only setup, a required browser/credential/human action is
-  pending, a command fails and needs a branch decision, or the value-proof flow completes.
+  pending, a command fails and needs a branch decision, or the value-proof play completes.
 - Completion signal: setup state summarized from live command output, next owner named, and no
-  unverified credential or flow proof presented as successful.
+  unverified credential or play proof presented as successful.
 
 ---
 
@@ -100,7 +100,7 @@ supposed to decide whether `rote` even exists) is incoherent and wastes tokens. 
 ```bash
 test -d "$HOME/.rote" && echo "STATE" || echo "CLEAN"
 ```
-`~/.rote` holds adapters, tokens, flows, workspaces — its presence means a prior install left
+`~/.rote` holds adapters, tokens, plays, workspaces — its presence means a prior install left
 state behind.
 
 **Branch on the 2×2** (this is the whole point — most cells skip the deep probing):
@@ -314,7 +314,7 @@ the signed-in identity; do not skip or defer sign-in for any of them.
 ### Step 2.6 — Build an adapter (delegated)
 
 **Invoke the `rote-adapter-create` skill** rather than inlining adapter creation here. That
-skill owns the full dry-run-first flow — spec discovery (catalog → web → local), `--dry-run`
+skill owns the full dry-run-first play — spec discovery (catalog → web → local), `--dry-run`
 analysis, auth + toolset selection driven by the analysis, create, and post-create options
 (write guard, sensitivity, credentials). It's the same skill a user invokes directly later when they add more
 adapters, so the logic lives in one place.
@@ -348,7 +348,7 @@ choices when the environment supports it:
 
 Recommend the order **adapters → credentials → OAuth → install skill → explore**, but run
 only what they pick, one at a time, confirming after each. Once their picks are done, offer
-the **value-proof closer (Step 5)** — run one live flow so setup ends with real output.
+the **value-proof closer (Step 5)** — run one live play so setup ends with real output.
 
 ### Step 3a — Install adapters (à la carte, from the live registry)
 
@@ -385,7 +385,7 @@ adapters (gmail/calendar) use OAuth via Step 3d, not a static token.
 
 **Credential gate — do NOT proceed past an unset required token** (real bug: an adapter was
 installed from a preset/bootstrap, its token was never set, and the wizard marched on to the
-next step / tried to run a flow against it anyway). After installing adapters, **verify** which
+next step / tried to run a play against it anyway). After installing adapters, **verify** which
 required tokens are actually configured before relying on any of them:
 
 ```bash
@@ -394,25 +394,25 @@ rote powerpack tokens
 
 For each installed adapter whose token shows **✗ not configured**, do **not** treat it as
 usable — route the user to **Step 3c (credentials)** to wire it (or to **Step 3d** for Google
-OAuth) *before* the value-proof flow in Step 5. A flow run against an adapter with an unset
+OAuth) *before* the value-proof play in Step 5. A play run against an adapter with an unset
 credential will fail; don't attempt it. If the user declines to set a token now, that adapter
-is simply skipped for the live-flow proof — pick a flow whose adapter IS credentialed instead.
+is simply skipped for the live-play proof — pick a play whose adapter IS credentialed instead.
 
-**Pull each adapter's flows right after installing it.** The adapter pull installs only the
-adapter — its curated flows are separate, and the value-proof closer (Step 5) needs at
-least one flow present. For each adapter just installed, find and pull its flows:
+**Pull each adapter's plays right after installing it.** The adapter pull installs only the
+adapter — its curated plays are separate, and the value-proof closer (Step 5) needs at
+least one play present. For each adapter just installed, find and pull its plays:
 
 ```bash
-rote registry flow find-by-adapter github
+rote registry play find-by-adapter github
 ```
 
-That lists `<org>/<name>` flows associated with the adapter (e.g.
+That lists `<org>/<name>` plays associated with the adapter (e.g.
 `modiqo/list-top-committers`, `modiqo/retrieve-recent-emails`,
 `modiqo/check-calendar-meetings`). Pull them non-interactively — `--yes` is **required**
 because the pull confirmation prompt may not work in an agent-run command:
 
 ```bash
-rote registry flow pull modiqo/list-top-committers --yes
+rote registry play pull modiqo/list-top-committers --yes
 ```
 
 Pull a couple of the most useful per adapter (don't bulk-pull all of them). These land in
@@ -482,9 +482,9 @@ Say this plainly so the user understands the handoff isn't friction, it's the se
 - **Never print, echo, or re-quote a token back** to the user once set. Don't `cat` the
   secrets dir.
 
-**Verify with cwd-independent checks only.** Do not run a flow or `rote ready` merely to test a
+**Verify with cwd-independent checks only.** Do not run a play or `rote ready` merely to test a
 token: both exercise provider capabilities rather than reporting credential state. Direct adapter
-checks such as `rote ready` require an active workspace, while a `steps:` flow must run outside
+checks such as `rote ready` require an active workspace, while a `steps:` play must run outside
 every active workspace so its runner can create the DAG workspace. Verify the token itself with:
 
 ```bash
@@ -520,7 +520,7 @@ a static token — for those, after `rote registry adapter pull bootstrap/<name>
 rote adapter reauth <name>
 ```
 
-The first run registers a DCR client (RFC 7591) and opens a PKCE browser flow; tell the
+The first run registers a DCR client (RFC 7591) and opens a PKCE browser play; tell the
 user to complete it in the browser. If a later reauth fails because the provider pruned the
 client (rare), add `--force-reregister`. Note: **Notion is not currently in the reachable
 registry** (`bootstrap` / `modiqo`), so don't offer a Notion install — the bootstrap
@@ -542,77 +542,77 @@ onboarding tree. Then offer the value-proof closer (Step 5).
 
 ---
 
-## Step 5 — Prove value: run one live flow (optional, recommended)
+## Step 5 — Prove value: run one live play (optional, recommended)
 
-End on a win — run a real flow against the user's own data so setup ends with *output*,
-not just "complete." Only offer this if at least one credential is wired (a flow with no
+End on a win — run a real play against the user's own data so setup ends with *output*,
+not just "complete." Only offer this if at least one credential is wired (a play with no
 working credential will just error).
 
-**This is where "flow" first appears — give the flow What/Value beat before the question.** Explain
-that a flow is a reusable workflow the agent can run locally: rote crystallizes what worked into
+**This is where "play" first appears — give the play What/Value beat before the question.** Explain
+that a play is a reusable workflow the agent can run locally: rote crystallizes what worked into
 deterministic steps, saving tokens and repetition without a workflow-vendor subscription. Then ask:
-"Want me to run a quick flow to see it work?" — yes / skip.
+"Want me to run a quick play to see it work?" — yes / skip.
 
-Use the `rote-flow-run` execution rules when a matched flow owns the proof. The short version,
+Use the `rote-flow-run` execution rules when a matched play owns the proof. The short version,
 applied here:
 
-**1. Find a flow for a credentialed adapter.** Use `rote explore "<intent>"` to discover what
-can handle the intent, and/or list adapter-matched flows:
+**1. Find a play for a credentialed adapter.** Use `rote explore "<intent>"` to discover what
+can handle the intent, and/or list adapter-matched plays:
 
 ```bash
-rote registry flow find-by-adapter github
+rote registry play find-by-adapter github
 ```
 
-**Only pick a flow whose adapter's credential is actually configured** (you verified this with
-`rote powerpack tokens` in the credential gate). A read-only flow is the safest first run
+**Only pick a play whose adapter's credential is actually configured** (you verified this with
+`rote powerpack tokens` in the credential gate). A read-only play is the safest first run
 (`list-top-committers`, `retrieve-recent-emails`, `check-calendar-meetings`) — avoid
-write/create flows for the proof.
+write/create plays for the proof.
 
 **2. Let the user pick one.**
 
 **3. Ensure it's pulled.** If not already local, pull it (`--yes` required):
 
 ```bash
-rote registry flow pull modiqo/list-top-committers --yes
+rote registry play pull modiqo/list-top-committers --yes
 ```
 
 **4. Read the frontmatter — for BOTH the params AND the execution mode.** Read the path returned
-by `rote flow search --json` or `rote flow list --json`. It tells you two things:
+by `rote play search "<intent>" --json` or `rote play list --json`. It tells you two things:
 - the `parameters:` block — name + description per param (ask the user for each, using the
   description as the hint; offer a sensible default like `modiqo/rote`);
 - whether there's a `steps:` block — this decides **how** you run it (next).
 
 **5. Run it the right way (this is the fix for the "ran via bash, not Deno" bug).**
 
-- **Frontmatter has `steps:` (DAG flow)** → run it from a directory outside every active rote
-  workspace. The flow runner creates and owns its DAG execution workspace:
+- **Frontmatter has `steps:` (DAG play)** → run it from a directory outside every active rote
+  workspace. The play runner creates and owns its DAG execution workspace:
 
   ```bash
-  cd /tmp && rote flow run <name> param=value …
+  cd /tmp && rote play run <name> param=value …
   ```
 
-- **No `steps:` (legacy/sequential flow — most curated flows)** → do **NOT** use
-  `rote flow run` (it can fall back to a plain bash invocation instead of Deno). Run it via
-  the bundled Deno from the flow's own directory:
+- **No `steps:` (legacy/sequential play — most curated plays)** → do **NOT** use
+  `rote play run` (it can fall back to a plain bash invocation instead of Deno). Run it via
+  the bundled Deno from the play's own directory:
 
   ```bash
-  cd <flow directory from rote output> && rote deno run --allow-all main.ts [args…]
+  cd <play directory from rote output> && rote deno run --allow-all main.ts [args…]
   ```
 
-  Pass the flow's positional args (from the `parameters:` block), e.g.
+  Pass the play's positional args (from the `parameters:` block), e.g.
   `… main.ts modiqo/rote`. `rote deno run` uses the bundled Deno from the active rote home.
-  The `cd && rote deno run` compound is one logical step. This `cd`s into the flow directory
+  The `cd && rote deno run` compound is one logical step. This `cd`s into the play directory
   outside the project, so
   make sure the current environment has access if it requires filesystem approval.
 
-When unsure which mode, inspect frontmatter or run `rote flow info <name-or-path> --json` first.
-Do not use direct Deno for any flow with frontmatter `steps:`.
+When unsure which mode, inspect frontmatter or run `rote play info <name-or-path> --json` first.
+Do not use direct Deno for any play with frontmatter `steps:`.
 
-Show the flow's output to the user — that's the payoff.
+Show the play's output to the user — that's the payoff.
 
 ### Step 6 — Day-to-day use
 
-Suggest the main **rote** skill for day-to-day use (`rote flow search "<intent>"` before any direct
+Suggest the main **rote** skill for day-to-day use (`rote play search "<intent>"` before any direct
 adapter call). For single-adapter delegated work, spawn a subagent and tell it to use
 **rote-using-adapters** with the adapter id and task.
 
@@ -624,9 +624,9 @@ adapter call). For single-adapter delegated work, spawn a subagent and tell it t
   success/failure visible on its own. Four allowed compounds are single logical steps: the
   selected canonical profile installer from the **Install choice**; `cd <workspace> && rote …`
   for adapter probes or calls that require a workspace cwd (see below);
-  `cd /tmp && rote flow run <name> param=value` for a `steps:` flow whose runner must own the DAG
+  `cd /tmp && rote play run <name> param=value` for a `steps:` play whose runner must own the DAG
   workspace (never point that `cd` at an active rote workspace); and
-  `cd <flow directory> && rote deno run --allow-all main.ts [args…]` for a legacy no-steps flow
+  `cd <play directory> && rote deno run --allow-all main.ts [args…]` for a legacy no-steps play
   (step 5 above).
 - **Prefer non-interactive commands in agent-run shells.** Many agent command runners cannot
   answer terminal prompts. The non-interactive switch differs per command: installer →
@@ -657,10 +657,10 @@ adapter call). For single-adapter delegated work, spawn a subagent and tell it t
 
   The workspace lives at `${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<name>`. This `cd && rote …` compound is a
   necessary exception to the one-command-at-a-time rule for direct adapter work (the cwd must hold
-  for the command). It does not apply to a DAG flow: use
-  `cd /tmp && rote flow run <name> param=value` so the runner can own its execution workspace
+  for the command). It does not apply to a DAG play: use
+  `cd /tmp && rote play run <name> param=value` so the runner can own its execution workspace
   outside every active rote workspace.
-  `--force` skips the "search for existing flows first" gate. Clean up later with
+  `--force` skips the "search for existing plays first" gate. Clean up later with
   `rote workspace clean` if desired.
 - **Detect before offering.** Resolve the rote binary through `command -v rote` or the
   supported absolute-path check before any rote command, and detect installed editors
@@ -679,14 +679,14 @@ adapter call). For single-adapter delegated work, spawn a subagent and tell it t
   branch.
 - **Don't fabricate URLs or codes.** Determine every setup fact from live CLI output.
 - After a successful first run, suggest the main **rote** skill takes over for day-to-day
-  use (`rote flow search` before any direct adapter call).
+  use (`rote play search` before any direct adapter call).
 
 ---
 
 ## Closing line + related skills
 
-**Closing line** (only after a clean first run): land one dry one-liner keyed to the live flow
-that just proved value, e.g. "And that flow ran straight against the provider's API — no proxy in
+**Closing line** (only after a clean first run): land one dry one-liner keyed to the live play
+that just proved value, e.g. "And that play ran straight against the provider's API — no proxy in
 the middle quietly metering you per call. Welcome to rote." Skip it if any step errored.
 
 **Related setup skills** (this is the front door):
