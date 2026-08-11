@@ -396,7 +396,7 @@ map, and the compact play search/run reference.
 13. When registry publication succeeds or the selected version is already in sync, require
     `rote-registry` to return the exact `play_uri`, `bootstrap_uri`, resolved
     `data.play_inspect.reference`, `data.play_inspect.execution`, published-reference
-    `execution_verification` status and evidence, and visibility-based access guidance. Present the
+    `execution_verification` status and evidence, and access guidance (resolution and execution audiences). Present the
     disclosure-only Play URI, advertised bootstrap transition, and resolved `play run` reference as
     separate resources. Static eligibility and inspection never substitute for the exact pinned
     acceptance run; if that run is not authorized or cannot be supplied safe representative inputs,
@@ -479,7 +479,7 @@ workspace or artifact location named by the owning skill.
   did not request.
 - Completion signal: a selected skill/reference, verified play result, explicit blocker, or final
   user-facing answer with any reusable-work save gate resolved and any published play's verified
-  Play URI plus visibility-based sharing guidance presented.
+  Play URI plus access guidance (resolution and execution audiences) presented.
 
 ## Detail References
 

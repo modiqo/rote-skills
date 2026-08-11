@@ -73,11 +73,19 @@ effect runner. Preserve the SDK's `single`, `fan_out`, and `empty_fan_out` disti
 each fan-out item independently; an observed empty fan-out is `[]`, while an absent optional value
 stays absent rather than becoming `""`, `0`, `false`, or `[]`.
 
-Branch on `ctx.step(stepName("literal")).outcome.status` when a step may be failed, skipped, or
-blocked. Use `requireAvailable` for a step that must have completed or have checkpoint-restored
-output; it deliberately throws for condition-skipped, failed, and blocked outcomes. Surface those
-terminal outcomes as typed warnings or errors instead of fabricating a successful payload. For
-play inputs, narrow `ctx.params` values explicitly (`typeof ctx.params.owner === "string"`) rather
+If a step can be restored, failed, skipped, or blocked, inspect
+`ctx.step(stepName("literal")).outcome.status`.
+
+A checkpoint-restored step has status `restored`. It does not have status `skipped`.
+When the play runs with `rote play run --resume`, handle `restored` in every status switch.
+
+Use `requireAvailable` when the step must provide output. It accepts completed and restored
+steps. It throws for condition-skipped, failed, and blocked steps.
+
+For skipped, failed, or blocked steps, return a typed warning or error. Do not create a successful
+payload from an unavailable result. For play inputs, narrow `ctx.params` values explicitly
+(`typeof ctx.params.owner === "string"`) rather than coercing absent parameters into fabricated
+defaults.
 than coercing absent parameters into fabricated defaults.
 
 Normalize completed bodies by substrate:

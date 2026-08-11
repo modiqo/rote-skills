@@ -57,8 +57,13 @@ Core rules:
   must be saved/released before push; `rote` for day-to-day routing after sharing.
 - Returns to: the caller with artifact kind/id/path, target org/owner, visibility or old/new
   visibility plus changed/no-op status, dry-run verdict, push result or skip reason,
-  version/conflict state, verified Play URI plus visibility-based sharing guidance for a published
-  play, invite results, and next recommended skill.
+  version/conflict state, and — for a published play — the whole publication result rather than a URI
+  alone (produced by *Stage P*, below): play location, verified Play URI, bootstrap URI, resolved run
+  reference, execution readiness, execution variant, blockers, published-reference
+  execution-verification status and evidence, plus access guidance (resolution and execution
+  audiences). Then invite results and next recommended skill. A caller given only the URI cannot tell
+  whether the reference it received is executable or verified, which is the question that stage exists
+  to answer.
 - Stop when: the artifact is shared, confirmed in sync, or has the requested visibility; auth/org
   permission blocks, visibility is unconfirmed, quota blocks the requested write, or the owning
   creation/authoring skill must resume.
@@ -272,10 +277,14 @@ execution-verified or successfully playable. On success, return
 `execution_verification: passed` with the exact command and result summary. On failure, return
 `execution_verification: failed` with the error and keep the Play out of the verified handoff.
 
-Qualify resolution and execution guidance separately:
+Qualify resolution and execution separately, and take the statement from the push result rather than
+deriving one from visibility. Who can resolve a Play and who can run it are different questions about
+the same artifact: a public flow that declares process or browser privileges is resolvable by anyone
+and runnable only by its owner or authorized org members, so any sentence composed from visibility
+alone states the wrong execution audience. The push result carries the authored access guidance for
+that pair; present it as given and add only the sharing mechanics below.
 
-- **Public** — share the canonical `play_uri`; anyone can GET its transparency card. Eligible plays can be run by anyone; plays that declare
-  process or browser privileges can require owner or org membership even when publicly resolvable.
+- **Public** — share the canonical `play_uri`; anyone can GET its transparency card.
 - **Private** — the canonical URI reveals its owner and slug even though unauthorized resolution
   remains indistinguishable from not-found. Prefer an opaque, revocable share URI when the registry
   returns one; possession identifies the share but never replaces Google/GitHub identity and

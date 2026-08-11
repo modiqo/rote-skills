@@ -251,8 +251,9 @@ progress surface when available; otherwise state that live presentation progress
 for this execution model instead of publishing a stepless substitute.
 
 Normalize each observation without assuming a provider schema. Preserve `single`, `fan_out`, and
-`empty_fan_out`; use `requireAvailable` for completed/checkpoint-restored output and branch on the
-outcome for failed, skipped, or blocked steps. Narrow process and browser bodies with
+`empty_fan_out`; use `requireAvailable` for completed or checkpoint-restored output and branch on the
+outcome for restored, failed, skipped, or blocked steps — a checkpoint-restored step arrives as its
+own `restored` status, so a switch missing that arm breaks under `--resume`. Narrow process and browser bodies with
 `isProcessExecBody` and `isBrowserBody`. Treat remaining adapter bodies as direct JSON, plain text,
 or narrowly recognized legacy text-envelope residue; malformed/optional values stay explicit and
 must not become fabricated empty strings, zeroes, false values, or arrays. Use the concrete pattern
@@ -350,6 +351,57 @@ Run pending discard only after release succeeded, the index was rebuilt, and sea
 shows the released play. Do not leave `.pending-flow.json` or a workspace-scoped pending stub behind
 as a resume anchor after the released play is discoverable.
 
+## Publication Offer After Release
+
+A successful release reports a `@@share` section (`data.share_nudge` under `--json`). It may carry a
+one-time publication offer. It is an offer, not a gate: the release is already complete, and the offer
+is made at most once for a released revision. Never read its presence as approval to publish, and
+never infer approval to publish from the save decision, from the release, or from the offer appearing.
+
+**Read `readiness` on every release, whatever else the section carries.** It describes the artifact
+and is reported every time — including on a revision already declined or published, and on one whose
+readiness could be assessed while publication was not on the table. It is never gated on an offer
+being made:
+
+- `blocked` — `readiness.blockers` names each blocker and the repair for it. Report every blocker and
+  its repair, fix the artifact, and release again. A blocked artifact is never offered for
+  publication, so it carries **no actions** — the blockers are the payload. Do not push it and do not
+  describe publication as available.
+- `not_assessed` — `readiness.gaps` names what could not be checked. Report what could not be
+  checked. An unchecked artifact is not a ready one.
+- `ready` — the artifact is fit to hand to someone else. That is all it means: `ready` is not an
+  offer and says nothing about whether one was made.
+
+**Whether publication was offered is a separate question, and only `actions` answers it.** On
+`--json`, act only when `data.share_nudge.actions` is non-empty; the `Action:` lines are the human
+rendering of that same collection. Those commands are deliberately absent from `@@next` and from
+`data.next` — publishing and recording a decline each need the user's decision, so neither is a
+"run this next" step, and nothing in `next` will ever offer you one. A `ready` readiness with no
+actions means the offer for this revision is already spent or not available; say nothing about
+publishing.
+
+When actions are present, present the choice they name, then stop. Publishing needs the user's
+explicit decision on target and visibility; `rote-registry` owns the push once they have made it.
+
+A suggested push is always private, one per namespace you are authorized to publish to. Public
+publication is always a separate, deliberate request; never widen visibility because the artifact
+looked harmless.
+
+If the user declines publication, record the decline so the offer is not repeated for this revision.
+Do this **after the release completes** — the flow must already be released, or the command refuses:
+
+```bash
+rote play release <name> --keep-local
+```
+
+That records a decision and nothing else: it does not undo the release, does not touch the flow, and
+does not block an explicit `rote registry play push` later. Run it only after an explicit decline. An
+unanswered offer stays unanswered — silence is not a decline, and recording one the user did not make
+suppresses the invitation they might have wanted.
+
+Once a version is published the decline is refused, and the command still exits 0 — read the
+`decision` field rather than the exit code: `published` means nothing was recorded.
+
 ## Registry Handoff
 
 If the play should be shared, use `rote guidance registry essential` and `rote grammar registry` for
@@ -357,7 +409,7 @@ the current push syntax. Confirm the target namespace before publishing, then ha
 `rote-registry` with play path, release status, owner/namespace, visibility, dependency notes, and
 the user's publish approval. A local release alone has no published Play URI. When `rote-registry`
 returns a `play_uri`, `bootstrap_uri`, resolved run reference, published-reference
-`execution_verification` status and evidence, and visibility-based sharing guidance after
+`execution_verification` status and evidence, and access guidance (resolution and execution audiences) after
 publication or an already-in-sync check, present and propagate them; do not construct or parse the
 URI in this skill. Treat the disclosure-only Play URI, advertised bootstrap transition, static
 execution readiness, and successful execution as separate facts: propagate `play_run_eligible`, the
@@ -373,9 +425,13 @@ Return these fields to `rote`, `rote-flow-crystallization`, or `rote-registry`:
 - Test commands and representative inputs.
 - Lint, release, index, search verification, and pending cleanup output.
 - Registry target, visibility, and publish approval if sharing is requested.
+- Publication offer: `offered` / `declined-and-recorded` / `suppressed` / `not offered`. Carry this
+  even when nothing was published — `rote registry play push` does not consult the recorded
+  decision, so a decline made here is invisible to `rote` and `rote-registry` unless you relay it,
+  and they will raise sharing again.
 - Published Play URI, execution readiness, blockers, published-reference execution-verification
-  status and evidence, and visibility-based access guidance returned by `rote-registry` when the
-  play is published; otherwise none.
+  status and evidence, and access guidance (resolution and execution audiences) returned by
+  `rote-registry` when the play is published; otherwise none.
 - Next recommended skill: `rote-typescript-transformations`, `rote-registry`, `rote-troubleshooting`,
   or none.
 

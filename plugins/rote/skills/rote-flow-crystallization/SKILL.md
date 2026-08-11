@@ -137,6 +137,14 @@ If the session was interrupted after writing the stub, recover with `rote play p
 the relevant workspace name, and rerun `rote play pending save <workspace-name>` before continuing
 the save decision.
 
+### Crystallization Value
+
+`pending save` also reports a typed crystallization value under `@@share` (`data.share_nudge` under
+`--json`). Read those fields; do not restate them from memory or compute your own. Its readiness is
+`not_assessed` deliberately: no artifact exists yet, so nothing about publication has been checked.
+Saving is what creates the flow that `rote play lint` and `rote play release` then validate. Never
+describe a pending flow as publishable, shareable, or ready to publish.
+
 ## Save Or Discard Decision
 
 Only after pending write and pending save complete, present the task result and ask one explicit
@@ -173,7 +181,7 @@ captured scaffold command, target owner/namespace if known, and approval state t
 `rote-flow-authoring`; after release, that skill hands off to `rote-registry`. A local release alone
 has no published Play URI. When the downstream publication path returns a `play_uri`,
 `bootstrap_uri`, resolved run reference, published-reference `execution_verification` status and
-evidence, and visibility-based sharing guidance, present and propagate them instead of constructing
+evidence, and access guidance (resolution and execution audiences), present and propagate them instead of constructing
 or parsing the URI here. Also propagate execution readiness and blockers; a published installer URI
 is an advertised transition rather than the Play identity, and static eligibility is not proof of
 successful execution.
@@ -187,8 +195,11 @@ Return these fields to `rote`, `rote-workspace`, `rote-browse`, or `rote-flow-au
 - Pending save command: exact emitted scaffold command or recovery command.
 - Save decision: accepted, declined, unclear, or pre-approved by the original request.
 - Release recommendation: draft only, local release, publish/share, or no release.
+- Exploration cost evidence: the two token bases separately, or none. Never their sum — the context
+  figure is a heuristic that may overlap the counted payload, so a total is a number neither source
+  supports. Relaying nothing is better than relaying one base as if it were both.
 - Published Play URI, execution readiness, blockers, published-reference execution-verification
-  status and evidence, and visibility-based access guidance returned by the downstream registry path
+  status and evidence, and access guidance (resolution and execution audiences) returned by the downstream registry path
   when published; otherwise none.
 - Next recommended skill: `rote-flow-authoring`, `rote-registry`, `rote-troubleshooting`, or none.
 
@@ -202,7 +213,8 @@ Return these fields to `rote`, `rote-workspace`, `rote-browse`, or `rote-flow-au
 - Hands off to: `rote-flow-authoring` after save approval; `rote-registry` only after an already
   released artifact needs sharing; `rote-troubleshooting` when pending commands fail repeatedly.
 - Returns to: `rote`, `rote-workspace`, `rote-browse`, or the delegating skill with pending state,
-  decision, scaffold command, verified Play URI and sharing guidance when published, and next owner.
+  decision, scaffold command, the published-play fields listed above when published (URI, execution
+  readiness, blockers, execution-verification status and evidence, access guidance), and next owner.
 - Stop when: the user declines saving, the save decision is unclear and needs input, the pending stub
   is unrecoverable, or authoring becomes the correct owner.
 - Completion signal: pending stub saved or discarded, decision recorded, and next skill or final
