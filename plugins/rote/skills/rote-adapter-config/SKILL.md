@@ -170,7 +170,7 @@ entirely for non-GraphQL adapters.
 ```bash
 rote adapter policies <id>
 ```
-Generate from a preset: `rote adapter policies <id> --generate --preset <github|openai|conservative>`.
+Generate from a preset: `rote adapter policies <id> --generate --preset <github|conservative|custom>`.
 
 ### Group / version
 
