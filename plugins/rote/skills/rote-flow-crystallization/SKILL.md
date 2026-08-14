@@ -1,9 +1,8 @@
 ---
 name: rote-flow-crystallization
 description: >
-  Preserve reusable results from rote workspace, browser, or manual workflow work as pending plays.
-  Use for pending write/save gates, save-or-discard decisions, and handoffs to play authoring or
-  registry sharing.
+  Distill reusable workspace, browser, shell, or manual evidence into a semantic play plan. Owns
+  save-or-discard, pending write/save where supported, and handoff to play authoring.
 ---
 
 # rote-flow-crystallization
@@ -13,14 +12,16 @@ Contract — are companion **skills**, never CLI commands (`rote-shell` is not `
 Invoke them through the runtime's skill mechanism; only literal `rote …` commands run in a
 terminal.
 
-Use this skill after workspace, browser, or manual execution produces a result that may be worth
-saving as a reusable rote play. The pending lifecycle is mandatory for reusable results: write the
-pending stub first, run or record the pending save command second, then resolve save or discard.
+Use this skill after workspace, browser, shell, or manual execution produces a result that may be
+worth saving as a reusable rote play. This skill owns the transition from evidence to a reusable
+procedure. Adapter, browser, and mixed workflows persist that decision through pending write/save;
+process-only workflows use the same planning and approval gate before adapterless workspace export.
 
 A workflow is reusable when it has parameterizable inputs, repeatable adapter/browser/shell steps, a
 stable output shape, and likely value for future agents. Do not treat a one-off user request as
-non-reusable. If reusable or plausibly reusable, run this skill before final presentation: pending
-write, pending save, then save/discard decision.
+non-reusable. If reusable or plausibly reusable, run this skill before final presentation: build the
+crystallization plan, persist it through pending write/save when supported, then resolve save or
+discard.
 
 Do not use this skill after unchanged execution of an existing released play that fully satisfied
 the user request. That workflow is already reusable; verify and present the play output instead.
@@ -28,28 +29,30 @@ Use this skill only when the run created new or changed workflow knowledge: adap
 browser steps, manual transformations, a composed superplay built around a partial-play baseline, or
 an explicit user request to save/release/publish a new workflow.
 
-Do not use this skill for shell-only `rote proc` work unless `rote-shell` explicitly returns here.
-Template and pending commands still require a real adapter, so process-only work uses the
-adapterless workspace-export route instead of inventing one. That export is steps + presentation by default;
-the explicit no-steps legacy TypeScript body is the escape only when the workflow needs control flow
-or runtime interaction the step language does not support, or when the user asks for it — a set
-discovered at run time is not a legacy trigger, since `for_each` resolves its width from an upstream
-step's response (`rote-flow-authoring` owns the representability test, `rote grammar steps` the
-syntax). An exported artifact is a draft — generalize recorded literals to `$param` and prune
-inferred spurious parameters before lint (`rote-flow-authoring` owns that checklist). The
-run-unchanged rule applies to the pending-save *scaffold command*, never to the exported artifact.
-Mixed shell plus adapter, provider API, or browser workflows use this pending lifecycle. Only
-workflows with no adapter, provider API, or browser state stay on the shell-only authoring route.
+Process-only `rote proc` work enters this skill when `rote-shell` identifies a reusable result.
+Template and pending commands still require a real adapter, so process-only work skips those commands
+without skipping crystallization: build the plan below, resolve save approval, then hand the approved
+plan to `rote-flow-authoring` for adapterless workspace export. Never invent an adapter. Mixed shell
+plus adapter, provider API, or browser workflows use pending write/save normally.
 
 If the user already asked to save, release, publish, or make the workflow reusable, treat that as
-save approval. Do not ask again, and do not skip `rote play pending write` or `rote play pending
-save`.
+save approval. Do not ask again. For pending-capable workflows, do not skip `rote play pending write`
+or `rote play pending save`.
+
+## Build The Crystallization Plan
+
+Use `rote guidance play crystallization` as the canonical plan contract; produce every field it
+defines without redefining them here. Record the plan in pending notes when the workflow supports
+pending write; carry it directly to authoring for process-only export. Read `rote guidance play
+shape` when mapping the plan into a DAG and `rote guidance play testing` before release. Exact step
+syntax belongs to `rote grammar steps`.
 
 ## Pending Write Gate
 
-Before presenting the final answer, create a pending play stub that captures the repeatable steps,
-inputs, adapter ids, cached response paths, and output shape from the completed run. Use live rote
-guidance for exact syntax when uncertain: `rote grammar export` or `rote guidance agent essential`.
+For adapter, browser, and mixed workflows, create a pending play stub before presenting the final
+answer. It captures the crystallization plan, inputs, adapter ids, cached response paths, and output
+shape from the completed run. Process-only workflows skip to the save decision after producing the
+plan. Use live rote guidance for exact pending syntax when uncertain: `rote grammar export`.
 
 Precondition check before `pending write`:
 
@@ -126,12 +129,10 @@ so capture the emitted command unchanged. Never append shape flags or reconstruc
 compaction or handoff.
 
 `pending save` only *prepares* this command; it does not order you to run it. Its output reads
-"Scaffold command prepared. Run it only after the user has approved saving this as a reusable play
-(ask them if you haven't already)". So run the scaffold command yourself **only after** approval —
-immediately if the user already approved, otherwise after the save question below. Scaffold output
-is an agent action, never user-facing instructions.
-When the pending state contains browser runtime or session data, run
-`rote guidance browser play-authoring` before editing the generated TypeScript body.
+"Scaffold command prepared. Resolve the save decision first; after acceptance or pre-approval, run
+`rote guidance play shape` and execute this command unchanged". Preserve the emitted command
+unchanged in the handoff; never run it from crystallization, present it as user instructions, append
+shape flags, or reconstruct it from memory.
 
 If the session was interrupted after writing the stub, recover with `rote play pending list`, inspect
 the relevant workspace name, and rerun `rote play pending save <workspace-name>` before continuing
@@ -147,8 +148,9 @@ describe a pending flow as publishable, shareable, or ready to publish.
 
 ## Save Or Discard Decision
 
-Only after pending write and pending save complete, present the task result and ask one explicit
-yes/no question when the user did not already approve saving.
+For pending-capable workflows, ask only after pending write and pending save complete. For
+process-only workflows, ask after the crystallization plan is complete. Present the task result and
+ask one explicit yes/no question when the user did not already approve saving.
 
 Use this shape:
 
@@ -161,18 +163,22 @@ I can save this as a reusable rote play for next time. Save it? (yes/no)
 Do not combine the save question with unrelated follow-ups. Do not infer consent from silence,
 thanks, or a new task.
 
-If the user says yes or already asked to save, run the captured scaffold command and hand off to
-`rote-flow-authoring` for implementation, tests, lint, release, index rebuild, search verification,
-and optional registry sharing.
+If the user says yes or already asked to save, hand off the crystallization plan and exact pending
+scaffold command to `rote-flow-authoring` **without executing it**. Authoring runs the pending
+scaffold unchanged for pending-capable workflows; for process-only workflows, it materializes the
+approved plan through adapterless workspace export. Authoring then owns implementation, tests, lint,
+release, index rebuild, search verification, and optional registry sharing.
 
-If the user says no, discard the pending stub through rote rather than deleting files directly:
+If the user says no, discard a pending-capable workflow's stub through rote rather than deleting
+files directly:
 
 ```bash
 rote play pending discard <workspace-name>
 ```
 
-If the answer is unclear, keep the pending stub and ask again for a yes/no decision. On resume, use
-`rote play pending list` to recover the stub and continue from the save question.
+For process-only work, record the declined decision and leave the captured evidence unchanged; there
+is no pending stub to discard. If the answer is unclear, retain any pending stub and the plan, then
+ask again for a yes/no decision. On resume, use `rote play pending list` when applicable.
 
 ## Registry Handoff
 
@@ -190,9 +196,11 @@ successful execution.
 
 Return these fields to `rote`, `rote-workspace`, `rote-browse`, or `rote-flow-authoring`:
 
-- Workspace name: source workspace or browser capture context.
-- Pending stub: name, adapters, query/response path, and notes.
-- Pending save command: exact emitted scaffold command or recovery command.
+- Workspace name: source workspace, browser capture context, or process workspace.
+- Crystallization plan: the eight-field contract defined by `rote guidance play crystallization`.
+- Pending stub: name, adapters, query/response path, and notes, or none for process-only work.
+- Pending save command: exact emitted scaffold command or recovery command, not executed by this
+  skill; none for process-only work.
 - Save decision: accepted, declined, unclear, or pre-approved by the original request.
 - Release recommendation: draft only, local release, publish/share, or no release.
 - Exploration cost evidence: the two token bases separately, or none. Never their sum — the context
@@ -205,11 +213,11 @@ Return these fields to `rote`, `rote-workspace`, `rote-browse`, or `rote-flow-au
 
 ## Handoff Contract
 
-- Use when: completed rote, browser, or manual work produced a result that may be reusable.
+- Use when: completed rote, browser, shell, or manual work produced a result that may be reusable.
 - Preconditions: an owning skill has a user-visible result plus workspace, browser, or command state
   sufficient to describe repeatable inputs and outputs.
-- Owns: pending write, pending save, save/discard decision handling, stub recovery, and transfer of
-  approved reusable work to authoring.
+- Owns: the crystallization plan, pending write/save where supported, save/discard decision handling,
+  stub recovery, and transfer of approved reusable work to authoring.
 - Hands off to: `rote-flow-authoring` after save approval; `rote-registry` only after an already
   released artifact needs sharing; `rote-troubleshooting` when pending commands fail repeatedly.
 - Returns to: `rote`, `rote-workspace`, `rote-browse`, or the delegating skill with pending state,
@@ -217,5 +225,6 @@ Return these fields to `rote`, `rote-workspace`, `rote-browse`, or `rote-flow-au
   readiness, blockers, execution-verification status and evidence, access guidance), and next owner.
 - Stop when: the user declines saving, the save decision is unclear and needs input, the pending stub
   is unrecoverable, or authoring becomes the correct owner.
-- Completion signal: pending stub saved or discarded, decision recorded, and next skill or final
-  answer named.
+- Completion signal: crystallization plan returned, supported pending state saved or discarded,
+  decision recorded, and next skill or final answer named. No scaffold or export command has been
+  executed by this skill.

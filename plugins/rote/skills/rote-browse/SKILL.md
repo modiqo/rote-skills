@@ -31,8 +31,9 @@ preserves the browser handoff.
 2. **Explore safely.** Follow the runtime guide's wait → snapshot → targeted query → action loop.
 3. **Verify the result.** Read fresh page state or the requested artifact, not only command status.
 4. **Classify replayability.** Decide one-off, private recall, or portable play candidate.
-5. **Hand off reusable work.** Use `rote-flow-crystallization`; after save approval, use
-   `rote guidance browser play-authoring` and `rote-flow-authoring`.
+5. **Hand off reusable work.** Use `rote-flow-crystallization`; after its accepted or pre-approved
+   handoff, `rote-flow-authoring` uses `rote guidance browser play-authoring` and materializes the
+   play.
 
 Do not start with generic play search when the user explicitly invoked browser automation. After the
 launch shape is chosen, a reusable browser play may be offered as an option, but do not silently
@@ -92,9 +93,10 @@ from snapshots, slices, screenshots, actions, and notes. Preserve only what repl
 - Sanitized expected output and verification evidence.
 - Opaque saved-auth profile identifier and status, human gates, and portability limits.
 
-Then hand off to `rote-flow-crystallization`. If saving is approved, run the emitted scaffold and
-`rote guidance browser play-authoring` before editing the TypeScript body. `rote-flow-authoring`
-resumes for tests, lint, release, index/search verification, and pending cleanup.
+Then hand off to `rote-flow-crystallization`; this skill never executes the emitted scaffold. After
+crystallization resolves acceptance or pre-approval, `rote-flow-authoring` follows
+`rote guidance browser play-authoring`, executes the scaffold or export, and owns tests, lint,
+release, index/search verification, and pending cleanup.
 
 ## Handoff Summary
 
@@ -121,9 +123,9 @@ Return:
 - Use when: browser navigation, observation, interaction, attach, authentication state, or browser
   replay is required.
 - Owns: launch choice, page lease, waits, snapshots, slices, ref recovery, and human gates.
-- Hands off to: `rote-flow-crystallization` for reusable captured work; `rote-flow-authoring` after
-  approval and browser play guidance; `rote-registry` for validated sharing; `rote` when substrate
-  routing changes.
+- Hands off to: `rote-flow-crystallization` for reusable captured work; `rote-flow-authoring` through
+  crystallization's accepted/pre-approved handoff; `rote-registry` only for an already released
+  artifact that needs sharing; `rote` when substrate routing changes.
 - Stop when: the result is verified, human action is required, the target cannot be recovered, an
   unsafe action lacks approval, or crystallization becomes the next owner.
 - Completion signal: verified browser result plus browser state, replayability, and next owner.

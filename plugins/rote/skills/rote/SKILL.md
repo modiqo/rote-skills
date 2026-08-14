@@ -47,8 +47,10 @@ MCP calls, provider CLIs, browser automation, registry commands, or custom scrip
 - A successful `--dry-run` is analysis only, not setup completion. Do not answer or proceed as if an
   adapter, play, registry push, or runtime action exists until the non-dry-run command has run and
   the installed/released/published state is verified.
-- `[MANDATORY PROTOCOL] no pending stub` is a hard final-answer stop. Do not present reusable results
-  until `rote play pending write` and `rote play pending save` have run.
+- `[MANDATORY PROTOCOL] no pending stub` is a hard final-answer stop until the reusable result enters
+  `rote-flow-crystallization`. Adapter, browser, and mixed work must complete pending write/save;
+  process-only work must complete the crystallization plan and save decision before adapterless
+  export. Never invent an adapter to silence the warning.
 - For reusable multi-source work, confirm each required source is backed by a captured `@N`
   response before presenting or releasing; release/lint success is not provider proof.
 - Use `rote how`, `rote start`, `rote guidance agent essential`, `rote guidance adapters
@@ -61,9 +63,9 @@ before final answer. Do not treat a one-off user request as non-reusable. One-of
 current need; reusable describes whether the procedure has parameterizable inputs, repeatable
 adapter/browser/shell steps, a stable output shape, and future agent value.
 
-If reusable or plausibly reusable, invoke the `rote-flow-crystallization` skill before final
-presentation:
-pending write, pending save, then save/discard decision. If not reusable, briefly record why.
+If reusable or plausibly reusable, invoke `rote-flow-crystallization` before final presentation;
+it owns the semantic plan, save/discard decision, and route to pending write/save or adapterless
+export. If not reusable, briefly record why.
 
 ## Default Play Shape
 
@@ -120,8 +122,8 @@ User instructions say what outcome to produce; this skill says how to use rote t
 5. General model defaults.
 
 If the user asks to save, release, publish, make reusable, or crystallize a workflow, treat that as
-approval for the save/release path. It does not waive pending write, pending save, scaffold, test,
-release, index, search, or cleanup states.
+approval for the save/release path. It does not waive the crystallization plan, applicable pending
+write/save, materialization, test, release, index, search, or cleanup states.
 
 ## Skill Play
 
@@ -144,11 +146,13 @@ digraph rote_flow {
     "Execute via rote-shell" [shape=box];
     "Verify requested artifact/content" [shape=box];
     "Reusable result?" [shape=diamond];
+    "Build crystallization plan" [shape=box];
+    "Pending supported?" [shape=diamond];
     "Pending write" [shape=box];
     "Pending save" [shape=box];
     "Save/release approved?" [shape=diamond];
     "Ask one yes/no save question" [shape=box];
-    "Scaffold draft" [shape=box];
+    "Materialize draft" [shape=box];
     "Test, lint, release" [shape=box];
     "Index and search verify" [shape=box];
     "Pending discard" [shape=box];
@@ -177,13 +181,16 @@ digraph rote_flow {
     "Verify requested artifact/content" -> "Full play reuse terminal" [label="verified full play"];
     "Verify requested artifact/content" -> "Reusable result?" [label="workspace/browser/manual result"];
     "Reusable result?" -> "Final answer" [label="no"];
-    "Reusable result?" -> "Pending write" [label="yes"];
+    "Reusable result?" -> "Build crystallization plan" [label="yes"];
+    "Build crystallization plan" -> "Pending supported?";
+    "Pending supported?" -> "Pending write" [label="adapter/browser/mixed"];
+    "Pending supported?" -> "Save/release approved?" [label="process-only"];
     "Pending write" -> "Pending save";
     "Pending save" -> "Save/release approved?";
-    "Save/release approved?" -> "Scaffold draft" [label="yes"];
+    "Save/release approved?" -> "Materialize draft" [label="yes"];
     "Save/release approved?" -> "Ask one yes/no save question" [label="no"];
     "Ask one yes/no save question" -> "Final answer";
-    "Scaffold draft" -> "Test, lint, release";
+    "Materialize draft" -> "Test, lint, release";
     "Test, lint, release" -> "Index and search verify";
     "Index and search verify" -> "Pending discard";
     "Pending discard" -> "Registry decision if sharing requested";
@@ -254,11 +261,11 @@ Shell/process routing rule:
    `rote-task-routing` selected the shell substrate.
 6. `rote-workspace` for adapter probes, calls, cached response queries, transformations, and
    multi-adapter execution.
-7. `rote-flow-crystallization` for new reusable workspace, browser, or manual results before final
-   presentation; unchanged reuse of an existing released play is already reusable and skips this
-   gate. Process-only crystallization stays in `rote-shell`: its recorded workspace uses the
-   adapterless export path plus `deps.toml`, because template/pending still require a real adapter.
-8. `rote-flow-authoring` only after direct authoring intent or an approved pending save command.
+7. `rote-flow-crystallization` for every new reusable workspace, browser, shell, or manual result
+   before final presentation; unchanged reuse of an existing released play skips this gate.
+   Process-only work uses the same doctrine and approval gate, then authoring materializes it through
+   adapterless export because template/pending still require a real adapter.
+8. `rote-flow-authoring` only after direct authoring intent or an approved crystallization plan.
 9. `rote-command-patterns` and `rote-typescript-transformations` are helper/reference skills; they
    return to the owner and do not complete the lifecycle themselves.
 10. `rote-troubleshooting` after an unchanged retry fails or state recovery is unclear.
@@ -344,8 +351,8 @@ map, and the compact play search/run reference.
 | Local CLI, files, logs, commands, or process state is the selected substrate | `rote-shell`. | Shell work uses `rote proc`/`rote deps`, records evidence, and returns result plus reusable-work signal. |
 | No play matched, installed adapter can help | `rote-task-routing`, then `rote-workspace`. | Adapter work runs in a rote workspace with cached response IDs preserved. |
 | No installed adapter matched | Search `rote adapter catalog search "<intent>"`; use `rote-adapter-create` if the user supplied or accepts an adapter spec. | Useful catalog hits are inspected or installed before out-of-band fallback. |
-| Workspace, browser, or manual work produced new reusable results | `rote-flow-crystallization`. | Pending write and pending save happen before final presentation; save/discard state is resolved. |
-| Shell/process work produced reusable results | `rote-shell`, then `rote-flow-authoring` or `rote-flow-crystallization` only when the shell skill returns that handoff. | Recorded process-only work uses no-shape-flag workspace export for the default steps + presentation play; adapter-requiring pending/template commands are not used. |
+| Workspace, browser, or manual work produced new reusable results | `rote-flow-crystallization`. | A semantic plan is persisted through pending write/save before final presentation; save/discard is resolved. |
+| Shell/process work produced reusable results | `rote-shell`, then `rote-flow-crystallization`. | The same semantic plan and save decision precede no-shape-flag workspace export; adapter-requiring pending/template commands are not used. |
 | User asks to create, edit, lint, release, or publish a play | `rote-flow-authoring`. | The play lifecycle reaches scaffold, tests, lint, release, index/search verification, cleanup, publish, or a clear blocker. |
 | Command syntax or rote idioms are needed | Prefer `rote grammar <topic>`; invoke the `rote-command-patterns` skill for task-focused patterns. | Live grammar is treated as source of truth. |
 | TypeScript play transformation detail is needed | Prefer `rote grammar deno`; invoke the `rote-typescript-transformations` skill. | Cached responses and `FlowOutput` shape are preserved. |
@@ -384,13 +391,14 @@ map, and the compact play search/run reference.
    answer — it emits the `[MANDATORY PROTOCOL]` pending-stub warning when a reusable result has not
    entered the pending lifecycle. Run the command that enforces the save gate instead of relying on
    remembering it.
-10. Before presenting new reusable results from workspace, browser, or manual work, run
-   `rote-flow-crystallization`: pending write, pending save, then save/discard decision. If
-   save/release was already requested, continue to authoring without asking again. Do not run this
-   gate for unchanged reuse of an existing play.
-11. For reusable shell/process work, let `rote-shell` choose adapterless workspace export, a mixed
-    pending/template route, or an explicit legacy no-steps body. Never invent an adapter or append
-    shape flags to a pending-save command.
+10. Before presenting any new reusable result, run `rote-flow-crystallization` to produce the
+    semantic plan and resolve save/discard. Adapter, browser, and mixed work then use pending
+    write/save. Process-only work skips those adapter-requiring commands without skipping the plan.
+    If save/release was already requested, continue to authoring without asking again. Do not run
+    this gate for unchanged reuse of an existing play.
+11. After an approved process-only plan, let `rote-flow-authoring` choose adapterless workspace
+    export or a justified legacy no-steps body using shell guidance. Never invent an adapter or
+    append shape flags to a pending-save command.
 12. After authoring, release with `rote play release`, rebuild the index, verify search, then clear
     the pending stub with `rote play pending discard <workspace>`.
 13. When registry publication succeeds or the selected version is already in sync, require
@@ -508,6 +516,8 @@ only when the full companion graph or handoff packet shape is needed.
 - `rote guidance browser essential` - browser automation patterns.
 - `rote guidance shell essential` - `rote proc`, process leases, stream capture, deps, and shell
   play crystallization patterns.
+- `rote guidance play` - progressive play design tree: `crystallization` for the semantic plan,
+  `shape` for the DAG, and `testing` for contract verification.
 - `rote play info <name-or-path> --json` - canonical single-play record: absolute path plus ordered
   parameters. Use it after choosing a play from search, instead of filtering a search array
   client-side.

@@ -224,8 +224,9 @@ return:
 When the task result is ready, do not immediately present reusable work. First prepare the
 save/discard decision through `rote-flow-crystallization`. If the original request already asked to
 save, release, publish, crystallize, make discoverable, or make the workflow reusable, mark save as
-pre-approved in the handoff and continue through pending write, pending save, authoring, release,
-index, search verification, and pending cleanup without asking again.
+pre-approved in the handoff. Crystallization still completes applicable pending write/save; on
+acceptance or pre-approval, `rote-flow-authoring` owns authoring, release, index, search
+verification, and pending cleanup without asking again.
 
 One-off describes the current need; reusable describes the procedure. Do not use one-off user intent
 as the reason to skip the save gate.
@@ -249,7 +250,7 @@ If the result is not reusable, return the workspace path, response IDs, and user
   workspace re-entry, and workspace handoff summaries.
 - Hands off to: `rote-flow-run` when `@@plays` suggests a usable play; `rote-flow-crystallization`
   when output is reusable or might be reusable; `rote-troubleshooting` after repeated unchanged
-  failures; `rote-registry` when a completed reusable artifact is ready to share.
+  failures; `rote-registry` only for an already released artifact that needs sharing.
 - Returns to: `rote` or the delegating skill with workspace path, commands run, cached response IDs,
   result/artifact, reusability signal, save gate, blockers, and next recommended skill.
 - Stop when: the workspace result is complete, required approval or credentials are missing, rote

@@ -17,9 +17,11 @@ Use this skill when cached rote responses need TypeScript transformation or a Ty
 being authored. `rote grammar deno` and `rote guidance typescript essential` remain the source of
 truth for execution syntax and SDK import forms.
 
-This is a helper skill, not a lifecycle owner. Return to `rote-flow-authoring` or `rote-workspace`
-after the transformation is implemented and tested; do not stop here when release, index/search
-verification, pending cleanup, or final presentation is still outstanding.
+This is a helper skill, not a lifecycle owner. Return to the invoking owner after the transformation
+is implemented and tested: `rote-flow-authoring` when authoring invoked it, `rote-workspace` when
+workspace invoked it. Do not stop here when release, index/search verification, pending cleanup, or
+final presentation is still outstanding, and do not hand authoring-owned state back to a substrate
+skill.
 
 ## Browser Boundary
 
@@ -142,7 +144,7 @@ code.
 
 ## Return Fields
 
-Return these fields to `rote-flow-authoring` or `rote-workspace`:
+Return these fields to the invoking owner (`rote-flow-authoring` or `rote-workspace`):
 
 - Input response IDs or fixture sources.
 - Transformation path: jq, TypeScript helper, play body, or blocker.
@@ -162,8 +164,8 @@ Return these fields to `rote-flow-authoring` or `rote-workspace`:
   `rote-flow-authoring` for play lifecycle/release; `rote-workspace` for additional adapter calls or
   cached response queries; `rote-command-patterns` for command syntax; `rote-troubleshooting` after
   repeated unchanged failures.
-- Returns to: `rote-flow-authoring` or `rote-workspace` with transformation path, output shape, tests,
-  and blockers.
+- Returns to: the invoking owner (`rote-flow-authoring` or `rote-workspace`) with transformation path,
+  output shape, tests, and blockers.
 - Stop when: transformation is tested, jq is sufficient and the owner can continue, required data is
   missing, or troubleshooting becomes the correct owner.
 - Completion signal: tested transformation or explicit blocker plus the owner skill to resume.

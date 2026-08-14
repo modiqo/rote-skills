@@ -48,9 +48,9 @@ Consume this packet from `rote`, `rote-task-routing`, or a generated adapter hel
   calling tools.
 - If resuming, `cd` to the supplied workspace and do not run `rote init` again.
 - Always probe before calling. Tool names and input schemas vary by adapter.
-- Before returning reusable results, write a pending play stub, run pending save, and route through
-  `rote-flow-crystallization`. Run the emitted scaffold only after the caller or user approves
-  saving, releasing, publishing, or making the workflow reusable.
+- Before returning reusable results, hand the adapter evidence and caller-supplied approval state to
+  `rote-flow-crystallization`; it owns pending write/save and the save decision. Never run the
+  emitted scaffold from this skill.
 
 ## Auth Shape Check
 
@@ -78,12 +78,12 @@ rote adapter list <id> --json --health
   conditions; play search has either been checked or explicitly delegated back to `rote` before new
   adapter exploration.
 - Owns: delegated single-adapter workspace entry, probe/call/query sequence, cached response
-  preservation, write-guard handling, pending play stub creation, and return summary for the main
-  conversation. Does not own release/index/search cleanup.
+  preservation, write-guard handling, and return summary for the main conversation. Does not own
+  pending stub creation, save decisions, scaffold execution, release, index, search, or cleanup.
 - Hands off to: `rote` when no installed adapter matches or the top-level route must change;
-  `rote-workspace` when broader multi-adapter workspace orchestration is needed; `rote-registry`
-  after a saved play is ready to share; `rote-flow-crystallization` when the caller owns the save
-  gate.
+  `rote-workspace` when broader multi-adapter workspace orchestration is needed; `rote-registry` only
+  for an already released artifact that needs sharing; `rote-flow-crystallization` for reusable
+  evidence and the save gate.
 - Returns to: `rote` or the delegating skill with workspace path, cached response IDs, result,
   write-guard state, reusable-result state, and next recommended skill.
 - Stop when: the task completes, probe shows the adapter cannot satisfy the request, a write guard
@@ -188,57 +188,15 @@ After approval, re-enter the same workspace and retry the blocked call with
 
 ## Task Completion Protocol
 
-The last required lifecycle commands inside the workspace, before reusable result text, are pending
-write followed by pending save. Pending save only prepares the scaffold command; it does not require
-save approval.
+For reusable results, return the evidence to `rote-flow-crystallization` before reusable result text.
+Carry the user intent, workspace name/path, cached response IDs, adapter id, validated response paths,
+result shape, caveats, and any caller-supplied save decision. Crystallization owns pending write,
+pending save, and the accepted, declined, unclear, or pre-approved decision; never infer the decision
+or execute the emitted scaffold here.
 
-```bash
-rote play pending write <workspace> \
-  --name <suggested-play-name> \
-  --adapter <adapter-id> \
-  --response-path "<validated jq path>" \
-  --notes "<encoding quirks, caveats, or data shape notes>"
-
-# Always prepare the scaffold command before returning reusable result text.
-rote play pending save <workspace>
-```
-
-Capture the scaffold command printed by `pending save`. If the user already asked to save, release,
-publish, or make the workflow reusable, treat that as approval and run the scaffold path. Otherwise,
-keep the workspace name and captured scaffold command, present the results, and ask:
-
-```text
-Want to save this as a reusable play? (yes/no)
-```
-
-Do not create, release, or discard the play until the user answers or the original request already
-gave save, release, publish, or make-reusable approval. Never skip pending write or pending save.
-
-## If User Saves The Play
-
-Once the user has approved saving, run the scaffold command yourself. Parameterize API inputs, not just pagination/output knobs.
-For structured filters, add a raw JSON passthrough flag such as `--filter`.
-
-Before release, verify:
-
-```text
-[ ] Adapter effects declared in frontmatter steps: (endpoint/method/params with $param tokens);
-    only an explicit --legacy-body play calls adapters from the TypeScript body
-[ ] FlowOutput wired in the presentation body (legacy: in the imperative body):
-    new FlowOutput(); out.human(...); out.summary(...); out.result({...})
-[ ] Presentation body reads play inputs from ctx.params, not Deno.args or step stdout
-[ ] Frontmatter parameters match the named key=value contract (legacy: CLI flags)
-[ ] Tests cover at least three distinct inputs, including one default-only run
-[ ] rote play lint <name> exits 0
-```
-
-Then use the release command; never edit `main.ts` to flip status manually:
-
-```bash
-rote play release <name>
-rote play index --rebuild
-rote play pending discard <workspace>
-```
+If the caller asks this delegated skill to return before crystallization, mark the save gate
+`pending` and stop. On acceptance or pre-approval, `rote-flow-authoring` owns scaffold execution,
+implementation, tests, lint, release, index/search verification, and pending cleanup.
 
 ## Handoff Summary
 
@@ -253,7 +211,7 @@ follow-up:
 - Adapter: <adapter-id>
 - User intent: ...
 - Workspace path: ...
-- Commands run: probe/call/query/pending-write commands
+- Commands run: probe/call/query commands
 - Cached responses: `@N` ids and what each contains
 - Write-guard state: none, approval required with token, or confirmed
 - Result or artifact: ...

@@ -14,7 +14,8 @@ Invoke them through the runtime's skill mechanism; only literal `rote …` comma
 terminal.
 
 Use this skill when the user asks to create, edit, lint, release, verify, or publish a reusable rote
-play, or when `rote-flow-crystallization` returns an approved pending save command. Keep live command
+play, or when `rote-flow-crystallization` returns an accepted or pre-approved plan plus its exact
+pending scaffold command. A prepared pending-save command alone is not approval. Keep live command
 help authoritative for syntax.
 
 ## Route The Implementation
@@ -31,6 +32,19 @@ Choose the implementation guide before editing the scaffold:
 Browser TypeScript does not belong to the generic transformation route. Run `rote guidance browser
 play-authoring`, follow its typed-step, presentation, and legacy-SDK procedure, then return here for tests, lint, release,
 index/search verification, and pending cleanup.
+
+## Consume The Crystallization Plan
+
+When this skill follows `rote-flow-crystallization`, treat its plan as the authoring input. The plan
+must satisfy the canonical eight-field contract in `rote guidance play crystallization`, and the
+decision must be accepted or pre-approved before materialization. Do not reconstruct the play from
+transcript order, ask the save question again, or execute a prepared command whose decision is still
+unclear. If the handoff lacks a usable plan or clear approval, return to crystallization; direct
+authoring may read that guide before editing.
+
+Use `rote guidance play shape` while mapping the plan into steps and
+`rote guidance play testing` before release. Record any necessary deviation from the approved plan
+in the final authoring return instead of silently changing the workflow contract.
 
 ## Elicit The Reusable Contract
 
@@ -181,16 +195,15 @@ process results.
 ## Scaffold Through Rote
 
 Use the pending save command from `rote-flow-crystallization` when authoring follows a completed
-task. This applies even when the original request already said to save, release, publish, or make the
-workflow reusable: pending write and pending save come first, then the emitted scaffold command.
-`pending save` only prepares that command — run it only after the user has approved saving
-(immediately when authoring follows an already-approved handoff, otherwise after the save question).
-Approval is the single gate both this skill and `rote-flow-crystallization` share.
+task. Crystallization must already have run pending write/save where supported and returned a decision
+of accepted or pre-approved. Authoring executes the emitted scaffold command itself, immediately after
+that handoff. A declined decision has already discarded the pending stub; an unclear decision belongs
+back in crystallization. Never interpret approval independently in this skill.
 
 The emitted scaffold command already encodes the pending artifact's steps + presentation shape. Run it
-unchanged. Never append shape flags, rebuild it from memory, or replace it with a second scaffold
-command; doing so can discard the recorded adapters, browser sessions, workspace, or execution
-model.
+unchanged, exactly once. Never append shape flags, rebuild it from memory, or replace it with a second
+scaffold command; doing so can discard the recorded adapters, browser sessions, workspace, or
+execution model. Crystallization and substrate skills preserve this command but never execute it.
 
 For adapter-backed or mixed adapter/shell work, "save this" means preserve workspace history, run
 pending write/save, and scaffold from rote with `rote play template create`. It does not authorize
@@ -206,9 +219,10 @@ provider adapter during scaffold or implementation because the new id appears cl
 easier to call. If the selected adapter cannot satisfy the capability, stop authoring and return to
 `rote-task-routing` with the missing capability.
 
-For process-only work handed off by `rote-shell`, do not invent an adapter just to satisfy template
-or pending commands: those adapterless paths remain unsupported. Prefer the no-shape-flag workspace
-export over the recorded `rote proc` trace; it emits `process.exec` steps plus presentation. If the
+For process-only work handed off by `rote-flow-crystallization`, do not invent an adapter just to
+satisfy template or pending commands: those adapterless paths remain unsupported. Materialize the
+approved plan through no-shape-flag workspace export over the recorded `rote proc` trace; it emits
+`process.exec` steps plus presentation. If the
 representability test above lands on a legacy body — a named gap in the step language, or an
 explicit user request — author
 `~/.rote/flows/<name>/main.ts` with `@rote-frontmatter`, create `deps.toml`, use the shell SDK, run
@@ -292,7 +306,7 @@ HTTP, or unrelated SDK APIs.
 
 ## Test, Lint, Release, And Search
 
-Run plays with frontmatter `steps:` (the default shape) through the play runner, from outside the
+Read `rote guidance play testing`, then run plays with frontmatter `steps:` (the default shape) through the play runner, from outside the
 active workspace, with representative parameter sets. For presentation plays, it executes effects
 first and then invokes the deprivileged presentation body:
 
@@ -444,8 +458,9 @@ Return these fields to `rote`, `rote-flow-crystallization`, or `rote-registry`:
 
 - Use when: a reusable play must be created, edited, tested, linted, released, verified, or prepared
   for publication.
-- Preconditions: user intent or a pending save command defines the reusable workflow boundary; any
-  required API shape can be discovered through rote before scaffolding.
+- Preconditions: direct user intent defines the boundary, or `rote-flow-crystallization` supplies a
+  usable plan, accepted/pre-approved decision, and exact pending scaffold command; any required API
+  shape can be discovered through rote before scaffolding.
 - Owns: contract elicitation, schema discovery, scaffold, implementation lifecycle, tests, lint,
   release, index/search verification, pending cleanup when applicable, and registry-ready return
   data.

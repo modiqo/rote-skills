@@ -76,9 +76,10 @@ source or the router selected it as fallback after adapter checks.
 - Preconditions: `rote` can run; a task intent and working directory are known; browser/API state
   that must feed the command has been materialized as a saved response, snapshot, slice, or file.
 - Owns: `rote proc` primitive selection, process evidence capture, dependency preflight,
-  background lease handling, process-backed TypeScript play shape, and shell SDK guidance.
-- Hands off to: `rote-flow-crystallization`, `rote-flow-authoring`, `rote-typescript-transformations`,
-  `rote-troubleshooting`, `rote-browse`, and `rote`.
+  background lease handling, and shell SDK guidance.
+- Hands off to: `rote-flow-crystallization` first for reusable process evidence;
+  `rote-flow-authoring` after an approved crystallization plan; `rote-typescript-transformations`,
+  `rote-troubleshooting`, `rote-browse`, and `rote` as their concerns arise.
 - Returns to: `rote` or the delegating companion with commands run, response IDs, process leases,
   captured artifacts, result, reusability signal, cleanup state, and next recommended skill.
 - Stop when: the shell result is delivered, dependency provisioning needs user approval, a process
@@ -284,16 +285,18 @@ stderr. Do not duplicate that announcement in crystallized plays. Use
 
 ## Crystallization Router
 
-When the user asks to turn recorded shell exploration into a reusable play, use
-`rote workspace export <path>` with no shape flags first. The default artifact is
-schema-v1 steps + presentation: typed `process.exec` effects in `steps:` plus a
-`steps_with_presentation` body. The export is a draft synthesized from one
-recording: `rote proc run` records literal argv, so replace recorded literals
-(paths, repos, dates) with `$param` tokens and prune any spurious inferred
-`parameters:` entries before lint. Use explicit `--format steps` only when the
-user wants a steps-only report. Adapterless template/frontmatter/pending
-commands still require a real adapter, so do not invent one for process-only
-work. Step syntax quick reference: `rote grammar steps`.
+When recorded shell exploration is reusable, hand its evidence to
+`rote-flow-crystallization` before exporting. That skill distills the reusable procedure into a
+semantic plan and resolves save approval; do not treat transcript order as the play design.
+After approval, pass the plan to `rote-flow-authoring`; authoring materializes it with
+`rote workspace export <path>` using no shape flags. The default artifact is schema-v1 steps plus
+presentation: typed `process.exec` effects in `steps:` and a `steps_with_presentation` body.
+
+The export is a draft synthesized from one recording: replace recorded literal argv values (paths,
+repos, dates) with `$param` tokens, prune spurious inferred `parameters:`, and align its steps with
+the approved plan before lint. Use `--format steps` only when the user wants a steps-only report.
+Adapterless template/frontmatter/pending commands still require a real adapter, so never invent one
+for process-only work. Step syntax belongs to `rote grammar steps`.
 
 Use an explicit legacy no-steps shell body only when the workflow needs shell
 control flow or runtime interaction the step language does not support, or when
@@ -677,268 +680,34 @@ body their completed, checkpoint-restored, failed, skipped, or blocked observati
 presentation SDK. Browser extracts stay bounded projections, and stateful browser actions keep the
 ordering and runtime/auth dependencies recorded by `rote-browse`.
 
-## Crystallization Rule
+## Crystallization Handoff
 
-After a CLI workflow produces the requested result, run the reuse triage before the final
-answer — one verified run is enough to classify; a workflow that has already worked twice is
-simply a stronger save candidate. Before presenting, run `cd <workspace-path> && rote ls`: it
-surfaces the workspace's `@@` state and the `[MANDATORY PROTOCOL]` pending-stub warning when a
-reusable result has no pending play yet. The canonical replay command depends on the play's
-execution model.
+After a CLI workflow produces the requested result, run reuse triage before the final answer. If it
+is reusable or plausibly reusable, hand the captured evidence to `rote-flow-crystallization`; do not
+turn the command transcript directly into a play. Before final presentation, ensure the root skill's
+`cd <workspace-path> && rote ls` gate has run; it is the deterministic source of the pending-stub
+warning. Return the workspace path, response IDs, captured files, process dependencies, and the
+semantic result each command established.
 
-Explicit legacy TypeScript plays with no `steps:` use rote's bundled Deno:
+After that skill returns an approved crystallization plan, hand it to `rote-flow-authoring`. This
+skill remains the specialist for process dependencies, PTY/background escape capabilities, and shell
+SDK details, but authoring owns materialization, testing, lint, release, and cleanup. Authoring
+executes process-only adapterless workspace export; mixed work follows the pending scaffold route
+selected by crystallization. Never invent an adapter for process-only work.
+
+Replay commands remain shape-specific:
 
 ```bash
-rote deno run --allow-all ~/.rote/flows/<name>/main.ts
-```
-
-Every play containing frontmatter `steps:`, including the default
-`steps_with_presentation` artifact, uses the play runner:
-
-```bash
+# Any play with frontmatter steps
 rote play run ~/.rote/flows/<name>/main.ts param=value
+
+# Explicit legacy body with no steps
+rote deno run --allow-all ~/.rote/flows/<name>/main.ts [args]
 ```
 
-## Crystallization Workflow
-
-When the user says yes, do the full release discipline:
-
-1. Choose the correct crystallization path:
-
-   - Process-only recorded workspace: use `rote workspace export <path>` with no shape flags. It
-     emits the default steps + presentation `process.exec` play without a fake adapter. Then generalize the
-     draft: recorded argv is literal, so substitute `$param` tokens for recorded values and prune
-     inferred `parameters:` entries that are not part of the contract. Do not run `rote play
-     pending save`, `rote play template create`, or `rote play frontmatter`; those commands still
-     require a real `--adapter`.
-   - Mixed adapter/process/browser workspace: use pending save or direct template/export. Run the
-     pending-save command unchanged; it already encodes the steps + presentation shape and recorded dependencies.
-     With direct template/export, no shape flags means schema-v1 `steps:` plus presentation. Pass
-     only real adapters or browser runtime endpoints to `--adapter`; never pass `process`, `shell`,
-     or `adapter/process`.
-   - Explicit steps-only request: use `--with-steps` for a template or `--format steps` for export,
-     without a presentation flag.
-   - Explicit legacy shell/no-steps request, or a named shell capability the step language
-     does not support (PTY interaction; background leases/streams with concurrent mid-lease
-     work): write `~/.rote/flows/<name>/main.ts` manually with `@rote-frontmatter`, `FlowOutput`, and shell
-     SDK calls. This is the legacy escape, not the default.
-
-   Minimal **default steps + presentation** process frontmatter shape — this is what a generalized export
-   looks like and the shape to copy for the default path (full worked example:
-   `rote guidance typescript play-creation`):
-
-   ```typescript
-   /**
-    * Repo Changelog
-    *
-    * Lists recent commit subjects for a local checkout.
-    *
-    * @rote-frontmatter
-    * ---
-    * name: repo-changelog
-    * description: "Lists recent commit subjects for a local git checkout."
-    * provenance:
-    *   author: Your Name <you@example.com>
-    *   tier: local
-    *   created_at: 2026-01-01T00:00:00.000000+00:00
-    *   rote_version: 0.53.0            # your current rote --version
-    * metadata:
-    *   rote_version: 0.53.0            # must parse as a real version
-    *   status: draft
-    *   kind: atomic
-    *   flow_type: sequential
-    *   execution_model: steps_with_presentation
-    *   format: typescript
-    *   requires_endpoints: []
-    *   requires_sessions: false
-    *   tags:
-    *   - shell
-    *   - typescript
-    * parameters:
-    * - name: root
-    *   type: string
-    *   required: true
-    *   description: "Absolute path to the git checkout"
-    * - name: count
-    *   type: string
-    *   required: false
-    *   default: "20"
-    *   description: "Number of commits to list"
-    * steps:
-    *   changelog:
-    *     type: process.exec
-    *     argv: [git, -C, $root, log, --oneline, -n, $count]
-    * ---
-    */
-
-   const { FlowOutput, isProcessExecBody, loadPresentationContext, stepName } =
-     await import("__ROTE_PRESENTATION_SDK__");
-   const out = new FlowOutput();
-   const ctx = await loadPresentationContext();
-   const log = ctx.requireAvailable(stepName("changelog"));
-   if (!isProcessExecBody(log.body)) throw new Error("changelog is not a process.exec observation");
-   const stdout = log.body.stdout?.text;
-   if (stdout === undefined) throw new Error("changelog captured no stdout");
-   const lines = stdout.split("\n").filter((l) => l.trim().length > 0);
-   out.human(lines.join("\n"));
-   out.summary(`${lines.length} commits in ${String(ctx.params.root)}`);
-   out.result({ run_id: ctx.run.run_id, commits: lines });
-   ```
-
-   Minimal explicit legacy shell-only frontmatter shape (the opt-in escape, NOT the default):
-
-   ```typescript
-   /**
-    * CSV Sales Report
-    *
-    * Summarizes a local CSV into JSON and a text report.
-    *
-    * @rote-frontmatter
-    * ---
-    * name: csv-sales-report
-    * description: "Summarizes a local CSV into JSON and a text report using rote shell primitives."
-    * provenance:
-    *   author: Your Name <you@example.com>
-    *   tier: local
-    *   created_at: 2026-01-01T00:00:00.000000+00:00
-    *   workspace: csv-json-report-demo
-    *   rote_version: 0.49.0
-    * metadata:
-    *   rote_version: 0.49.0
-    *   status: draft
-    *   kind: atomic
-    *   flow_type: sequential
-    *   format: typescript
-    *   requires_endpoints: []
-    *   requires_sessions: false
-    *   parameters:
-    *   - name: input
-    *     type: string
-    *     required: false
-    *     default: "input.csv"
-    *     description: "Input CSV path"
-    *   - name: out_dir
-    *     type: string
-    *     required: false
-    *     default: "out"
-    *     description: "Output directory"
-    *   tags:
-    *   - shell
-    *   - process
-    *   - typescript
-    * ---
-    */
-   ```
-
-   > **Frontmatter must parse:** a `provenance:` block requires `author`,
-   > `tier`, `created_at`, and `rote_version` (only `workspace` is optional),
-   > and `metadata:` requires its own `rote_version` — the provenance copy is
-   > a separate field, not a substitute; omitting either fails parsing.
-   > A missing `author` fails `rote deno run <play>` with a generic
-   > "configuration error"; the real cause ("provenance: missing field
-   > `author`") shows only in `rote play index --rebuild` stderr. The
-   > `created_at` / `rote_version` in the example are placeholders — use a real
-   > timestamp and your current `rote --version`.
-   >
-   > **Surviving `rote play lint`:** lint runs the body in lint mode against a
-   > synthetic workspace. Shell SDK reads are lint-aware (`proc.stdout.text()`
-   > → `""`, `proc.exit()` → `{kind:"code",code:0}`, `proc.files()` → `[]`), so
-   > no `isLintMode()` guard is needed. But: (a) parsing must tolerate empty
-   > captured output (e.g. `text.split(...)` on `""`), (b) resolve relative path
-   > args against `Deno.cwd()` *before* `Rote.workspace()` switches the cwd, and
-   > (c) give parameters defaults — lint runs the play with no arguments.
-
-2. Create `~/.rote/flows/<name>/main.ts`.
-3. For default steps + presentation and explicit steps-only plays, put the replay graph in frontmatter `steps:`.
-   The default presentation body only reads completed observations through
-   `__ROTE_PRESENTATION_SDK__`. For explicit legacy SDK plays, use TypeScript shell primitives for process
-   work: `rote.exec`, `rote.execBackground`, `rote.execStatus`,
-   `rote.execStop`, `rote.followFile`, `rote.followProcess`, `rote.ptyRun`,
-   `rote.depsCheck`, and `rote.execMany`. Use adapter handles from
-   `runPreflight(...)` for adapter work.
-4. Create `~/.rote/flows/<name>/deps.toml` for every local tool or required
-   input file. For shell-only plays, prefer a real `deps.toml` file over
-   frontmatter-only dependency prose so replay can run `rote deps check`.
-5. Keep frontmatter parameters, usage text, and the flag parser in lockstep.
-   If frontmatter names use underscores, the parser must accept those exact
-   names or documented aliases; do not ship `github_repo` metadata with only a
-   `--github-repo` parser unless both forms work.
-6. Start with `metadata.status: draft`. Do not set `released` until dependency
-   preflight and replay QA have passed.
-7. Test the draft with at least three distinct inputs. For the default steps + presentation play and every other
-   play containing `steps:`:
-
-   ```bash
-   rote play run ~/.rote/flows/<name>/main.ts param=<input-a>
-   rote play run ~/.rote/flows/<name>/main.ts param=<input-b>
-   rote play run ~/.rote/flows/<name>/main.ts param=<input-c>
-   ```
-
-   Only for an explicit legacy TypeScript body with no `steps:`:
-
-   ```bash
-   cd ~/.rote/flows/<name>
-   rote deps check deps.toml
-   rote deno run --allow-all ~/.rote/flows/<name>/main.ts <input-a>
-   rote deno run --allow-all ~/.rote/flows/<name>/main.ts <input-b>
-   rote deno run --allow-all ~/.rote/flows/<name>/main.ts <input-c>
-   ```
-
-   The DAG runner takes named `key=value` parameters, while the legacy body takes its declared
-   positional argument order.
-
-   If dependency preflight fails, ask the user whether to provision missing
-   required tools, with the install scope and side effects stated plainly. Do
-   not continue release QA until dependency preflight passes or the user says
-   to keep the play as `draft`.
-
-8. Use the right QA gate for the execution shape.
-
-   Declarative `steps:` DAG plays:
-
-   ```bash
-   rote play validate ~/.rote/flows/<name>/main.ts
-   rote play run ~/.rote/flows/<name>/main.ts --dry-run param=value
-   rote play run ~/.rote/flows/<name>/main.ts param=value
-   rote play run ~/.rote/flows/<name>/main.ts --resume latest param=value
-   ```
-
-   `rote play lint` gates `rote play release` for every shape — release runs
-   lint and refuses on failure. For pure `steps:` DAG plays the body checks are
-   largely vacuous (the DAG runner bypasses the TypeScript body), but the gate
-   still applies; for `steps_with_presentation`, lint is the presentation body
-   contract check and should run before release.
-
-   Authored SDK plays:
-
-   ```bash
-   rote play lint <name>
-   rote deno run --allow-all ~/.rote/flows/<name>/main.ts --help
-   rote deno run --allow-all ~/.rote/flows/<name>/main.ts <known-good-input>
-   ```
-
-   In both shapes, loop until hardcoded paths, missing dependency declarations,
-   mismatched parameters, raw shell leaks, and output-format issues are fixed.
-
-9. Mark release only after QA passes. Use `rote play release <name>` for the
-   lifecycle transition (it runs the lint gate; do not edit frontmatter
-   `status` by hand), then verify search:
-
-   ```bash
-   rote play release <name>
-   rote play index --rebuild
-   rote play search "<name or relevant keywords>"
-   ```
-
-10. If a pending workspace stub was used, discard it after release:
-
-   ```bash
-   rote play pending discard <workspace>
-   ```
-
-Do not claim a shell-derived play is released from memory. The release claim
-must point back to `rote deps check deps.toml`, command output, saved responses,
-and successful replay commands for the play's execution model.
+Read `rote guidance play crystallization` for the plan, `rote guidance play shape` for the DAG, and
+`rote guidance play testing` for verification. Use `rote grammar steps` for exact syntax and return
+here only for shell-specific implementation detail.
 
 ## Step Reference Rules For Mixed DAGs
 
