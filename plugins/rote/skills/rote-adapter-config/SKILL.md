@@ -87,7 +87,7 @@ bearer env var, so never treat "Bearer" alone as proof of a static token.
 | Static bearer/API key | Health shows missing static env var or user is rotating a known API key | Use masked terminal handoff or `rote token set <ENV> --stdin`; never echo the value. |
 | OAuth client id/secret | Scheme metadata is OAuth2 or OpenAPI `oauth2_schemes` is present | Use `rote adapter auth scheme add <id> <scheme> [descriptor] --oauth2` when adding a scheme, or rerun the create flow if the whole adapter must change. |
 | OAuth DCR / MCP PRM | Token metadata says OAuth/DCR, MCP auth redirects, or provider registration was dynamic | Use `rote adapter reauth <id> [--scheme <name>]`; use `rote adapter reauth <id> --force-reregister` only when the provider pruned the dynamic client. |
-| Google Discovery | Google API adapter or `GSUITE_TOKEN`/Google scopes are involved | Use `rote oauth setup google --scopes ...`; do not ask for a pasted bearer token. |
+| Google Discovery | Google API adapter, or the manifest declares `google_discovery` setup | Use `rote oauth setup google --adapter <id> --scopes ...`; do not ask for a pasted bearer token. |
 | Unknown bearer | Installed adapter reports bearer but provenance is unclear | Run `rote adapter list <id> --json --health` before advising token set vs reauth. |
 
 ---

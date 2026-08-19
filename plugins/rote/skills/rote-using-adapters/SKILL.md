@@ -66,7 +66,7 @@ rote adapter list <id> --json --health
   only as explicit terminal opt-in.
 - OAuth client id/secret or OAuth DCR / MCP PRM: return a blocker recommending
   `rote adapter reauth <id>` or `rote adapter reauth <id> --scheme <name>`.
-- Google Discovery: return a blocker recommending `rote oauth setup google --scopes ...`.
+- Google Discovery: return a blocker recommending `rote oauth setup google --adapter <id> --scopes ...`.
 - Unknown bearer: report the health output and route to `rote-adapter-config`; do not request a
   pasted token.
 

@@ -342,7 +342,7 @@ choices when the environment supports it:
 | **Build an adapter** | Catalog / web / local spec → dry-run-first create. **Delegates to `rote-adapter-create`.** | invoke the `rote-adapter-create` skill |
 | **Configure an adapter** | Tune auth, base-url, sensitivity, guard, etc. **Delegates to `rote-adapter-config`.** | invoke the `rote-adapter-config` skill |
 | **Set up credentials** | Token wizard for installed adapters. **Secrets — see 3c.** | `rote powerpack credentials` (run in user's own terminal) |
-| **Connect Google (OAuth)** | Browser OAuth for Google adapters (gmail/calendar). **Non-interactive — see 3d.** | `rote oauth setup google --scopes <list>` |
+| **Connect Google (OAuth)** | Browser OAuth for Google adapters (gmail/calendar). **Non-interactive — see 3d.** | `rote oauth setup google --adapter <id> --scopes <list>` |
 | **Install the agent skill** | Installs the rote skills for supported local agents. | `rote install skill` |
 | **Explore / learn** | Onboarding tree + human-friendly help. | `rote how`, then `rote human` |
 
@@ -439,7 +439,7 @@ These credential shapes are handled differently:
 | Static bearer/API key | github `GITHUB_TOKEN`, linear `LINEAR_API_TOKEN`, stripe | Use masked terminal handoff; `rote token set <ENV> --stdin` only as explicit terminal opt-in. |
 | OAuth client id/secret | OAuth2 OpenAPI adapters with `oauth2_schemes` | Register the app, collect client id/secret through the OAuth flow, and avoid pasted bearer tokens. |
 | OAuth DCR / MCP PRM | MCP adapters with automatic browser redirect and dynamic registration | Pull/create the adapter, then run `rote adapter reauth <name>` if auth is not already complete. |
-| Google Discovery | gmail, calendar, drive | Use `rote oauth setup google --scopes ...`; no static token. |
+| Google Discovery | gmail, calendar, drive | Use `rote oauth setup google --adapter <id> --scopes ...`; no static token. |
 | Unknown installed bearer | Existing adapter says bearer but provenance is unclear | Run `rote adapter list <id> --json --health` before telling the user to set a token. |
 
 - **Browser-OAuth adapters** → no static token at all; the browser redirect keeps the secret out
@@ -466,8 +466,9 @@ Say this plainly so the user understands the handoff isn't friction, it's the se
   It prompts per-adapter and **masks** input (rote uses `rpassword`), storing to
 	  `~/.rote/secrets/` (perms 600). The secret never passes through chat. This is the
 	  recommended path — frame the handoff as the secure one. The user
-  runs it, returns, and you verify (below). Note: the wizard may also list `GSUITE_TOKEN` —
-  tell the user to **skip it**, since Google is wired via OAuth in Step 3d, not a token.
+  runs it, returns, and you verify (below). Note: the wizard lists Google credentials under the
+  shared `GSUITE_TOKEN` name whatever the adapter declares — tell the user to **skip them**;
+  Google is wired and verified in Step 3d, not here.
 
 	  **`rote token set` is a last-resort opt-in only.** Offer it only if the user explicitly
 		  refuses the terminal handoff and insists on setting a token through the current session.
@@ -497,19 +498,26 @@ configured/not-configured without exercising the API.
 ### Step 3d — Google OAuth (non-interactive)
 
 The bare `rote oauth setup google` opens an interactive multi-select ("Which Google APIs
-do you need?"). Drive it non-interactively by
-**pre-selecting scopes with `--scopes`**:
+do you need?"). Drive it non-interactively with **`--adapter` and `--scopes`** — one run per
+adapter, passing only that adapter's scopes:
 
 ```bash
-rote oauth setup google --scopes gmail.readonly,calendar.calendarlist.readonly,calendar.calendars.readonly,calendar.events.readonly,calendar.events.freebusy,drive.file
+rote oauth setup google --adapter gmail --scopes gmail.readonly
+rote oauth setup google --adapter calendar --scopes calendar.calendarlist.readonly,calendar.calendars.readonly,calendar.events.readonly,calendar.events.freebusy
 ```
 
-That's the standard discovery scope set (Gmail read, Calendar read + free/busy, Drive
-app-files). If the user only wants a subset, offer a scope choice (Gmail-only
-`gmail.readonly`; Calendar-only the four `calendar.*`; add `drive.file` for Drive) and pass just
-those — comma-separated, no spaces. This still opens a **browser** for
-the Google consent screen; tell the user to complete it there. The token is stored as
-`GSUITE_TOKEN`; confirm with `rote powerpack tokens` afterward.
+`--adapter` stores the grant in the credential that adapter declares (`GMAIL_TOKEN`,
+`CALENDAR_TOKEN`, or the shared `GSUITE_TOKEN` on installs predating per-adapter names) and
+binds it there. Without it the grant always lands in `GSUITE_TOKEN`, which an adapter
+declaring its own credential never reads — the flow reports success and the adapter stays
+unauthenticated.
+
+Scopes are comma-separated, no spaces, and belong to the adapter being authorized: sending
+Gmail scopes with `--adapter calendar` stores a Gmail grant in the calendar credential without
+error. Each run opens a **browser** for the Google consent screen; tell the user to complete it
+there, then confirm with `rote adapter list <adapter-id> --json --health`. That proves a
+refreshable credential exists, not that its scopes fit the adapter — the report carries no scope
+field, so a wrong-scope grant still reads `healthy: true`.
 
 ### Step 3e — OAuth DCR adapters (reference)
 
@@ -632,7 +640,7 @@ adapter call). For single-adapter delegated work, spawn a subagent and tell it t
   answer terminal prompts. The non-interactive switch differs per command: installer →
   `ROTE_YES=1`; powerpack picker → `--yes`; `rote adapter new` →
   `--yes`; `rote adapter new-from-mcp` → **`--headless`** (it rejects `--yes`); Google OAuth →
-  `--scopes …`. Don't guess the flag — if unsure, check `<command> --help` first. The one
+  `--adapter` + `--scopes …`. Don't guess the flag — if unsure, check `<command> --help` first. The one
   prompt you must NOT automate away is credential entry — see secrets below.
 - **Never handle secrets in chat.** Agent conversations and command histories are not a masked
   secret-entry surface unless the current environment explicitly says otherwise. Static tokens
