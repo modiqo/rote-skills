@@ -129,7 +129,9 @@ rote adapter auth scheme disable <id> <scheme> [--force]  # --force to disable t
 ```bash
 rote adapter reauth <id> [--scheme <name>] [--force-reregister]
 ```
-Opens a browser. `--force-reregister` re-runs DCR when the provider pruned the client (rare).
+For an installed MCP adapter with a missing DCR credential, this registers and authorizes in place;
+it does not recreate the adapter. `--force-reregister` re-runs DCR when the provider pruned the
+client (rare).
 
 ### Write guard
 

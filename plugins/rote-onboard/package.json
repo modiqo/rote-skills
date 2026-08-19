@@ -1,6 +1,6 @@
 {
   "name": "rote-onboard",
-  "version": "0.69.1",
+  "version": "0.69.2",
   "description": "Optional guided onboarding and update skills; requires the base rote package.",
   "homepage": "https://getrote.dev",
   "license": "Apache-2.0"

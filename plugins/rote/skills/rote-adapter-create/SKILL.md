@@ -354,19 +354,33 @@ rote adapter new <id> <spec-source> --yes --config-json '{"auth":{...},"toolset_
 (Add `--base-url <url>` if Stage 2 required it, `--group <name>` if grouping.) For the
 config-json shape, mirror the dry-run `auth` block for the chosen scheme.
 
-**MCP servers** (Stage 0 flagged Spec Type "MCP") use a different create command — no spec
-dry-run, OAuth/DCR runs during creation:
+**MCP servers** (Stage 0 flagged Spec Type "MCP") use a different create command.
+
+**MCP mode gate** — resolve this before running creation:
+
+- Unresolved static-bearer auth: run without `--headless` or `--dry-run` in the user's terminal so
+  the interactive discovery choice can run.
+- Stored conventional `ADAPTER_<ID>_TOKEN`, or OAuth/DCR: run headlessly. OAuth/DCR may still open a
+  browser; tell the user to complete it.
+- Analysis only: use `--dry-run`, then inspect `catalog_scope` and `catalog_advice`; no adapter exists.
+
+Do not expect `--headless` or `--dry-run` to present the interactive static-bearer choice. The
+complete mode and failure contract lives in `rote guidance adapters essential`.
+Keep new secrets out of process arguments: store a static token through the existing masked or
+`--stdin` handoff, then use `--headless`, rather than assembling an `--auth` argument.
+
 ```bash
 rote adapter new-from-mcp <id> <mcp-url> --headless
 ```
-For OAuth-DCR servers (Notion) this opens a browser; tell the user to complete it.
 
 ### Post-create (offer each; run what the user wants)
 
 - **Credentials** (static-token auth): hand off to the masked wizard — tell the user to run
   `rote powerpack credentials` in their own terminal (masked), or set one with
   `rote token set <ENV> --stdin` only as an explicit terminal opt-in. Never echo a token.
-  (Same secrets discipline as the setup skill.)
+  If MCP creation reports an anonymous catalog, do not treat its tool count as complete; follow
+  the emitted store/delete/recreate sequence. See `rote guidance adapters essential` for the
+  static-bearer versus OAuth decision. (Same secrets discipline as the setup skill.)
 - **Write guard**: `rote adapter guard init <id>`
 - **Sensitivity**: `rote sensitivity upgrade` (if needed) then `rote sensitivity apply <id> --json`
 - **Capability index**: `rote adapter capability rebuild`

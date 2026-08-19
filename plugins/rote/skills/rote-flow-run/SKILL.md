@@ -60,6 +60,10 @@ active workspace. The runner creates and owns the DAG execution workspace:
 rote play run /absolute/path/to/main.ts [param=value ...]
 ```
 
+When the run resolves a pulled adapter whose manifest declares portable OAuth setup, let the runner
+authorize it in place and surface the provider browser flow. Do not replace credential recovery
+with `rote adapter new-from-mcp` or recreate the installed adapter.
+
 `metadata.execution_model: steps_with_presentation` is still a `steps:` play — the runner executes
 the declared steps first, then invokes the deprivileged presentation body; direct Deno would not
 receive the typed presentation input.
