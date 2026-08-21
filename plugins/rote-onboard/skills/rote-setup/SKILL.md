@@ -512,12 +512,13 @@ binds it there. Without it the grant always lands in `GSUITE_TOKEN`, which an ad
 declaring its own credential never reads — the flow reports success and the adapter stays
 unauthenticated.
 
-Scopes are comma-separated, no spaces, and belong to the adapter being authorized: sending
-Gmail scopes with `--adapter calendar` stores a Gmail grant in the calendar credential without
-error. Each run opens a **browser** for the Google consent screen; tell the user to complete it
-there, then confirm with `rote adapter list <adapter-id> --json --health`. That proves a
-refreshable credential exists, not that its scopes fit the adapter — the report carries no scope
-field, so a wrong-scope grant still reads `healthy: true`.
+Scopes are comma-separated, no spaces, and belong to the adapters being authorized: with
+`--adapter`, scopes that no adapter reading the target credential uses are named and refused
+before the browser opens. Adapters sharing one credential share one grant, so a scope any of them
+uses is accepted. When any of those adapters declares no scope profile the run warns instead of
+refusing, and the requested scopes are stored unchecked. Each run opens a **browser** for the Google consent screen; tell
+the user to complete it there, then confirm with `rote adapter list <adapter-id> --json --health`
+— that proves a refreshable credential exists, not which scopes it carries.
 
 ### Step 3e — OAuth DCR adapters (reference)
 

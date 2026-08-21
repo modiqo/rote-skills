@@ -91,6 +91,9 @@ The stub should preserve:
 - Parameter candidates and values that must not be hard-coded.
 - A concise result shape that a future play can return.
 - Auth, data-shape, and environment assumptions that affect reuse.
+- Package inputs and address positions needed by the reusable play. Record the facts without
+  deciding their shipped layout here; `rote-flow-authoring` applies the authoritative contract from
+  `rote guidance typescript play-creation`.
 
 When crystallizing a partial-play composition, the reusable unit is the new superplay, not a
 one-off edited report. The stub should describe how to invoke or reproduce the baseline play output

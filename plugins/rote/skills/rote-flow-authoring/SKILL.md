@@ -134,6 +134,11 @@ Do not put adapter calls, `Rote`, `runPreflight`, `fetch`, `Deno.Command`, direc
 filesystem access in a `steps_with_presentation` body. That body reads completed step outputs
 through `__ROTE_PRESENTATION_SDK__`.
 
+Before choosing package members or resource addressing, run
+`rote guidance typescript play-creation` and apply its portable play-package contract. That live
+guidance is authoritative for package roles, allowed resource positions, publication, identity,
+and sensitive-data handling.
+
 The effect plane, minimally — an adapter step, a local-command step, and cross-step data flow.
 Remaining `parameters:` entries are elided for brevity: declare EVERY `$param` a step references
 (an unresolved token passes through as a literal, not an error):

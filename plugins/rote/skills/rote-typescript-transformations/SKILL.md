@@ -68,6 +68,10 @@ arbitrary/workspace export. That machine-local resolution belongs only in `deno.
 supplies its own sandbox import map at execution time. Never hard-code the SDK path or file URL in
 `main.ts`.
 
+Before adding package-relative imports or process-payload references, run
+`rote guidance typescript play-creation`. Follow that authoritative package contract instead of
+inferring module imports or resource addressing from a file's location.
+
 ## Normalize Presentation Observations
 
 Treat the presentation body as a schema-agnostic normalizer over recorded facts, not as a second
@@ -88,7 +92,6 @@ For skipped, failed, or blocked steps, return a typed warning or error. Do not c
 payload from an unavailable result. For play inputs, narrow `ctx.params` values explicitly
 (`typeof ctx.params.owner === "string"`) rather than coercing absent parameters into fabricated
 defaults.
-than coercing absent parameters into fabricated defaults.
 
 Normalize completed bodies by substrate:
 
