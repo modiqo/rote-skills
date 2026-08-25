@@ -110,7 +110,7 @@ when work needs to survive handoff or compaction.
 ```mermaid
 flowchart TD
   Start[User request] --> Orchestrator[rote]
-  Orchestrator --> FlowSearch[play search first]
+  Orchestrator --> FlowSearch[local play search, then registry search]
   Orchestrator --> Browser[rote-browse]
   FlowSearch --> FullFlow[matched play fully covers]
   FlowSearch --> PartialFlow[matched play partially covers]

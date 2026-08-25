@@ -1,9 +1,9 @@
 ---
 name: rote-task-routing
 description: >
-  Choose the next rote execution path after play search does not fully cover a request. Use for
-  explore/catalog gates, shell/process routing, subagent-before-workspace decisions, single-adapter
-  versus multi-adapter routing, and fallback boundaries.
+  Choose the next rote execution path after local and registry Play search do not fully cover a
+  request. Use for explore/catalog gates, shell/process routing, subagent-before-workspace
+  decisions, single-adapter versus multi-adapter routing, and fallback boundaries.
 ---
 
 # rote-task-routing
@@ -13,8 +13,9 @@ Contract — are companion **skills**, never CLI commands (`rote-shell` is not `
 Invoke them through the runtime's skill mechanism; only literal `rote …` commands run in a
 terminal.
 
-Use this skill after `rote play search "<intent>"` finds no runnable full match, or after
-`rote-flow-run` returns a partial baseline that must be combined with additional work.
+Use this skill after the root skill's local-then-registry Play-search gate finds no runnable full
+match, or after `rote-flow-run` returns a partial baseline that must be combined with additional
+work.
 
 Do not use this skill after `rote-flow-run` verifies a full match. A verified full-play result has no
 uncovered work, so adapter exploration, catalog search, workspace setup, and fallback routing are
@@ -230,10 +231,10 @@ Return these fields to `rote` or the selected owner:
 
 ## Handoff Contract
 
-- Use when: play search did not fully cover the request, or a matched play produced only a baseline
-  for additional rote work.
-- Preconditions: `rote` or `rote-flow-run` has provided the user intent, play-search outcome, and any
-  baseline output that must be preserved.
+- Use when: local and registry Play search did not fully cover the request, or a matched Play
+  produced only a baseline for additional rote work.
+- Preconditions: `rote` or `rote-flow-run` has provided the user intent, both applicable provider
+  outcomes, and any baseline output that must be preserved.
 - Owns: explore-first routing, shell/process routing, subagent-before-workspace decisions,
   single-adapter versus multi-adapter selection, catalog search before fallback, and explicit route
   return fields. Does not own adapter execution, shell execution, play authoring, or final

@@ -585,8 +585,9 @@ write/create plays for the proof.
 rote registry play pull modiqo/list-top-committers --yes
 ```
 
-**4. Read the frontmatter — for BOTH the params AND the execution mode.** Read the path returned
-by `rote play search "<intent>" --json` or `rote play list --json`. It tells you two things:
+**4. Read the frontmatter — for BOTH the params AND the execution mode.** Read the play at the
+path returned by `rote play search "<intent>" --json` (each result's `callability.location`) or by
+`rote play list --json`. It tells you two things:
 - the `parameters:` block — name + description per param (ask the user for each, using the
   description as the hint; offer a sensible default like `modiqo/rote`);
 - whether there's a `steps:` block — this decides **how** you run it (next).

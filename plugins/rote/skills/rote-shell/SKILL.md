@@ -331,8 +331,8 @@ Before authoring a process-backed TypeScript play, read:
 rote guidance typescript play-creation
 ```
 
-That guide owns frontmatter, `deps.toml`, FlowOutput, release QA, and the shell
-SDK wrapper contract.
+That guide owns frontmatter, FlowOutput, release QA, and the shell SDK wrapper
+contract. `rote guidance shell essential` owns the dependency manifest.
 
 ### Play Runtime Boundary
 
@@ -593,65 +593,25 @@ crystallized TypeScript plays: if the play calls `rote.exec({ argv })` for `git`
 play directory must include a matching dependency manifest before the play is
 marked `released`.
 
-```toml
-schema_version = 1
+`rote guidance shell essential` (Dependency Manifests) owns the manifest shape
+and the install-approval script: tools, install candidates, `[files]`, version
+requirements, and `readiness` probes. Write the file from there.
 
-[[tools]]
-id = "github-cli"
-command = "gh"
-required = true
-version_requirement = ">=2.0.0"
-
-[files]
-required = ["input.txt"]
-```
-
-Declare `version_requirement` to enforce a version: preflight probes the tool's
-own version flags (`--version`, `-V`, `version`, `-v`) against the located
-binary. If the version cannot be inferred, preflight confirms the tool is
-present and passes, reporting it as version-unverified rather than failing.
-Omit `version_requirement` to check presence only. Preflight never runs
-manifest-supplied commands and has no install side effects.
-
-Then run:
+Run preflight before work, and again after any install:
 
 ```bash
 cd ~/.rote/flows/<name>
 rote deps check deps.toml
 ```
 
-Do not auto-install tools into global locations unless the user approved that
-specific provisioning policy. A crystallized play should declare dependencies
-so the target environment can check or provision them before work begins.
-
-If `rote deps check deps.toml` reports missing required tools, stop and elicit
-an install decision from the user before continuing. Show the missing tool,
-why the play needs it, and the lowest-risk install scope available. Prefer
-project-local or rote-managed installs over global package manager installs.
-Only install globally when the user explicitly approves that scope.
-
-Use this shape:
-
-```text
-The play needs these missing tools before replay:
-- gh: required for GitHub PR and Actions checks
-
-I can install/provision them using one of these scopes:
-- rote-managed/project-local: preferred when available; keeps replay isolated
-- user/global package manager: broader machine mutation; requires explicit approval
-
-Do you want me to install/provision the missing tools, or should I leave the
-play in draft until you install them?
-```
-
-After any approved install or user-managed install, rerun:
-
-```bash
-cd ~/.rote/flows/<name>
-rote deps check deps.toml
-```
-
-Never mark the play `released` while required dependencies are still missing.
+If it reports missing required tools, stop and elicit an install decision from
+the user before continuing: show the missing tool, why the play needs it, and
+the lowest-risk install scope available. Prefer project-local or rote-managed
+installs over global package manager installs, and only install globally when
+the user explicitly approves that scope. Never mark the play `released` while
+required dependencies are still missing, or while any required tool has no
+install candidate — preflight passes on a present tool either way, so a green
+`rote deps check` does not clear this gate.
 
 ## Mixed Workflows
 

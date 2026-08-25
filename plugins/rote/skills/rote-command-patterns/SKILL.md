@@ -28,8 +28,7 @@ the workflow.
 - Use `rote grammar deno` and `rote guidance typescript essential` before TypeScript play execution.
 - Use `rote grammar export` before play scaffolding, pending play work, lint, release, or index
   commands.
-- Use `rote grammar registry` and `rote guidance registry essential` before pushes, pulls, namespace
-  selection, or publish steps.
+- Use `rote grammar registry` before pushes, pulls, namespace selection, or publish steps.
 
 If live grammar conflicts with this skill, live grammar wins.
 

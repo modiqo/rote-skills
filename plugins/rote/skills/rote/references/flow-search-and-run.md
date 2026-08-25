@@ -1,17 +1,49 @@
 # Play Search And Run
 
-Use this reference when `rote play search "<intent>"` returns a plausible reusable play and you need
+Use this reference when either Play-search provider returns a plausible reusable Play and you need
 the shortest reliable path to run it.
 
-1. Resolve the exact play contract:
+Search is local by default. Start there for installed Plays. When no verified full local Play fits,
+or when the task is specifically registry discovery, search published Plays explicitly:
 
 ```bash
-rote play info <play-name-or-path> --json
+rote play search "<intent>" --source registry --json
 ```
 
-Use the returned `path` and declared parameters. Do not reconstruct a path from the name.
+Registry search defaults to `--scope accessible`: anonymous callers see public Plays, while a
+usable signed-in session also includes private personal Plays and private Plays from every
+organization the caller can access. Use `--scope public` when the result will feed a public page or
+another identity-independent artifact. Use `--owner <slug>` only to narrow either scope. Registry
+results are pinned discovery cards, not local callability records. Preserve the exact
+`owner/name@version` reference and inspect it before execution:
 
-2. Pick the execution mode from the play's frontmatter (or `rote play info --json`).
+```bash
+rote play inspect <owner/name@version> --json
+```
+
+When inspection reports an executable Play and its blockers are resolved, present that inspection,
+get the user's approval, then let the registry-aware runner verify, install, converge, and execute it
+(`--yes` asserts the approval you just obtained):
+
+```bash
+rote play run <owner/name@version> [param=value ...] --yes
+```
+
+Do not send a registry card through `rote play info`, invent a local path, or compare its rank with
+a local result's rank.
+
+1. For a local result, use its typed callability first:
+
+```bash
+rote play search "<intent>" --json
+```
+
+Run `data.search_results[0].items[].callability.command` verbatim when it is present and
+`state: runnable`. Use `rote play info <play-name-or-path> --json` only when the result is
+blocked, lacks a command, or a legacy argument contract needs confirmation; do not reconstruct a
+path from the name.
+
+2. If a lookup is needed, pick the execution mode from the play's frontmatter.
 
 Use `rote deno run --allow-all` for legacy `.ts` plays whose frontmatter has no `steps:` block,
 after checking the captured `--help` text or a `--dry-run` invocation for the body's actual

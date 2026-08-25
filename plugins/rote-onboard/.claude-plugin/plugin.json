@@ -1,6 +1,6 @@
 {
   "name": "rote-onboard",
-  "version": "0.72.0",
+  "version": "0.73.0",
   "description": "Optional onboarding companion for the base rote plugin, covering guided setup and updates.",
   "author": {
     "name": "Modiqo"

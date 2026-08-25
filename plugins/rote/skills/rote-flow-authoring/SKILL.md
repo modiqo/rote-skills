@@ -27,7 +27,7 @@ Choose the implementation guide before editing the scaffold:
 | Browser navigation, snapshots, clicks, typing, browser auth, or replay | `rote guidance browser play-authoring` |
 | Cached-response transformation or general TypeScript logic | `rote-typescript-transformations` plus `rote grammar deno` |
 | Shell/process execution | The shell authoring route from `rote-shell` |
-| Registry publication | `rote guidance registry essential` |
+| Registry publication | `rote-registry` plus `rote grammar registry` |
 
 Browser TypeScript does not belong to the generic transformation route. Run `rote guidance browser
 play-authoring`, follow its typed-step, presentation, and legacy-SDK procedure, then return here for tests, lint, release,
@@ -281,7 +281,10 @@ own `restored` status, so a switch missing that arm breaks under `--resume`. Nar
 `isProcessExecBody` and `isBrowserBody`. Treat remaining adapter bodies as direct JSON, plain text,
 or narrowly recognized legacy text-envelope residue; malformed/optional values stay explicit and
 must not become fabricated empty strings, zeroes, false values, or arrays. Use the concrete pattern
-in `rote guidance typescript play-creation`.
+in `rote guidance typescript play-creation`. If strict normalization requires representative input
+during lint, use `rote guidance play testing` for fixture policy, then use `rote grammar steps` for
+the exact frontmatter and manifest syntax. Fixtures are lint evidence, not executable step
+configuration.
 
 Preserve a stable `FlowOutput` shape:
 
@@ -428,8 +431,8 @@ Once a version is published the decline is refused, and the command still exits 
 
 ## Registry Handoff
 
-If the play should be shared, use `rote guidance registry essential` and `rote grammar registry` for
-the current push syntax. Confirm the target namespace before publishing, then hand off to
+If the play should be shared, use `rote grammar registry` for the current push syntax. Confirm the
+target namespace before publishing, then hand off to
 `rote-registry` with play path, release status, owner/namespace, visibility, dependency notes, and
 the user's publish approval. A local release alone has no published Play URI. When `rote-registry`
 returns a `play_uri`, `bootstrap_uri`, resolved run reference, published-reference

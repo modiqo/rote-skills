@@ -23,7 +23,12 @@ skills through the runtime's skill mechanism; only literal `rote …` commands r
 If there is any reasonable chance the task needs rote, load and follow this skill before direct
 MCP calls, provider CLIs, browser automation, registry commands, or custom scripts.
 
-- Start day-to-day work with `rote play search "<intent>"`; a reusable play may already exist.
+- Start day-to-day work with `rote play search "<intent>"`; a reusable local Play may already
+  exist. If local search has no verified full match, run
+  `rote play search "<intent>" --source registry` before accepting a partial baseline, exploring,
+  or building a replacement. Registry search defaults to every Play accessible to the current
+  session; use `--scope public` for identity-independent output. Load
+  [Play Search And Run](references/flow-search-and-run.md) when choosing or executing a result.
 - When search does not return a verified full-play match, invoke the `rote-task-routing` skill
   before `rote-shell`, `rote-flow-authoring`, raw HTTP, native CLIs, or custom scripts unless the
   user's request is explicitly only local CLI/files/logs/process work.
@@ -132,7 +137,7 @@ digraph rote_flow {
     "User request" [shape=doublecircle];
     "Explicit setup/update/browser/org/registry?" [shape=diamond];
     "Invoke specialist" [shape=box];
-    "Run rote play search <intent>" [shape=box];
+    "Search local, then registry Plays" [shape=box];
     "Full play match?" [shape=diamond];
     "Partial play match?" [shape=diamond];
     "Run matched play" [shape=box];
@@ -162,9 +167,9 @@ digraph rote_flow {
 
     "User request" -> "Explicit setup/update/browser/org/registry?";
     "Explicit setup/update/browser/org/registry?" -> "Invoke specialist" [label="yes"];
-    "Explicit setup/update/browser/org/registry?" -> "Run rote play search <intent>" [label="no"];
+    "Explicit setup/update/browser/org/registry?" -> "Search local, then registry Plays" [label="no"];
     "Invoke specialist" -> "Verify requested artifact/content";
-    "Run rote play search <intent>" -> "Full play match?";
+    "Search local, then registry Plays" -> "Full play match?";
     "Full play match?" -> "Run matched play" [label="yes"];
     "Full play match?" -> "Partial play match?" [label="no"];
     "Run matched play" -> "Verify requested artifact/content";
@@ -337,19 +342,20 @@ short routing table is not enough.
 
 ## Top-Level Skill Routing
 
-Start day-to-day rote tasks with `rote play search "<intent>"`, then invoke the narrow skill that
-owns the next state. Explicit setup, update, browser, shell/process, registry, org, adapter-create, or
-adapter-config requests may start in that specialist skill, but those specialists still return to
-this lifecycle before final presentation when reusable workflow state is involved. Workflow logic
-lives in standalone skills; `rote/references/` is only for platform mapping, the optional workflow
-map, and the compact play search/run reference.
+Complete the root Play-search gate before invoking the narrow skill that owns the next state: search
+locally, then search the registry when no verified full local match exists. Explicit setup, update,
+browser, shell/process, registry, org, adapter-create, or adapter-config requests may start in that
+specialist skill, but those specialists still return to this lifecycle before final presentation
+when reusable workflow state is involved. Workflow logic lives in standalone skills;
+`rote/references/` is only for platform mapping, the optional workflow map, and the compact Play
+search/run reference.
 
 | Branch | Invoke or load | Completion expectation |
 | --- | --- | --- |
 | Existing play fully covers the request | `rote-flow-run`. | Play output is verified and delivered; stop unless the user asked for edits, a new artifact, or publication work. |
 | Existing play covers a baseline or partial result | `rote-flow-run`, then `rote-task-routing`. | Baseline output is kept intact while uncovered work is routed. |
 | Local CLI, files, logs, commands, or process state is the selected substrate | `rote-shell`. | Shell work uses `rote proc`/`rote deps`, records evidence, and returns result plus reusable-work signal. |
-| No play matched, installed adapter can help | `rote-task-routing`, then `rote-workspace`. | Adapter work runs in a rote workspace with cached response IDs preserved. |
+| Neither Play provider produced a full or partial match, installed adapter can help | `rote-task-routing`, then `rote-workspace`. | Adapter work runs in a rote workspace with cached response IDs preserved. |
 | No installed adapter matched | Search `rote adapter catalog search "<intent>"`; use `rote-adapter-create` if the user supplied or accepts an adapter spec. | Useful catalog hits are inspected or installed before out-of-band fallback. |
 | Workspace, browser, or manual work produced new reusable results | `rote-flow-crystallization`. | A semantic plan is persisted through pending write/save before final presentation; save/discard is resolved. |
 | Shell/process work produced reusable results | `rote-shell`, then `rote-flow-crystallization`. | The same semantic plan and save decision precede no-shape-flag workspace export; adapter-requiring pending/template commands are not used. |
@@ -361,19 +367,22 @@ map, and the compact play search/run reference.
 
 ## Execution State Machine
 
-1. State the intent in one phrase and run `rote play search "<intent>"`, except when an explicit
-   setup/update/browser/shell/org/registry/adapter-create/adapter-config request already names a
-   specialist.
-2. If a play fully covers the request, run it through the `rote-flow-run` skill, using the
-   `rote play info <name-or-path> --json` command for the canonical path and parameter contract, verify the
-   requested artifact content, and stop. Do not explore adapters, initialize a workspace, rewrite the
-   artifact, or enter pending write/save unless the user explicitly asked to edit, create a separate
-   enhanced artifact, save a new workflow, release, or publish.
-3. If a play covers only part of the request, run it as the baseline. Preserve the raw baseline
-   output, provenance, sentinels, source labels, and markers as source material for a new composed
-   superplay. Route only the uncovered work, then save/release the reusable composition if requested
-   or approved. Do not replace the baseline with a hand-written lookalike report.
-4. If no play matched or uncovered work remains, run `rote explore "<intent>"` and obey any
+1. State the intent in one phrase and run `rote play search "<intent>"`. If it has no verified full
+   local match, run `rote play search "<intent>" --source registry` before classifying the best
+   available coverage. Keep each provider's order intact; their ranks are not comparable. Explicit
+   setup/update/browser/shell/org/registry/adapter-create/adapter-config requests may start in the
+   named specialist instead.
+2. If a Play from either provider fully covers the request, run it through `rote-flow-run`. That
+   skill owns local callability and the registry card's inspect/install/run path. Verify the requested
+   artifact content, and stop. Do not explore adapters, initialize a workspace, rewrite the artifact,
+   or enter pending write/save unless the user explicitly asked to edit, create a separate enhanced
+   artifact, save a new workflow, release, or publish.
+3. After both applicable provider searches, if a Play covers only part of the request, run it as the
+   baseline. Preserve the raw baseline output, provenance, sentinels, source labels, and markers as
+   source material for a new composed superplay. Route only the uncovered work, then save/release the
+   reusable composition if requested or approved. Do not replace the baseline with a hand-written
+   lookalike report.
+4. If neither provider matched or uncovered work remains, run `rote explore "<intent>"` and obey any
    `@@plays` suggestions before adapter work.
 5. Choose the substrate. Route local CLI/files/log/process work to `rote-shell`; route adapter/API
    work through task selection before workspace work.
@@ -518,9 +527,9 @@ only when the full companion graph or handoff packet shape is needed.
   play crystallization patterns.
 - `rote guidance play` - progressive play design tree: `crystallization` for the semantic plan,
   `shape` for the DAG, and `testing` for contract verification.
-- `rote play info <name-or-path> --json` - canonical single-play record: absolute path plus ordered
-  parameters. Use it after choosing a play from search, instead of filtering a search array
-  client-side.
+- `rote play info <name-or-path> --json` - canonical local Play record: absolute path plus ordered
+  parameters. Use it only when a local result lacks a runnable command or legacy argument syntax
+  needs confirmation. Registry cards use `rote play inspect <reference> --json` instead.
 - `rote play list` - inventory released local plays; do not use an empty search query as inventory.
 - `rote grammar query`, `rote grammar steps`, `rote grammar deno`, `rote grammar export`, and
   related topics - current command syntax (`steps` covers the frontmatter `steps:` plane: step kinds,

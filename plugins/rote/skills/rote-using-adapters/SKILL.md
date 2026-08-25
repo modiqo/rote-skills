@@ -75,8 +75,8 @@ rote adapter list <id> --json --health
 - Use when: `rote` or a router selected exactly one installed adapter to satisfy a delegated task,
   especially in a subagent or adapter-specific helper.
 - Preconditions: the caller supplied adapter id, user intent, any existing workspace, and stop
-  conditions; play search has either been checked or explicitly delegated back to `rote` before new
-  adapter exploration.
+  conditions; the root local-then-registry Play-search gate has either completed or been explicitly
+  delegated back to `rote` before new adapter exploration.
 - Owns: delegated single-adapter workspace entry, probe/call/query sequence, cached response
   preservation, write-guard handling, and return summary for the main conversation. Does not own
   pending stub creation, save decisions, scaffold execution, release, index, search, or cleanup.
@@ -102,16 +102,9 @@ rote start
 If this is a delegated subagent task, do not run play search again. The caller already selected the
 single-adapter route; resume that route and continue directly to sequential workspace commands.
 
-If this is a fresh top-level task:
-
-```bash
-rote play search "<task intent>"
-```
-
-If a play matches, stop adapter exploration and run the play using the main `rote` skill's play
-execution rules.
-
-If no play matches, create and enter a workspace:
+If this is a fresh top-level task, return to the main `rote` skill and complete its local-then-registry
+Play-search gate. If a Play matches, stop adapter exploration and run it through `rote-flow-run`.
+Create and enter a workspace only when the completed gate returns uncovered adapter work:
 
 ```bash
 rote init <adapter-id>-task --seq

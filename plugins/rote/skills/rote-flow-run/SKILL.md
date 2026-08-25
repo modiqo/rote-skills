@@ -1,9 +1,9 @@
 ---
 name: rote-flow-run
 description: >
-  Run a play returned by `rote play search` when it fully or partially matches the user request.
-  Use after the rote orchestrator's play-search-first gate to resolve the play path, parameters,
-  execution mode, output artifact, and verification result.
+  Run a local or registry Play selected by `rote play search` when it fully or partially matches
+  the user request. Use after the rote orchestrator's Play-search gate to resolve the provider's
+  reference, parameters, execution mode, output artifact, and verification result.
 ---
 
 # rote-flow-run
@@ -13,8 +13,9 @@ Contract — are companion **skills**, never CLI commands (`rote-shell` is not `
 Invoke them through the runtime's skill mechanism; only literal `rote …` commands run in a
 terminal.
 
-Use this skill when `rote play search "<intent>"` returns a usable existing play. A matched play is
-the preferred implementation path: run it before exploring adapters or rebuilding the workflow.
+Use this skill when either `rote play search` provider returns a usable existing Play. A matched
+Play is the preferred implementation path: run it before exploring adapters or rebuilding the
+workflow.
 
 If the play fully covers the request, this skill owns the task through verification and final return:
 the verified play output is the answer. If the play covers only a baseline or one part of the
@@ -23,19 +24,19 @@ uncovered work to `rote-task-routing`.
 
 ## Execution Rules
 
-- If search returned a usable play name, resolve that single play with
-  `rote play info <name> --json`. If search returned or the user supplied a play file path, use
-  `rote play info <path> --json`. This is the canonical path and parameter contract.
-- Prefer the `execution.command` and `execution.argument_order` fields from `rote play info --json`
-  over any command template copied from search output or memory, but treat `argument_order` as
-  metadata rather than proof of how a legacy body parses argv.
-- A bare name may be ambiguous when multiple plays share frontmatter `name:`. Use an org-qualified
-  id, such as `<org>/<name>`, or the absolute path from search/info to disambiguate. A path to an
-  existing non-play file should fail as "not a play", not as a missing name.
-- Use the `path` from `rote play info` verbatim; do not construct
-  `~/.rote/flows/<org>/<name>/main.ts` by hand.
-- Treat `rote play search --json` as discovery, not as the final single-play contract. Search returns
-  ranked fuzzy matches; info resolves one exact play record and avoids client-side filtering.
+- Read the search result's `source` before resolving it. Local results and registry cards have
+  different execution contracts.
+- For a local result, use the printed `run:` command or `callability.command` verbatim when
+  `callability.state` is `runnable`. `callability.location` is only the path. Use
+  `rote play info <name-or-path> --json` only for parameter defaults, ordered legacy arguments, or a
+  missing runnable command.
+- For a registry card, preserve its exact pinned `owner/name@version` reference. Run the printed
+  `rote play inspect <reference>` command, obey its blockers and approval requirements, then use its
+  `rote play run <reference>` action. The runner owns verified installation and convergence.
+- A bare local name may be ambiguous when multiple Plays share frontmatter `name:`. Use the absolute
+  local path to disambiguate. Registry discovery already returns an unambiguous pinned reference.
+- Each provider ranks only its own results. Choose based on task coverage and provider order; never
+  compare local and registry rank values.
 - For legacy TypeScript plays (no frontmatter `steps:` block), use the captured invocation help or
   run the entrypoint with `--dry-run` to confirm whether the body accepts positionals, named flags,
   or another syntax. `argument_order` records frontmatter order only; it does not verify argv reads.
@@ -49,8 +50,19 @@ uncovered work to `rote-task-routing`.
 
 ## Execution Modes
 
-Pick the mode from the play's frontmatter — inspect it or run
-`rote play info <name-or-path> --json` when unsure. Do not use direct Deno for any play with
+For a registry card, inspect and execute the same pinned reference:
+
+```bash
+rote play inspect <owner/name@version> --json
+rote play run <owner/name@version> [param=value ...] --yes
+```
+
+Inspection is read-only. Continue only when its execution report permits the run and the user has
+approved this play and these parameters; `--yes` asserts that approval. Do not convert the registry
+reference into a guessed local path.
+
+For a local result, pick the mode from the Play's frontmatter. Use
+`rote play info <name-or-path> --json` when unsure. Do not use direct Deno for any Play with
 frontmatter `steps:`.
 
 Run any play whose frontmatter has `steps:` through the play runner, from a directory outside any
@@ -123,10 +135,12 @@ Required tracking fields are `--inference-id`, `--model`, `--model-type`, and `-
 
 ## Fallbacks
 
-- If `rote play info` is unavailable, fall back to `rote play search "<intent>" --json` for path and
-  parameter details.
-- If JSON play lookup is unavailable, resolve the play from rote's play listing and inspect only the
-  play frontmatter for parameters.
+- If local search JSON is unavailable, use `rote play info <name-or-path> --json`; do not rebuild a
+  run command from `callability.location` or fall back to a second search ordering.
+- If a registry card cannot be inspected, return the pinned reference and inspection blocker. Do not
+  substitute local `play info`, an unpinned reference, or a guessed path.
+- If local JSON lookup is unavailable, resolve the Play from rote's local listing and inspect only
+  its frontmatter for parameters.
 - Prefer upgrading rote or using live `rote grammar` guidance over filesystem searches.
 - If execution is unsafe, parameters are missing, or the play is only a partial match, stop play
   execution and return the reason plus the preserved state.
@@ -135,8 +149,8 @@ Required tracking fields are `--inference-id`, `--model`, `--model-type`, and `-
 
 Return these fields to `rote` or the next skill:
 
-- Play name: registry or local play name, if search reported it.
-- Play path: absolute path used for execution.
+- Play reference: exact pinned registry reference or local Play name, if search reported it.
+- Play path: absolute path used for local execution, or none for a registry reference.
 - Parameters: positional values and any unresolved required values.
 - Execution command: exact command run or skip reason.
 - Output artifact: path or cached response id.
@@ -152,16 +166,16 @@ Return these fields to `rote` or the next skill:
 ## Handoff Contract
 
 - Use when: a matched play may satisfy all or part of the user request.
-- Preconditions: `rote` has run the play-search-first gate, or the user explicitly supplied a play
-  path and intent that can be validated against rote play metadata.
-- Owns: reading search JSON/frontmatter, resolving parameters, choosing execution mode, running the
-  play, preserving partial baseline output/provenance for superplay composition, and verifying
-  user-visible results.
+- Preconditions: `rote` completed the local-then-registry search gate, or the user explicitly
+  supplied a local Play path or pinned registry reference whose intent can be validated.
+- Owns: branching on search provider, reading local callability or registry inspection, resolving
+  parameters, choosing execution mode, running the Play, preserving partial baseline
+  output/provenance for superplay composition, and verifying user-visible results.
 - Hands off to: `rote-task-routing` when uncovered work remains; `rote-flow-crystallization` only
   when the user requested new workflow/save work beyond unchanged play reuse; `rote-troubleshooting`
   when unchanged retries keep failing.
-- Returns to: `rote` with play name, path, parameters, execution command, output artifact, coverage,
-  and verification result.
+- Returns to: `rote` with Play reference, optional local path, parameters, execution command, output
+  artifact, coverage, and verification result.
 - Stop when: the play fully answers the request, required parameters are missing, execution would be
   unsafe, or the play only establishes a baseline for another route. A verified full match returns
   no next skill.

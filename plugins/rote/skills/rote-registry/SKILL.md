@@ -6,11 +6,12 @@ description: >
   (draft or release) — to check whether the artifact already exists in your orgs, tell you
   whether you need to push, and (after a push) surface org members and offer to invite others
   for review or use. Also runs standalone for push/share requests, visibility changes, usage/quotas
-  (plan + quota across all your orgs), invites, and member management. Use when the user says
+  (plan + quota across all your orgs), invites, member management, and published Play discovery.
+  Use when the user says
   "push to registry", "share my adapter/play", "publish this", "make this public/private",
-  "change visibility", "show my usage / quota", "invite someone to my org", or "who's in my org".
-  Determines every fact from live `rote registry` commands
-  — never from memory.
+  "change visibility", "find a published play", "show my usage / quota", "invite someone to my
+  org", or "who's in my org".
+  Determines every fact from live `rote` commands — never from memory.
 ---
 
 # rote-registry — share artifacts, manage the org
@@ -33,7 +34,9 @@ Core rules:
   binary isn't on PATH, resolve it via the **narrow probe** — check `$HOME/.local/bin/rote`
   then `$HOME/.cargo/bin/rote`, never a deep home-directory search.)
 - **One command at a time, strictly sequential — never parallel.** Probes gate decisions.
-- **Auth-gate first.** Every registry op needs a valid session — see Stage 0.
+- **Auth-gate every `rote registry` command, reads included.** The one anonymous-capable discovery
+  command is `rote play search --source registry` — not a `rote registry` command: public scope
+  needs no session, accessible scope uses a stored one when usable and reports public otherwise.
 - **Existence is checked by fingerprint/version, not just name** — re-pushing an identical
   artifact wastes a quota slot. See Stage 2.
 - **Visibility is never silently defaulted on push.** Confirm before a public push; published
@@ -46,9 +49,10 @@ Core rules:
 - Use when: a newly created adapter or crystallized play reaches the share point, or the user asks
   for registry push/share, a published artifact visibility change, usage/quota, invite, member,
   artifact search, or registry collaboration.
-- Preconditions: `rote registry whoami --verbose` has authenticated or the login blocker is surfaced;
-  artifact id/path and target owner can be elicited; visibility is confirmed before any push or
-  in-place visibility change.
+- Preconditions: `rote play search --source registry` needs only an intent query; every
+  `rote registry` command has authenticated through `rote registry whoami --verbose` or surfaced
+  the login blocker; artifact id/path and target owner can be elicited; visibility is confirmed
+  before any push or in-place visibility change.
 - Owns: registry auth gate, org/owner selection, existence checks, dry-run publish/push, visibility
   selection and in-place changes, conflict recovery, usage reporting, and invite-at-share-time
   collaboration.
@@ -83,11 +87,18 @@ path invoke this skill right after minting. The artifact id is known; jump to St
 - **Change visibility** of a published adapter or play → Stage V
 - **Show usage** (plan + quota across all orgs) → Stage U
 - **Manage org** (members / invites) → Stage 4
-- **Find** an artifact in the registry (`adapter|play search`) → one-off
+- **Find a published Play** — the user asked what exists in the registry → run
+  `rote play search "<intent>" --source registry` (no Stage 0 needed); use `--scope public` only
+  when identity-independent output is required, then return after the one-off result
+- **Find a Play that does X** — a capability request that happens to arrive here → return to the
+  main `rote` skill and complete its local-then-registry Play-search gate. An installed Play that
+  already covers the request must not be re-resolved from the registry
+- **Find an adapter** → Stage 0, then `rote registry adapter search <query>` — it is auth-gated
+  like every other `rote registry` read — and return after the one-off result
 
 ---
 
-## Stage 0 — Auth gate
+## Stage 0 — Auth gate for every `rote registry` command
 
 ```bash
 rote registry whoami --verbose
@@ -204,7 +215,7 @@ version", offer a semver bump and retry:
 rote adapter bump <id> [--minor|--major]   # default: patch
 ```
 ```bash
-rote play bump <path> [--minor|--major]
+rote play bump <play-name-or-path> [--minor|--major]
 ```
 Then re-run the publish/push. Show the conflict error verbatim before offering the bump.
 
