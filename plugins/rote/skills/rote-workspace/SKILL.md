@@ -135,10 +135,16 @@ For response inspection and transformation, stay inside rote first:
 Inspect workspace state with rote commands, not direct filesystem reads. Prefer live command
 surfaces such as `rote start`, `rote guidance`, and `rote grammar` when syntax is uncertain.
 
+`rote workspace ls` is inventory, not an enterability check. Enter only rows it renders as
+`active` or `empty`; those are the enterable `Complete` entries. Stop on every `Needs attention`
+row — including incomplete, corrupt, mid-restore, unavailable, or responses-unreadable entries —
+and follow its diagnosis or recovery hint instead of running `cd` or `rote ls` against it.
+
 Use this rote-native recovery checklist before reading files under `${ROTE_HOME}` directly:
 
 ```bash
 rote workspace ls
+cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<complete-workspace-name>
 rote ls
 rote workspace inspect meta
 rote workspace inspect variables
@@ -153,7 +159,7 @@ After compaction, interruption, or a context handoff, recover state through rote
 
 ```bash
 rote workspace ls
-cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<workspace-name>
+cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<complete-workspace-name>
 rote ls
 rote workspace inspect meta
 rote workspace inspect variables
@@ -164,10 +170,11 @@ rote play list
 
 Preserve the workspace name, cached `@N` response IDs, pending play name, output artifact path, any
 partial-play baseline, and any release/index/search verification already completed. When recovering
-the same task after compaction, interruption, handoff, or subagent return, reuse the named workspace.
-For an unrelated task, start `rote init <task-specific-name> --seq`; do not select a workspace merely
-because `rote workspace ls` lists one. Export and crystallization consume recorded workspace history,
-so cross-task reuse contaminates the resulting play.
+the same task after compaction, interruption, handoff, or subagent return, reuse the named workspace
+only when the inventory shows an enterable `Complete` row. For an unrelated task, start
+`rote init <task-specific-name> --seq`; do not select a workspace merely because `rote workspace ls`
+lists one. Export and crystallization consume recorded workspace history, so cross-task reuse
+contaminates the resulting play.
 
 Before final presentation, run `cd <workspace-path> && rote ls` — it surfaces the workspace's
 `@@` state and emits the `[MANDATORY PROTOCOL]` pending-stub warning when a reusable result has

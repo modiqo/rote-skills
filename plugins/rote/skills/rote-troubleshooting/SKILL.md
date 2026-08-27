@@ -66,8 +66,10 @@ Pick the group that matches the failure class — never walk the whole list hopi
 up:
 
 - Guidance/syntax failures: `rote start`, `rote guidance agent essential`, `rote grammar <topic>`.
-- Workspace/cached-response failures: `rote workspace ls`, then from inside the workspace
-  `rote ls`, `rote workspace inspect meta`, `rote workspace inspect variables`.
+- Workspace/cached-response failures: use `rote workspace ls` as inventory. Enter only `Complete`
+  rows rendered as `active` or `empty`; stop on every `Needs attention` row instead of running `cd`
+  or `rote ls` against it. From inside an enterable workspace, run `rote ls`,
+  `rote workspace inspect meta`, and `rote workspace inspect variables`.
 - Adapter failures: `rote adapter list`.
 - Play lifecycle failures: `rote play pending list`, `rote play list`.
 - Runtime/SDK failures: `rote sdk status`, `rote deno status`.
