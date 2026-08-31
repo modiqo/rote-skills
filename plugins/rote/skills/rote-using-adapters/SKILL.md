@@ -108,7 +108,7 @@ Create and enter a workspace only when the completed gate returns uncovered adap
 
 ```bash
 rote init <adapter-id>-task --seq
-cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<adapter-id>-task
+cd ${ROTE_HOME:-$HOME/.rote}/workspaces/<adapter-id>-task
 rote model set <model> --provider <provider> --confirmed-current
 ```
 

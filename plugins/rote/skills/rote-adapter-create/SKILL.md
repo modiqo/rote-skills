@@ -406,10 +406,10 @@ Show it's ready (tools/toolsets/auth). Offer to:
   rote init proof --seq --force
   ```
   ```bash
-  cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/proof && rote <id>_probe "<query>"
+  cd ${ROTE_HOME:-$HOME/.rote}/workspaces/proof && rote <id>_probe "<query>"
   ```
   ```bash
-  cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/proof && rote <id>_call <top-probe-hit> '<minimal-args>'
+  cd ${ROTE_HOME:-$HOME/.rote}/workspaces/proof && rote <id>_call <top-probe-hit> '<minimal-args>'
   ```
   Read the call's verdict by failure class — judge auth by the response *body*, not the status
   code alone. Any whole-response `4xx` whose body points at the token, key, or header format is

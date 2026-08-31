@@ -70,7 +70,7 @@ between steps — prefix every workspace-scoped command with the resolved worksp
 logical step:
 
 ```bash
-cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<workspace-name> && rote <command…>
+cd ${ROTE_HOME:-$HOME/.rote}/workspaces/<workspace-name> && rote <command…>
 ```
 
 Keep rote commands one at a time. Read `@@status`, `@@next`, `@@plays`, cached `@N` responses, and
@@ -144,7 +144,7 @@ Use this rote-native recovery checklist before reading files under `${ROTE_HOME}
 
 ```bash
 rote workspace ls
-cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<complete-workspace-name>
+cd ${ROTE_HOME:-$HOME/.rote}/workspaces/<complete-workspace-name>
 rote ls
 rote workspace inspect meta
 rote workspace inspect variables
@@ -159,7 +159,7 @@ After compaction, interruption, or a context handoff, recover state through rote
 
 ```bash
 rote workspace ls
-cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<complete-workspace-name>
+cd ${ROTE_HOME:-$HOME/.rote}/workspaces/<complete-workspace-name>
 rote ls
 rote workspace inspect meta
 rote workspace inspect variables

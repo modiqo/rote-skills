@@ -385,8 +385,8 @@ step):
 
 ```bash
 rote init cli-work --seq --force
-cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/cli-work && rote model set <model> --provider <provider> --confirmed-current
-cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/cli-work && rote workspace sandbox cli-work off
+cd ${ROTE_HOME:-$HOME/.rote}/workspaces/cli-work && rote model set <model> --provider <provider> --confirmed-current
+cd ${ROTE_HOME:-$HOME/.rote}/workspaces/cli-work && rote workspace sandbox cli-work off
 ```
 
 If the runtime does not expose the current model and provider and no command requires identity,

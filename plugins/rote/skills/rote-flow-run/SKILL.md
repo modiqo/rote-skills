@@ -99,7 +99,7 @@ case, use this sequence:
 
 ```bash
 rote init <workspace> --seq
-cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<workspace>
+cd ${ROTE_HOME:-$HOME/.rote}/workspaces/<workspace>
 rote model set <model> --provider <provider> --confirmed-current
 rote run --inference-id $(uuidgen) \
   --model <model> \

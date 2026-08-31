@@ -38,7 +38,7 @@ and enter paths under the active rote home. Do not assume a particular environme
 or allowlist syntax.
 
 Prefer the exact workspace path printed by rote. If you must construct the path, use
-`${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<name>` rather than assuming `~/.rote`.
+`${ROTE_HOME:-$HOME/.rote}/workspaces/<name>` rather than assuming `~/.rote`.
 
 All commands are non-destructive to the filesystem; they touch `~/.rote/` config and the
 registry.
@@ -662,10 +662,10 @@ adapter call). For single-adapter delegated work, spawn a subagent and tell it t
 
   ```bash
   rote init proof --seq --force
-  cd ${ROTE_HOME:-$HOME/.rote}/rote/workspaces/proof && rote <adapter-id>_probe "<intent>"
+  cd ${ROTE_HOME:-$HOME/.rote}/workspaces/proof && rote <adapter-id>_probe "<intent>"
   ```
 
-  The workspace lives at `${ROTE_HOME:-$HOME/.rote}/rote/workspaces/<name>`. This `cd && rote …` compound is a
+  The workspace lives at `${ROTE_HOME:-$HOME/.rote}/workspaces/<name>`. This `cd && rote …` compound is a
   necessary exception to the one-command-at-a-time rule for direct adapter work (the cwd must hold
   for the command). It does not apply to a DAG play: use
   `cd /tmp && rote play run <name> param=value` so the runner can own its execution workspace
