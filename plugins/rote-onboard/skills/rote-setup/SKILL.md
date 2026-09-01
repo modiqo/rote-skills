@@ -263,11 +263,11 @@ Do not assume — branch on the actual output of `rote whoami`.
 
 ## Step 1 — Sign in (detect configured providers)
 
-Present the sign-in options. The CLI supports `--provider google`, `--provider github`,
-and `--email <addr>`. Show provider choices:
+Present the sign-in options:
 
 - **Google** → `rote login --provider google`
 - **GitHub** → `rote login --provider github`
+- **Email one-time code** → `rote login --otp --otp-email <addr>` (no browser needed)
 
 Run the chosen one as its own command:
 
@@ -275,8 +275,10 @@ Run the chosen one as its own command:
 rote login --provider google
 ```
 
-This opens a browser for OAuth. Tell the user to complete it in the browser, then
-re-verify:
+OAuth opens a browser; tell the user to complete it there. The one-time code
+mails a six-digit code instead - the option to offer when no browser is
+reachable; ask the user for the code and follow the `@@next` line the send
+prints. Either way, re-verify:
 
 ```bash
 rote whoami

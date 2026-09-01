@@ -104,8 +104,10 @@ path invoke this skill right after minting. The artifact id is known; jump to St
 rote registry whoami --verbose
 ```
 - Authenticated → note the email; continue.
-- Not authenticated → `rote registry login` (or `rote login --provider google|github`). It's a
-  browser play — tell the user to finish in the browser, then re-run `whoami` before proceeding.
+- Not authenticated → `rote login`. OAuth opens a browser — tell the user to finish there. Where no
+  browser is reachable, `rote login --otp --otp-email <addr>` mails a code and
+  `echo <code> | rote login --otp --otp-email <addr> --otp-verify` submits it. Re-run `whoami`
+  before proceeding either way.
 
 ---
 
