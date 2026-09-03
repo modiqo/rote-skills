@@ -108,7 +108,9 @@ Other settable keys (same command): `name`, `description`, `tags` (csv),
 ```bash
 rote adapter auth update <id> --bearer-token <ENV_VAR>
 ```
-Variants: `--api-key-header <name=ENV>`, `--api-key-query <name=ENV>`, `--none` (remove auth).
+Variants: `--api-key-header <name=ENV>`, `--api-key-query <name=ENV>`, `--basic <USER_ENV>`
+(password read from `<USER_ENV>_PASSWORD`, or `--basic <USER_ENV>=<PASS_ENV>` to name both),
+`--none` (remove auth).
 The token **value** is a secret — set it via the masked `rote powerpack credentials` (user's
 own terminal) or `rote token set <ENV> --stdin` as an explicit terminal opt-in. Never echo a
 token.

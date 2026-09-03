@@ -435,10 +435,13 @@ Loop every org and render a summary so the user knows their consumption:
 ```bash
 rote registry org list --json
 ```
-then for each slug:
+then call each slug once:
 ```bash
 rote registry org usage <slug> --json
 ```
+Usage requires the owner or admin role. On `permission_denied`, mark that org unavailable and
+continue. Never retry the unchanged command.
+
 The shape: `{ plan, current{members, public_adapters, private_adapters, public_flows,
 private_flows}, limit{... null = unlimited}, features{audit, verification} }`.
 
