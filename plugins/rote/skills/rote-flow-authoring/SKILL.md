@@ -233,14 +233,13 @@ explicit user request — author
 `~/.rote/flows/<name>/main.ts` with `@rote-frontmatter`, create `deps.toml`, use the shell SDK, run
 dependency preflight, and test that legacy body with `rote deno run --allow-all`.
 
-A workspace export is a draft synthesized from one recording, not a finished play. `rote proc run`
-records literal argv, so the export carries recorded literals (paths, owners, dates) and may lift
-recorded values into spurious `parameters:` entries. Before lint: replace recorded literals with
-`$param` tokens, declare each real parameter, and prune every inferred parameter that is not part
-of the contract. Generalizing parameters and the presentation body is expected; changing the shape
-by hand (adding/removing `steps:` or `execution_model`) is not — re-export with the explicit flag
-instead. The "run the emitted command unchanged" rule protects the pending-save *scaffold command*,
-not the exported artifact.
+A workspace export is a draft synthesized from one recording, not a finished play. Explicit
+`--params` safely reifies matching literals in typed string fields; auto-detected parameters leave
+recorded bytes unchanged. Before lint, prune inferred parameters outside the contract and fix only
+the residual step fields or extracted resources named by export warnings. Generalizing parameters
+and the presentation body is expected; changing the shape by hand (adding/removing `steps:` or
+`execution_model`) is not — re-export with the explicit flag instead. The "run the emitted command
+unchanged" rule protects the pending-save *scaffold command*, not the exported artifact.
 
 ## Play Runtime Boundary
 

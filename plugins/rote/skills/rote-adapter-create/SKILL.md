@@ -185,6 +185,10 @@ This emits JSON and **creates nothing**. Keep the JSON in context. Its shape (ve
 If the dry-run errors, report the error verbatim and return to discovery (the URL/spec is the
 problem, not the adapter).
 
+Recreating an older adapter can change its contract. Before deletion, record its configuration and
+affected plays. After recreation, restore the configuration, rebind those plays, then verify one
+probe and call. Ask before deleting.
+
 ---
 
 ## Auth Shape Matrix
