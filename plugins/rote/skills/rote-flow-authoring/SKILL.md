@@ -187,15 +187,9 @@ echo them through a step's stdout and never read `Deno.args`.
 
 ### Preserve Process Failures
 
-For `process.exec`, the child exit status is the DAG's failure signal; stdout is only data. If an
-inline or invoked script catches a fatal error, write an actionable diagnostic to stderr and exit
-nonzero or rethrow. Printing `{"ok": false}` to stdout and returning normally records a successful
-step, so never use an error-shaped payload as a substitute for a failing exit status.
-
-Exit zero for an expected optional degradation only when the output makes that distinction
-explicit, for example `{"ok": true, "available": false, "warning": "..."}`. Classify every broad
-exception handler as fatal or optional instead of converting all exceptions into successful
-process results.
+Use the Process Exit Contract in `rote grammar steps`; never replace a child failure with an exit-zero
+stdout sentinel. Follow `rote guidance play testing` for coverage fixtures and `rote guidance shell
+essential` before wrapping a pipeline in a shell.
 
 ## Scaffold Through Rote
 
@@ -274,8 +268,8 @@ progress surface when available; otherwise state that live presentation progress
 for this execution model instead of publishing a stepless substitute.
 
 Normalize each observation without assuming a provider schema. Preserve `single`, `fan_out`, and
-`empty_fan_out`; use `requireAvailable` for completed or checkpoint-restored output and branch on the
-outcome for restored, failed, skipped, or blocked steps — a checkpoint-restored step arrives as its
+`empty_fan_out`; use `requireAvailable` for completed, partial, or checkpoint-restored output and branch on the
+outcome for partial, restored, failed, skipped, or blocked steps — a checkpoint-restored step arrives as its
 own `restored` status, so a switch missing that arm breaks under `--resume`. Narrow process and browser bodies with
 `isProcessExecBody` and `isBrowserBody`. Treat remaining adapter bodies as direct JSON, plain text,
 or narrowly recognized legacy text-envelope residue; malformed/optional values stay explicit and

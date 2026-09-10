@@ -260,12 +260,10 @@ if (exit.kind !== "code" || exit.code !== 0) {
 const files = await proc.files();        // captured file artifacts ([] unless capture requested)
 ```
 
-For declarative `process.exec`, the child exit status is likewise the DAG's control-plane result.
-If an inline Python, shell, or JavaScript program catches a fatal error, write the diagnostic to
-stderr and exit nonzero or rethrow. A stdout payload such as `{"ok": false}` followed by exit zero
-is successful process data and cannot fail the step. Reserve exit-zero degradation for expected
-optional absence, represented explicitly as success such as
-`{"ok": true, "available": false, "warning": "..."}`.
+For declarative `process.exec`, use the Process Exit Contract in `rote grammar steps` and follow
+`rote guidance play testing` for coverage fixtures. Do not replace failures with exit-zero stdout
+sentinels.
+When a pipeline is unavoidable, use `bash -o pipefail -c`, not `/bin/sh` plus `set -o pipefail`.
 
 `rote.execMany` preserves workspace response ordering by running process
 requests serially. For several different independent commands, generate sibling
@@ -636,7 +634,7 @@ raw shell when a rote primitive can preserve the evidence.
 
 Adapter, `process.exec`, and typed `browser.navigate|extract|click|type` actions are first-class
 `steps:` effects. Default crystallization places them in one effect DAG and gives the presentation
-body their completed, checkpoint-restored, failed, skipped, or blocked observations through the
+body their completed, partial, checkpoint-restored, failed, skipped, or blocked observations through the
 presentation SDK. Browser extracts stay bounded projections, and stateful browser actions keep the
 ordering and runtime/auth dependencies recorded by `rote-browse`.
 

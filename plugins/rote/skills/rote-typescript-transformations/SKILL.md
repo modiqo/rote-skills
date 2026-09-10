@@ -85,8 +85,9 @@ If a step can be restored, failed, skipped, or blocked, inspect
 A checkpoint-restored step has status `restored`. It does not have status `skipped`.
 When the play runs with `rote play run --resume`, handle `restored` in every status switch.
 
-Use `requireAvailable` when the step must provide output. It accepts completed and restored
-steps. It throws for condition-skipped, failed, and blocked steps.
+Use `requireAvailable` when the step must provide output. It accepts completed, partial, and restored
+steps. It throws for condition-skipped, failed, and blocked steps. Branch on `outcome.status` when
+partial diagnostics or restored provenance affect the rendered result.
 
 For skipped, failed, or blocked steps, return a typed warning or error. Do not create a successful
 payload from an unavailable result. For play inputs, narrow `ctx.params` values explicitly
