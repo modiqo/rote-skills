@@ -57,7 +57,8 @@ rote play inspect <owner/name@version> --json
 rote play run <owner/name@version> [param=value ...] --yes
 ```
 
-Inspection is read-only. Continue only when its execution report permits the run and the user has
+Inspection may run recognized local interpreter version flags (bounded to five seconds
+and 64 KiB per output stream); it does not execute Play code, install dependencies, or start a daemon. Continue only when its execution report permits the run and the user has
 approved this play and these parameters; `--yes` asserts that approval. Do not convert the registry
 reference into a guessed local path.
 
@@ -71,6 +72,10 @@ active workspace. The runner creates and owns the DAG execution workspace:
 ```bash
 rote play run /absolute/path/to/main.ts [param=value ...]
 ```
+
+If a process step exceeds the default output budget, inspect the command before
+retrying: it may already have performed side effects. Only then pass
+`--approve-process-output <BYTES>`; the play cannot grant itself more output.
 
 When the run resolves a pulled adapter whose manifest declares portable OAuth setup, let the runner
 authorize it in place and surface the provider browser flow. Do not replace credential recovery

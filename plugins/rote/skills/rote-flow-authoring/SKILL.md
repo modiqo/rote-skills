@@ -181,8 +181,8 @@ reads a completed step's unwrapped body (never `.result.content[0].text`); `for_
 fans a step out over the source step's array with `$item`/`$item_index` bound per element. Fan-out
 width is resolved at run time, so a set discovered by an upstream step is NOT a legacy trigger —
 over a process step's JSON stdout use `for_each: '$.stdout.text | fromjson'` (bridge example in
-`rote guidance typescript play-creation`). A `process.exec` step takes an optional `timeout_ms:`
-budget (default 30s). In the presentation body, play parameters arrive on `ctx.params` — never
+`rote guidance typescript play-creation`). A play cannot raise its own process-output
+limit. A `process.exec` step takes an optional `timeout_ms:` budget (default 30s). In the presentation body, play parameters arrive on `ctx.params` — never
 echo them through a step's stdout and never read `Deno.args`.
 
 ### Preserve Process Failures
@@ -281,8 +281,9 @@ configuration.
 
 Preserve a stable `FlowOutput` shape:
 
-- Return structured data for machine reuse.
-- Include a concise human-readable summary when useful.
+- Use one final `out.answer({ summary, details?, data? })` for a computed answer in all modes;
+  see `rote guidance typescript play-creation`. Keep the summary derived from the domain evidence.
+- Provide contrasting outcome scenarios through `rote guidance play testing` before release.
 - For superplays, include enough structure to distinguish baseline-play output from newly added
   adapter/browser/process data.
 - Keep adapter raw responses out of the final result unless the user needs them.

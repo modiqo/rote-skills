@@ -97,7 +97,8 @@ defaults.
 Normalize completed bodies by substrate:
 
 - Narrow `process.exec` with `isProcessExecBody`; validate `status.exit` before consuming optional
-  `stdout.text`, `stderr.text`, or file observations.
+  `stdout.text`, `stderr.text`, or file observations. A truncated inline preview is resolved from
+  its verified artifact for complete-data evaluation; preserve `utf8_lossy` as an explicit warning.
 - Narrow browser bodies with `isBrowserBody`; switch on `op` and retain bounded page/element facts.
 - Treat other bodies as adapter observations. Accept direct JSON, plain text, JSON encoded in one
   text block, and the narrowly recognized legacy `{result:{content:[{type:"text",text}]}}`
@@ -126,9 +127,8 @@ Keep transformations deterministic:
 
 Design `FlowOutput` for future agents as well as humans:
 
-- `summary` for the short answer.
-- `data` or domain-specific fields for machine-readable results.
-- `warnings` for partial, skipped, or best-effort outcomes.
+- Use `out.answer({ summary, details?, data? })`; disclose partial, skipped, or best-effort outcomes in `summary`, explain them in `details`, and retain structured evidence in `data`.
+- Follow `rote guidance typescript play-creation` §5g for the output contract.
 - No secrets, local paths, transient workspace IDs, or one-off response IDs unless requested.
 - Stable field names that match documented frontmatter output expectations.
 

@@ -135,6 +135,12 @@ For response inspection and transformation, stay inside rote first:
 Inspect workspace state with rote commands, not direct filesystem reads. Prefer live command
 surfaces such as `rote start`, `rote guidance`, and `rote grammar` when syntax is uncertain.
 
+Use `rote workspace stats <name> --json` for counts, sessions, and recorded purpose; omit `--json`
+for human output. See `rote guidance agent essential` → Quick Reference → Workspace for the
+`classification` meanings, their distinction from `execution_mode`, and the response-count
+checks required before `rote workspace delete`. Preserve needed work before deleting a non-empty
+workspace; never treat an unavailable count as proof that it is empty.
+
 `rote workspace ls` is inventory, not an enterability check. Enter only rows it renders as
 `active` or `empty`; those are the enterable `Complete` entries. Stop on every `Needs attention`
 row — including incomplete, corrupt, mid-restore, unavailable, or responses-unreadable entries —

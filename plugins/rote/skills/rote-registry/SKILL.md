@@ -175,21 +175,13 @@ For each org where a push is warranted, **ask visibility first** (never default 
 depends on is already in the target namespace and hard-fails if one is missing — so the adapters
 have to land first.
 
-Before sharing a play, inspect every selected adapter's credential contract and catalog entry:
+Before sharing a play, inspect each selected adapter's auth declaration:
 
 ```bash
 rote adapter info <id> --json
-rote adapter catalog info <id> --json
 ```
 
-If the adapter requires a static bearer token, API key, username, password, or secret server
-variable, its catalog entry must contain a first-party HTTPS `token_url`. Treat the URL as setup
-guidance only; never fetch it with credentials and never ask the user to paste a credential into
-conversation. If `token_url` is missing, discover the vendor's official token/API-key settings
-page, verify that its host belongs to the vendor, and update the reviewable catalog source before
-continuing. Do not put an unreviewed URL in play metadata and do not mint or present a Play URI
-until the catalog-backed setup page is available. OAuth/DCR/Google-discovery adapters are exempt:
-rote owns those authorization transitions.
+Use the selected release's auth declaration for credential setup. Catalog vendor links are optional and never block publication. Keep credential values local.
 
 Both push commands accept `--dry-run`: it runs the full preflight (eligibility, visibility,
 version-conflict prediction, and — for plays — dependency reachability) and reports

@@ -418,19 +418,23 @@ After a command finishes, read `@@result` first:
 
 - `response_id` is the saved evidence handle
 - `response_kind` tells you how to query the evidence
-- `primary_query`, `primary_stdout_query`, `primary_stderr_query`, or
-  `artifact_query` are exact typed queries for the saved response
+- `primary_query`, `primary_stdout_query`, and `primary_stderr_query`
+  retrieve the selected output from the saved response
 - `@@next` remains the immediate next-action guide
 
 For one-shot process output, prefer the typed query fields from `@@result`:
 
 ```bash
-rote query @1 '.stdout.text' -r
-rote query @1 '.stderr.text' -r
+rote query @proc.1.stdout '.text' -r
+rote query @proc.1.stderr '.text' -r
 rote query @1 '.status.exit' -r
 rote query @1 '.files' -r
 rote query @2 '.cleanup' -r
 ```
+
+For `process.exec`, the typed stdout/stderr queries read complete text at any
+storage size and verify it automatically. Numeric `@N` queries inspect the saved
+response metadata and previews. Follow runtime advice if a complete read fails.
 
 Use `@proc` addresses when inspecting process responses:
 
@@ -620,7 +624,7 @@ local CLI facts. Example shape:
 rote POST /github '{"method":"GET","path":"/repos/$owner/$repo"}' -t -s
 rote proc run -- gh repo view "$owner/$repo" --json name,visibility
 rote query @1 '.' -r
-rote query @2 '.stdout.text' -r
+rote query @proc.2.stdout '.text' -r
 ```
 
 The `$owner`/`$repo` above are exploration-time shell/workspace substitutions. In a crystallized
