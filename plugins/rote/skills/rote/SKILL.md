@@ -78,7 +78,7 @@ When work is crystallized, no shape flags means the schema-v1 steps + presentati
 `process.exec`, and browser effects live in frontmatter `steps:`, while
 `metadata.execution_model: steps_with_presentation` selects a deprivileged TypeScript renderer.
 Schema v2 remains an explicit `--scheme 2` opt-in. Explicit `--with-steps` (template) or
-`--format steps` (export) is steps-only; `--legacy-body` or a deliberate shell/no-steps route is the
+`--format steps` (export) is steps-only; `--legacy-body` or a explicit TypeScript no-steps route is the
 legacy escape: take it only when the workflow needs control flow or runtime interaction the step
 language does not support, or when the user explicitly asks for a no-steps body. Runtime-discovered
 fan-out, conditions, ordering, parallelism, and long finite commands are steps capabilities
