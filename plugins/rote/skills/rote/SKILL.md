@@ -29,9 +29,14 @@ MCP calls, provider CLIs, browser automation, registry commands, or custom scrip
   or building a replacement. Registry search defaults to every Play accessible to the current
   session; use `--scope public` for identity-independent output. Load
   [Play Search And Run](references/flow-search-and-run.md) when choosing or executing a result.
-- When search does not return a verified full-play match, invoke the `rote-task-routing` skill
-  before `rote-shell`, `rote-flow-authoring`, raw HTTP, native CLIs, or custom scripts unless the
-  user's request is explicitly only local CLI/files/logs/process work.
+- When search does not return a verified full-play match, send any partial match to `rote-flow-run`
+  for classification before task routing. A behavior-preserving partial runs as a baseline, then
+  reaches `rote-task-routing`. A behavior-changing partial with an exact numbered local search
+  result, `installation_state: exact_local`, and a local path goes directly to
+  `rote-flow-authoring`. An uninstalled registry result with `installation_state: uninstalled` goes
+  to `rote-registry` for exact-version pull first. With no partial match, invoke
+  `rote-task-routing` before raw HTTP, native CLIs, or custom scripts unless the request is explicitly
+  only local CLI/files/logs/process work.
 - When rote commands fail repeatedly, invoke the `rote-troubleshooting` skill and fix the cause.
   Do not record a memory, note, or instruction to avoid rote for this task class — a failed run
   is a configuration or routing problem to repair, not a verdict on the tool.
@@ -140,8 +145,13 @@ digraph rote_flow {
     "Search local, then registry Plays" [shape=box];
     "Full play match?" [shape=diamond];
     "Partial play match?" [shape=diamond];
+    "Classify partial through rote-flow-run" [shape=box];
+    "Change matched play behavior?" [shape=diamond];
+    "Exact numbered source local?" [shape=diamond];
     "Run matched play" [shape=box];
     "Run partial play as baseline" [shape=box];
+    "Fork and edit through rote-flow-authoring" [shape=box];
+    "Pull exact version through rote-registry" [shape=box];
     "Preserve baseline for superplay" [shape=box];
     "Full play reuse terminal" [shape=doublecircle];
     "Route uncovered work" [shape=box];
@@ -161,7 +171,8 @@ digraph rote_flow {
     "Test, lint, release" [shape=box];
     "Index and search verify" [shape=box];
     "Pending discard" [shape=box];
-    "Registry decision if sharing requested" [shape=box];
+    "Keep local or publish?" [shape=diamond];
+    "Publish through rote-registry" [shape=box];
     "Present verified Play URI and sharing guidance" [shape=box];
     "Final answer" [shape=doublecircle];
 
@@ -173,9 +184,17 @@ digraph rote_flow {
     "Full play match?" -> "Run matched play" [label="yes"];
     "Full play match?" -> "Partial play match?" [label="no"];
     "Run matched play" -> "Verify requested artifact/content";
-    "Partial play match?" -> "Run partial play as baseline" [label="yes"];
+    "Partial play match?" -> "Classify partial through rote-flow-run" [label="yes"];
     "Partial play match?" -> "Run rote explore <intent>" [label="no"];
+    "Classify partial through rote-flow-run" -> "Change matched play behavior?";
+    "Change matched play behavior?" -> "Exact numbered source local?" [label="yes"];
+    "Change matched play behavior?" -> "Run partial play as baseline" [label="no: compose around it"];
+    "Exact numbered source local?" -> "Fork and edit through rote-flow-authoring" [label="yes"];
+    "Exact numbered source local?" -> "Pull exact version through rote-registry" [label="no: registry result"];
+    "Pull exact version through rote-registry" -> "Fork and edit through rote-flow-authoring" [label="installed"];
+    "Pull exact version through rote-registry" -> "Final answer" [label="blocked"];
     "Run partial play as baseline" -> "Preserve baseline for superplay";
+    "Fork and edit through rote-flow-authoring" -> "Test, lint, release";
     "Preserve baseline for superplay" -> "Route uncovered work";
     "Route uncovered work" -> "Run rote explore <intent>";
     "Run rote explore <intent>" -> "Substrate route";
@@ -198,9 +217,12 @@ digraph rote_flow {
     "Materialize draft" -> "Test, lint, release";
     "Test, lint, release" -> "Index and search verify";
     "Index and search verify" -> "Pending discard";
-    "Pending discard" -> "Registry decision if sharing requested";
-    "Registry decision if sharing requested" -> "Final answer" [label="local only"];
-    "Registry decision if sharing requested" -> "Present verified Play URI and sharing guidance" [label="published"];
+    "Pending discard" -> "Keep local or publish?";
+    "Keep local or publish?" -> "Final answer" [label="local or previously declined"];
+    "Keep local or publish?" -> "Final answer" [label="unclear: ask missing choice"];
+    "Keep local or publish?" -> "Publish through rote-registry" [label="publication approved"];
+    "Publish through rote-registry" -> "Present verified Play URI and sharing guidance" [label="published"];
+    "Publish through rote-registry" -> "Final answer" [label="unresolved blocker"];
     "Present verified Play URI and sharing guidance" -> "Final answer";
 }
 ```
@@ -271,6 +293,9 @@ Shell/process routing rule:
    Process-only work uses the same doctrine and approval gate, then authoring materializes it through
    adapterless export because template/pending still require a real adapter.
 8. `rote-flow-authoring` only after direct authoring intent or an approved crystallization plan.
+   Published-play adaptation also requires an exact numbered local package with
+   `installation_state: exact_local` and a local path. Send an uninstalled registry reference to
+   `rote-registry` first.
 9. `rote-command-patterns` and `rote-typescript-transformations` are helper/reference skills; they
    return to the owner and do not complete the lifecycle themselves.
 10. `rote-troubleshooting` after an unchanged retry fails or state recovery is unclear.
@@ -296,7 +321,7 @@ These thoughts mean stop and return to the current lifecycle state:
 | Thought | Reality |
 | --- | --- |
 | "I know which adapter to use, so I can skip play search." | Search is the entry gate for day-to-day rote work. |
-| "A partial play is just a draft; I can rewrite it." | Run it as a reusable baseline, preserve its output/provenance, and build a new composed superplay around it. |
+| "A partial play always becomes a baseline that I compose around." | Compose only when its behavior can stay unchanged. If its behavior must change, route an exact numbered local source to `rote-flow-authoring`. Send an uninstalled registry result to `rote-registry` for exact-version pull first. Use `rote guidance play forking` for the edit route. |
 | "A full play answered it, but I should explore adapters to improve it." | Stop after verifying the requested artifact. Existing released play reuse is terminal unless the user asked for a new artifact or edit. |
 | "The report looks right, so verification is done." | Verify the requested artifact content and required rote lifecycle evidence. |
 | "Rote warned `[MANDATORY PROTOCOL] no pending stub`, but I can answer now." | Stop. For workspace, browser, manual, or mixed shell/API work that produced reusable results, run pending write and pending save before final text. |
@@ -353,13 +378,15 @@ search/run reference.
 | Branch | Invoke or load | Completion expectation |
 | --- | --- | --- |
 | Existing play fully covers the request | `rote-flow-run`. | Play output is verified and delivered; stop unless the user asked for edits, a new artifact, or publication work. |
-| Existing play covers a baseline or partial result | `rote-flow-run`, then `rote-task-routing`. | Baseline output is kept intact while uncovered work is routed. |
+| Existing play partially covers the request and its behavior can stay unchanged | `rote-flow-run`, then `rote-task-routing`. | Baseline output is kept intact while uncovered work is routed. |
+| Existing play partially covers the request and its behavior must change | `rote-flow-run`; then `rote-registry` if the pinned registry result is uninstalled; then `rote-flow-authoring`. | Authoring receives an exact numbered local source. Baseline composition does not run. |
 | Local CLI, files, logs, commands, or process state is the selected substrate | `rote-shell`. | Shell work uses `rote proc`/`rote deps`, records evidence, and returns result plus reusable-work signal. |
 | Neither Play provider produced a full or partial match, installed adapter can help | `rote-task-routing`, then `rote-workspace`. | Adapter work runs in a rote workspace with cached response IDs preserved. |
 | No installed adapter matched | Search `rote adapter catalog search "<intent>"`; use `rote-adapter-create` if the user supplied or accepts an adapter spec. | Useful catalog hits are inspected or installed before out-of-band fallback. |
 | Workspace, browser, or manual work produced new reusable results | `rote-flow-crystallization`. | A semantic plan is persisted through pending write/save before final presentation; save/discard is resolved. |
 | Shell/process work produced reusable results | `rote-shell`, then `rote-flow-crystallization`. | The same semantic plan and save decision precede no-shape-flag workspace export; adapter-requiring pending/template commands are not used. |
-| User asks to create, edit, lint, release, or publish a play | `rote-flow-authoring`. | The play lifecycle reaches scaffold, tests, lint, release, index/search verification, cleanup, publish, or a clear blocker. |
+| User asks to create, lint, release, publish, or edit a local play | `rote-flow-authoring`. | The play lifecycle reaches scaffold, tests, lint, release, index/search verification, cleanup, publish, or a clear blocker. |
+| User asks to adapt a published play directly | `rote-registry` first when the exact reference is uninstalled; then `rote-flow-authoring`. | Authoring receives an exact numbered local package with `installation_state: exact_local` and a local path. |
 | Command syntax or rote idioms are needed | Prefer `rote grammar <topic>`; invoke the `rote-command-patterns` skill for task-focused patterns. | Live grammar is treated as source of truth. |
 | TypeScript play transformation detail is needed | Prefer `rote grammar deno`; invoke the `rote-typescript-transformations` skill. | Cached responses and `FlowOutput` shape are preserved. |
 | Repeated failure appears after an unchanged retry | `rote-troubleshooting`. | The cause changes, the route changes, or the blocker is surfaced. |
@@ -377,11 +404,13 @@ search/run reference.
    artifact content, and stop. Do not explore adapters, initialize a workspace, rewrite the artifact,
    or enter pending write/save unless the user explicitly asked to edit, create a separate enhanced
    artifact, save a new workflow, release, or publish.
-3. After both applicable provider searches, if a Play covers only part of the request, run it as the
-   baseline. Preserve the raw baseline output, provenance, sentinels, source labels, and markers as
-   source material for a new composed superplay. Route only the uncovered work, then save/release the
-   reusable composition if requested or approved. Do not replace the baseline with a hand-written
-   lookalike report.
+3. After both applicable provider searches, let `rote-flow-run` classify a partial match before
+   execution. If its behavior can stay unchanged, run it as the baseline. Preserve its raw output, provenance,
+   sentinels, source labels, and markers for a composed superplay, then route only the uncovered
+   work. If its behavior must change, do not run baseline composition. Send an uninstalled registry
+   result to `rote-registry` for exact-version pull, then send the exact local source to
+   `rote-flow-authoring`; an exact numbered local source can go directly to authoring. Use
+   `rote guidance play forking` for the edit route.
 4. If neither provider matched or uncovered work remains, run `rote explore "<intent>"` and obey any
    `@@plays` suggestions before adapter work.
 5. Choose the substrate. Route local CLI/files/log/process work to `rote-shell`; route adapter/API
@@ -409,13 +438,14 @@ search/run reference.
     export or a justified legacy no-steps body using shell guidance. Never invent an adapter or
     append shape flags to a pending-save command.
 12. After authoring, release with `rote play release`, rebuild the index, verify search, then clear
-    the pending stub with `rote play pending discard <workspace>`.
+    the pending stub with `rote play pending discard <workspace>`. Authoring owns the keep-local or
+    publish choice and internal preparation; carry prior decisions forward without asking again.
 13. When registry publication succeeds or the selected version is already in sync, require
     `rote-registry` to return the exact `play_uri`, `bootstrap_uri`, resolved
     `data.play_inspect.reference`, `data.play_inspect.execution`, published-reference
-    `execution_verification` status and evidence, and access guidance (resolution and execution audiences). Present the
-    disclosure-only Play URI, advertised bootstrap transition, and resolved `play run` reference as
-    separate resources. Static eligibility and inspection never substitute for the exact pinned
+    `execution_verification` status and evidence, and access guidance (resolution and execution audiences). Keep
+    this packet in the agent handoff; present the usable reference and relevant access or execution
+    limits to the user. Static eligibility and inspection never substitute for the exact pinned
     acceptance run; if that run is not authorized or cannot be supplied safe representative inputs,
     label it unverified. A local release has no published Play URI, and no skill should construct or
     parse one.
@@ -470,7 +500,7 @@ workspace or artifact location named by the owning skill.
 - Preconditions satisfied: commands already run, approvals granted, credentials verified
 - Workspace path: ... or none
 - Cached responses: `@N` ids and what each contains
-- Allowed commands: rote commands or play paths the target may run
+- Allowed commands: exact rote commands, with catalog references for steps plays
 - Stop conditions: unsafe action, missing credential, failed precondition, user approval needed
 - Return fields: result, artifacts, response IDs, save gate, verified Play URI and sharing guidance
   when published, next recommended skill
@@ -525,10 +555,11 @@ only when the full companion graph or handoff packet shape is needed.
 - `rote guidance browser essential` - browser automation patterns.
 - `rote guidance shell essential` - `rote proc`, process leases, stream capture, deps, and shell
   play crystallization patterns.
-- `rote guidance play` - progressive play design tree: `crystallization` for the semantic plan,
-  `shape` for the DAG, and `testing` for contract verification.
-- `rote play info <name-or-path> --json` - canonical local Play record: absolute path plus ordered
-  parameters. Use it only when a local result lacks a runnable command or legacy argument syntax
+- `rote guidance play` - progressive play design tree: `forking` for adapting a Play that almost
+  fits, `crystallization` for the semantic plan, `shape` for the DAG, and `testing` for contract
+  verification.
+- `rote play info <name-or-path> --json` - canonical local Play record: exact invocation, artifact
+  location, and parameters. Use it when a local result lacks a runnable command or legacy argument syntax
   needs confirmation. Registry cards use `rote play inspect <reference> --json` instead.
 - `rote play list` - inventory released local plays; do not use an empty search query as inventory.
 - `rote grammar query`, `rote grammar steps`, `rote grammar deno`, `rote grammar export`, and

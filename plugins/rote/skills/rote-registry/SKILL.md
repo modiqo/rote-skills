@@ -46,34 +46,41 @@ Core rules:
 
 ## Handoff Contract
 
-- Use when: a newly created adapter or crystallized play reaches the share point, or the user asks
-  for registry push/share, a published artifact visibility change, usage/quota, invite, member,
-  artifact search, or registry collaboration.
+- Use when: a newly created adapter or crystallized play reaches the share point; `rote-flow-run`
+  returns an uninstalled, behavior-changing registry result that needs exact-version pull; or the
+  user asks for registry push/share, a published artifact visibility change, usage/quota, invite,
+  member, artifact search, or registry collaboration.
 - Preconditions: `rote play search --source registry` needs only an intent query; every
   `rote registry` command has authenticated through `rote registry whoami --verbose` or surfaced
   the login blocker; artifact id/path and target owner can be elicited; visibility is confirmed
-  before any push or in-place visibility change.
+  before any push or in-place visibility change. A fork handoff from `rote-flow-run` supplies an
+  exact pinned Play reference and `installation_state: uninstalled`; pull still requires inspection
+  and approval for that exact version. A direct `rote-flow-authoring` return supplies the same
+  pinned reference and installation state.
 - Owns: registry auth gate, org/owner selection, existence checks, dry-run publish/push, visibility
   selection and in-place changes, conflict recovery, usage reporting, and invite-at-share-time
-  collaboration.
+  collaboration. It also owns pulling an exact published Play before a fork handoff.
 - Hands off to: `rote-org` for deeper organization administration; `rote-adapter-create` when the
   artifact is not ready to publish; `rote-flow-crystallization` or `rote-flow-authoring` when a play
-  must be saved/released before push; `rote` for day-to-day routing after sharing.
+  must be saved/released before push; `rote-flow-authoring` after an exact Play version is pulled for
+  a behavior-changing fork; `rote` for day-to-day routing after sharing.
 - Returns to: the caller with artifact kind/id/path, target org/owner, visibility or old/new
   visibility plus changed/no-op status, dry-run verdict, push result or skip reason,
   version/conflict state, and — for a published play — the whole publication result rather than a URI
   alone (produced by *Stage P*, below): play location, verified Play URI, bootstrap URI, resolved run
   reference, execution readiness, execution variant, blockers, published-reference
   execution-verification status and evidence, plus access guidance (resolution and execution
-  audiences). Then invite results and next recommended skill. A caller given only the URI cannot tell
-  whether the reference it received is executable or verified, which is the question that stage exists
-  to answer.
+  audiences). A fork handoff also returns the exact pull command, installed identity, local path, and
+  successful managed-install state. Then invite results and next recommended skill. A caller given
+  only the URI cannot tell whether the reference it received is executable or verified, which is the
+  question that stage exists to answer.
 - Stop when: the artifact is shared, confirmed in sync, or has the requested visibility; auth/org
-  permission blocks, visibility is unconfirmed, quota blocks the requested write, or the owning
-  creation/authoring skill must resume.
+  permission blocks, visibility is unconfirmed, quota blocks the requested write, an exact-version
+  pull fails, or the owning creation/authoring skill must resume.
 - Completion signal: registry state verified from live commands, push/share/visibility/invite result
   summarized, and return data includes the artifact, owner, visibility, a published play's verified
-  Play URI and sharing guidance, and any remaining blocker.
+  Play URI and sharing guidance, any completed managed install needed for a fork, and any remaining
+  blocker.
 
 ---
 
@@ -111,21 +118,19 @@ rote registry whoami --verbose
 
 ---
 
-## Stage 1 — Which orgs, and is the artifact already there?
+## Stage 1 — Choose the namespace
 
-**This is where the "hub" concept first appears — give the hub What/Value beat before asking
-where to push.** Explain that the hub is where a working play or adapter becomes reusable by the
-team or community: one proven lesson saved so everyone stops rediscovering it, with deterministic
-token savings across the org. Then proceed.
+Use the confirmed personal handle from account information and authorized organizations from:
 
-List the orgs the user belongs to (the push targets):
 ```bash
 rote registry org list --json
 ```
-Returns the orgs with `slug` / `name`. Ask which existing org/namespace should own the artifact.
-If the user has no orgs or wants a new one, hand off to **rote-org** to create it; do not create it
-inside this skill. Resume here with the created org slug, then run the **existence check** against
-each candidate org (Stage 2).
+
+Resolve the user's choice: **on your handle, or in which organization?** Reuse a destination already
+selected in this task. A user without organizations can publish under their confirmed personal
+handle. If that handle is missing, claim it through the live registry account commands before
+publishing. Create an organization through `rote-org` only when the user chooses a new organization.
+Then check the selected namespace in Stage 2.
 
 ---
 
@@ -158,16 +163,17 @@ Summarize the per-org verdict plainly, e.g.:
 > `linear` — **not in `conikee-home`** (push to share) · **in sync in `modiqo`** (nothing to do).
 
 If every org says "in sync," tell the user there's nothing to push. For a play, continue to Stage P
-for each selected owner; then offer Stage 4 (invite/members) or Stage U (usage).
+for each selected owner. Stage 4 applies only to organization-owned artifacts.
 
 ---
 
 ## Stage 3 — Push (only where needed, at chosen visibility)
 
-For each org where a push is warranted, **ask visibility first** (never default it):
-- **Private** — org-only. For review/use inside the org. It can be flipped later, but making an
-  artifact private does not revoke already-pulled local copies.
-- **Public** — anyone on the registry can pull it. Confirm before a public push; for a public
+For the selected namespace, resolve **public or private** before pushing. Reuse visibility already
+authorized in this task; ask only when it is missing.
+- **Private** — the owning user can access it under a personal handle; authorized members can
+  access it under an organization. Making it private does not revoke already-pulled local copies.
+- **Public** — anyone on the registry can pull it. The user must choose public; for a public
   **adapter** push, remind them it ships config (base URL, auth scheme) — not token values, but
   still worth a glance.
 
@@ -196,25 +202,18 @@ rote registry adapter publish <id> <slug>             # push for real
 ```
 Add `--private` for a private push (omit for public).
 
-**Play** (auto-archives + walks dependencies). Push the play's `main.ts` path:
-```bash
-rote registry play push <path-to-play>/main.ts <slug> --dry-run   # verify deps + report
-rote registry play push <path-to-play>/main.ts <slug>             # push for real
-```
-Add `--private` for private.
+**Play** — complete the authorized publication using `rote grammar play` and `rote grammar registry`.
+Release and create a numbered snapshot when needed, using Rote's returned operation reference or
+preparation action. Push the returned snapshot target with the selected namespace and visibility.
+Use the live command's dry run before the registry write. Local snapshot creation is not publication.
 
-**Version conflict recovery** — if a push fails with "version already exists" / "bump the
-version", offer a semver bump and retry:
-```bash
-rote adapter bump <id> [--minor|--major]   # default: patch
-```
-```bash
-rote play bump <play-name-or-path> [--minor|--major]
-```
-Then re-run the publish/push. Show the conflict error verbatim before offering the bump.
+If the target namespace needs a local copy, let the publication commands prepare it. Fork only when
+an editable copy of a managed source is needed. These mechanics do not require separate approval
+once the user has chosen the outcome. On a version conflict, apply the normal patch bump and retry
+preflight; ask only if the user must choose a different version policy or outcome.
 
-On success, state what landed where (id, org, visibility, version). For a play, continue to Stage P;
-for an adapter, go to Stage 4.
+On success, state what landed where (id, namespace, visibility, version). For a play, continue to Stage P;
+for an organization-owned adapter, go to Stage 4. Personal publication is complete.
 
 ---
 
@@ -287,7 +286,9 @@ deriving one from visibility. Who can resolve a Play and who can run it are diff
 the same artifact: a public flow that declares process or browser privileges is resolvable by anyone
 and runnable only by its owner or authorized org members, so any sentence composed from visibility
 alone states the wrong execution audience. The push result carries the authored access guidance for
-that pair; present it as given and add only the sharing mechanics below.
+that pair; present it as given and add only the sharing mechanics below. Keep the full typed
+verification packet in the agent handoff; the user needs the usable reference and relevant access
+or execution limits.
 
 - **Public** — share the canonical `play_uri`; anyone can GET its transparency card.
 - **Private** — the canonical URI reveals its owner and slug even though unauthorized resolution
@@ -298,12 +299,28 @@ that pair; present it as given and add only the sharing mechanics below.
 
 Include the Play location, any Play URI and bootstrap transition, resolved run reference, execution
 readiness, blockers, execution-verification status and evidence, and access guidance in the return
-data before continuing to Stage 4. Do not construct a URL, parse it out of a command, or hardcode
+data. Continue to Stage 4 only for an organization-owned play. Do not construct a URL, parse it out
+of a command, or hardcode
 a play host; the play-push result owns the canonical Play and bootstrap URIs, and `rote play inspect` owns the
 resolved run reference and execution assessment.
 
 If inspection or the acceptance run fails, report the error and do not claim that the Play was
 verified. A local release that was not published has no published Play URI.
+
+An uninstalled registry result cannot go straight to authoring because fork accepts only a local
+numbered source. When `rote-flow-run` returns a behavior-changing result with
+`installation_state: uninstalled`, this skill owns the registry-to-local transition. Require an
+inspected, exact `<org>/<name>@<version>` reference and approval to install that version. Apply the
+same transition when direct authoring returns an uninstalled registry reference. Then run:
+
+```bash
+rote registry play pull <org>/<name>@<version> --yes
+```
+
+Hand off to `rote-flow-authoring` and name `rote guidance play forking` only after pull reports the
+exact managed identity and local path. The handoff is complete when that exact version is installed
+and selectable for authoring. Return `installation_state: exact_local` with the installed identity
+and path. If pull fails, keep ownership here and return its blocker.
 
 ---
 
@@ -340,7 +357,7 @@ the human `->` or `already` line.
 
 ## Stage 4 — Turn the push into collaboration (members + invite)
 
-Right after a successful push, offer to invite others to the org you just pushed into so they can
+After publication to an organization, offer to invite others to that organization so they can
 review or use the new artifact. The play is: **ask → snapshot who's already there → collect a set
 of emails → dedup → pick role(s) → invite each sequentially → report**.
 
@@ -454,9 +471,8 @@ This is the usage answer — quota consumption at a glance, no surprises.
   quota — surfacing "already in sync" is a feature, not a non-answer.
 - **`adapter publish` vs `adapter push`:** `publish` packs then pushes (the normal path);
   `push` uploads an already-packed `.adapt`. Prefer `publish` for a freshly-minted adapter.
-- **Play drafts vs releases:** the crystallize hand-off fires for both. A draft push shares
-  work-in-progress for review; a release push shares the finished play. Same commands; the
-  user's intent (review vs use) just shapes the invite framing in Stage 4.
+- **Play drafts:** resume `rote-flow-authoring` for validation before preparing a snapshot for
+  publication. A saved local development copy is a complete local result.
 - For deeper org administration (create/delete orgs, change roles, remove members, manage
   pending invites at length), hand off to the **rote-org** skill — this skill covers the
   push-time slice (members + invite); rote-org is the full admin surface.

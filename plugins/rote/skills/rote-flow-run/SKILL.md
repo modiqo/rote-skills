@@ -18,9 +18,15 @@ Play is the preferred implementation path: run it before exploring adapters or r
 workflow.
 
 If the play fully covers the request, this skill owns the task through verification and final return:
-the verified play output is the answer. If the play covers only a baseline or one part of the
-request, run it as the reusable baseline, preserve its output/provenance, and return only the
-uncovered work to `rote-task-routing`.
+the verified play output is the answer. If a partial match can keep its behavior unchanged, run it
+as the reusable baseline, preserve its output/provenance, and return only the uncovered work to
+`rote-task-routing`.
+
+If the matched play's behavior must change, do not run it as a baseline. An exact numbered local
+source goes to `rote-flow-authoring` via `rote guidance play forking`. An uninstalled registry result
+goes first to `rote-registry` with its pinned reference and `installation_state: uninstalled`.
+Registry owns the exact-version pull and hands the installed source to authoring. Never edit a
+managed play in place or use `rote play run` as an installation shortcut for a fork.
 
 ## Execution Rules
 
@@ -31,10 +37,17 @@ uncovered work to `rote-task-routing`.
   `rote play info <name-or-path> --json` only for parameter defaults, ordered legacy arguments, or a
   missing runnable command.
 - For a registry card, preserve its exact pinned `owner/name@version` reference. Run the printed
-  `rote play inspect <reference>` command, obey its blockers and approval requirements, then use its
-  `rote play run <reference>` action. The runner owns verified installation and convergence.
-- A bare local name may be ambiguous when multiple Plays share frontmatter `name:`. Use the absolute
-  local path to disambiguate. Registry discovery already returns an unambiguous pinned reference.
+  `rote play inspect <reference>` command and obey its blockers. Use its `rote play run <reference>`
+  action only when the play will run unchanged. The runner verifies an installed copy or installs
+  and converges a missing one.
+- Before executing a partial match, decide whether its behavior can remain unchanged. For a behavior
+  change, report whether the exact numbered source is already local. Send an uninstalled registry
+  result to `rote-registry`; send an exact local source to `rote-flow-authoring`. Neither route runs
+  the source as a baseline.
+- Use the catalog's exact `<owner>/<name>@<version>` reference to disambiguate local plays.
+  It also addresses installed local copies without registry authentication, after provenance and
+  package verification. Unversioned references prefer development, then resolve registry latest.
+  Drafts use `@development`; an unscoped draft uses `<name>@development`.
 - Each provider ranks only its own results. Choose based on task coverage and provider order; never
   compare local and registry rank values.
 - For legacy TypeScript plays (no frontmatter `steps:` block), use the captured invocation help or
@@ -50,7 +63,9 @@ uncovered work to `rote-task-routing`.
 
 ## Execution Modes
 
-For a registry card, inspect and execute the same pinned reference:
+The execution modes below apply only when the selected play will run unchanged, either as a full
+match or a behavior-preserving baseline. For a registry card, inspect and execute the same pinned
+reference:
 
 ```bash
 rote play inspect <owner/name@version> --json
@@ -67,11 +82,17 @@ For a local result, pick the mode from the Play's frontmatter. Use
 frontmatter `steps:`.
 
 Run any play whose frontmatter has `steps:` through the play runner, from a directory outside any
-active workspace. The runner creates and owns the DAG execution workspace:
+active workspace. The runner creates and owns the DAG execution workspace for each fresh run:
 
 ```bash
-rote play run /absolute/path/to/main.ts [param=value ...]
+cd /tmp && rote play run <owner>/<name>@<version> [param=value ...]
 ```
+
+For cached-response lookup and resume scope, follow `rote guidance query essential`.
+
+Play-run workspaces and their resume checkpoints expire through automatic retention. Preserve
+needed output outside the run workspace; see `rote guidance agent essential` → Workspace for
+retention configuration and collection behavior.
 
 If a process step exceeds the default output budget, inspect the command before
 retrying: it may already have performed side effects. Only then pass
@@ -125,18 +146,19 @@ Required tracking fields are `--inference-id`, `--model`, `--model-type`, and `-
   replace it unless the user explicitly asks for an edit or separate enhanced artifact.
 - Existing released plays are already reusable. Running one unchanged does not create new reusable
   workflow knowledge and does not trigger `rote-flow-crystallization`.
-- For partial matches, preserve the baseline play as a reusable component for a composed superplay
-  and route only the uncovered content onward.
-- Do not treat a partial-play output as the final augmented artifact. After uncovered work runs,
-  verify the composed result contains both the baseline evidence and the new required capability.
-- Preserve provenance literally for partial matches: play name, parameters, output artifact,
-  source labels, sentinels, markers, and any `FLOW_USED=...` or `source=...` text must survive as
-  superplay source evidence. Do not paraphrase the baseline into a new hand-written report that
-  erases play evidence.
-- For hybrid requests, record the baseline and the uncovered work before routing onward: baseline
-  play used, baseline output artifact, missing capability, selected adapter id(s), required
-  probe/call responses, and final artifact markers that prove both parts are present. A successful
-  baseline play is not completion when the user asked for additional live/API data.
+- For behavior-preserving partial matches, preserve the baseline play as a reusable component for a
+  composed superplay and route only the uncovered content onward.
+- Do not treat a behavior-preserving partial baseline as the final augmented artifact. After
+  uncovered work runs, verify the composed result contains both the baseline evidence and the new
+  required capability.
+- Preserve provenance literally for behavior-preserving partial matches: play name, parameters,
+  output artifact, source labels, sentinels, markers, and any `FLOW_USED=...` or `source=...` text
+  must survive as superplay source evidence. Do not paraphrase the baseline into a hand-written
+  report that erases play evidence.
+- For behavior-preserving hybrid requests, record the baseline and the uncovered work before routing
+  onward: baseline play used, baseline output artifact, missing capability, selected adapter id(s),
+  required probe/call responses, and final artifact markers that prove both parts are present. A
+  successful baseline play is not completion when the user asked for additional live/API data.
 
 ## Fallbacks
 
@@ -147,42 +169,48 @@ Required tracking fields are `--inference-id`, `--model`, `--model-type`, and `-
 - If local JSON lookup is unavailable, resolve the Play from rote's local listing and inspect only
   its frontmatter for parameters.
 - Prefer upgrading rote or using live `rote grammar` guidance over filesystem searches.
-- If execution is unsafe, parameters are missing, or the play is only a partial match, stop play
-  execution and return the reason plus the preserved state.
+- If execution is unsafe or parameters are missing, stop play execution and return the reason plus
+  the preserved state. A behavior-changing partial match returns its source and installation state
+  to the next owner without baseline execution.
 
 ## Return Fields
 
 Return these fields to `rote` or the next skill:
 
 - Play reference: exact pinned registry reference or local Play name, if search reported it.
-- Play path: absolute path used for local execution, or none for a registry reference.
+- Play path: optional local artifact location, separate from the exact execution reference.
+- Installation state: `exact_local` or `uninstalled`.
 - Parameters: positional values and any unresolved required values.
 - Execution command: exact command run or skip reason.
-- Output artifact: path or cached response id.
+- Output artifact: path, or cached response ID together with its workspace path.
 - Verification result: what was checked and whether it satisfies the request.
-- Coverage: full match, partial baseline, or skipped.
+- Coverage: full match, behavior-preserving partial baseline, behavior-changing fork source, or
+  skipped.
 - Uncovered requirements: missing sources, capabilities, live observations, artifact sections, and
   verification checks.
-- Preserved provenance: baseline play name, parameters, output artifact, and any markers or source
-  labels that must remain visible in the composed superplay.
-- Next recommended skill: `rote-task-routing` for uncovered work, `rote-flow-crystallization` only
-  for explicit new workflow/save work, or none for a verified full match.
+- Preserved provenance: for the behavior-preserving baseline route, play name, parameters, output
+  artifact, and markers or source labels that must remain visible in the composed superplay.
+- Next recommended skill: `rote-task-routing` for uncovered work after a behavior-preserving
+  baseline; `rote-registry` for an uninstalled registry fork source; `rote-flow-authoring` for an
+  exact local fork source; `rote-flow-crystallization` only for explicit new workflow/save work; or
+  none for a verified full match.
 
 ## Handoff Contract
 
 - Use when: a matched play may satisfy all or part of the user request.
 - Preconditions: `rote` completed the local-then-registry search gate, or the user explicitly
   supplied a local Play path or pinned registry reference whose intent can be validated.
-- Owns: branching on search provider, reading local callability or registry inspection, resolving
-  parameters, choosing execution mode, running the Play, preserving partial baseline
-  output/provenance for superplay composition, and verifying user-visible results.
-- Hands off to: `rote-task-routing` when uncovered work remains; `rote-flow-crystallization` only
-  when the user requested new workflow/save work beyond unchanged play reuse; `rote-troubleshooting`
-  when unchanged retries keep failing.
-- Returns to: `rote` with Play reference, optional local path, parameters, execution command, output
-  artifact, coverage, and verification result.
+- Owns: branching on search provider, installation state, and whether a partial match preserves or
+  changes behavior; reading local callability or registry inspection; resolving parameters; running
+  unchanged Plays; preserving behavior-preserving baseline output/provenance; and verifying results.
+- Hands off to: `rote-task-routing` after a behavior-preserving baseline; `rote-registry` when a
+  behavior-changing registry result is not installed; `rote-flow-authoring` when its exact numbered
+  source is local; `rote-flow-crystallization` only when the user requested new workflow/save work
+  beyond unchanged play reuse; `rote-troubleshooting` when unchanged retries keep failing.
+- Returns to: `rote` with Play reference, optional local path, installation state, parameters,
+  execution command or skip reason, output artifact, coverage, and verification result.
 - Stop when: the play fully answers the request, required parameters are missing, execution would be
-  unsafe, or the play only establishes a baseline for another route. A verified full match returns
-  no next skill.
-- Completion signal: play executed or skipped with reason, output verified or blocker named, and next
-  recommended skill if any.
+  unsafe, a behavior-preserving baseline is ready for composition, or a behavior-changing source is
+  classified for registry or authoring. A verified full match returns no next skill.
+- Completion signal: Play executed or skipped with reason, output verified or blocker named, source
+  installation state recorded, and next owner selected without bypassing a required registry pull.

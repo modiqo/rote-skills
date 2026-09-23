@@ -70,6 +70,10 @@ rote adapter list <id> --json --health
 - Unknown bearer: report the health output and route to `rote-adapter-config`; do not request a
   pasted token.
 
+For a `request.preview` (`--dry-run`), no request was sent. Surface its value-free impact,
+workspace, adapter, and token if confirmation is required. After approval, remove `--dry-run`
+before adding `--confirm`; `rote -p` multi-command mode rejects these flags. See `rote guidance writeguard essential`.
+
 ## Handoff Contract
 
 - Use when: `rote` or a router selected exactly one installed adapter to satisfy a delegated task,

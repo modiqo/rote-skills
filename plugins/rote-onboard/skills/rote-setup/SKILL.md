@@ -108,7 +108,7 @@ state behind.
 | Binary | `~/.rote` | Meaning | Action |
 |:---:|:---:|---|---|
 | ✗ | ✗ | **Clean slate** | Skip all state probing — there's nothing to probe. Go straight to the **install** choice below, then Step 0 (login). |
-| ✓ | ✗ | **Binary, no state** | Ask if the binary should be updated first (`rote self-update`, or defer to **rote-update**), then begin setup fresh at Step 0. No `whoami` needed — there's no session to detect. |
+| ✓ | ✗ | **Binary, no state** | Ask if the binary should be updated first (`rote update`, or defer to **rote-update**), then begin setup fresh at Step 0. No `whoami` needed — there's no session to detect. |
 | ✗ | ✓ | **Orphaned state** | The binary's gone but state remains (possibly stale / version-incompatible). **Propose backing up `~/.rote` and starting clean** — default to back-up-then-clean: move it aside, then install fresh. Confirm before moving anything. |
 | ✓ | ✓ | **Existing install** | Only this cell justifies the deeper probing. Proceed to **Step 0 (login)** and branch on `rote whoami`'s real output. |
 
@@ -597,10 +597,11 @@ path returned by `rote play search "<intent>" --json` (each result's `callabilit
 **5. Run it the right way (this is the fix for the "ran via bash, not Deno" bug).**
 
 - **Frontmatter has `steps:` (DAG play)** → run it from a directory outside every active rote
-  workspace. The play runner creates and owns its DAG execution workspace:
+  workspace. Use the exact catalog reference from the current search or info invocation.
+  The play runner creates and owns its DAG execution workspace:
 
   ```bash
-  cd /tmp && rote play run <name> param=value …
+  cd /tmp && rote play run <owner>/<name>@<version> param=value …
   ```
 
 - **No `steps:` (legacy/sequential play — most curated plays)** → do **NOT** use
@@ -636,7 +637,7 @@ adapter call). For single-adapter delegated work, spawn a subagent and tell it t
   success/failure visible on its own. Four allowed compounds are single logical steps: the
   selected canonical profile installer from the **Install choice**; `cd <workspace> && rote …`
   for adapter probes or calls that require a workspace cwd (see below);
-  `cd /tmp && rote play run <name> param=value` for a `steps:` play whose runner must own the DAG
+  `cd /tmp && rote play run <owner>/<name>@<version> param=value` for a `steps:` play whose runner must own the DAG
   workspace (never point that `cd` at an active rote workspace); and
   `cd <play directory> && rote deno run --allow-all main.ts [args…]` for a legacy no-steps play
   (step 5 above).
@@ -670,7 +671,7 @@ adapter call). For single-adapter delegated work, spawn a subagent and tell it t
   The workspace lives at `${ROTE_HOME:-$HOME/.rote}/workspaces/<name>`. This `cd && rote …` compound is a
   necessary exception to the one-command-at-a-time rule for direct adapter work (the cwd must hold
   for the command). It does not apply to a DAG play: use
-  `cd /tmp && rote play run <name> param=value` so the runner can own its execution workspace
+  `cd /tmp && rote play run <owner>/<name>@<version> param=value` so the runner can own its execution workspace
   outside every active rote workspace.
   `--force` skips the "search for existing plays first" gate. Clean up later with
   `rote workspace clean` if desired.

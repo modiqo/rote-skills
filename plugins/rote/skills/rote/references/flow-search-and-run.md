@@ -40,8 +40,8 @@ rote play search "<intent>" --json
 
 Run `data.search_results[0].items[].callability.command` verbatim when it is present and
 `state: runnable`. Use `rote play info <play-name-or-path> --json` only when the result is
-blocked, lacks a command, or a legacy argument contract needs confirmation; do not reconstruct a
-path from the name.
+blocked, lacks a command, or a legacy argument contract needs confirmation. Use the selected catalog
+reference for `rote play run`; the artifact path and embedded help do not define that target.
 
 2. If a lookup is needed, pick the execution mode from the play's frontmatter.
 
@@ -57,7 +57,7 @@ Use `rote play run` for any play whose frontmatter has `steps:`, passing named `
 parameters — direct Deno skips the effect plane:
 
 ```bash
-rote play run /absolute/path/to/main.ts [param=value ...]
+cd /tmp && rote play run <owner>/<name>@<version> [param=value ...]
 ```
 
 `metadata.execution_model: steps_with_presentation` is still a `steps:` play: the runner executes

@@ -24,10 +24,18 @@ Choose the implementation guide before editing the scaffold:
 
 | Workflow concern | Required guidance |
 | --- | --- |
+| Adapting a published play instead of authoring from scratch | `rote guidance play forking` |
 | Browser navigation, snapshots, clicks, typing, browser auth, or replay | `rote guidance browser play-authoring` |
 | Cached-response transformation or general TypeScript logic | `rote-typescript-transformations` plus `rote grammar deno` |
 | Shell/process execution | The shell authoring route from `rote-shell` |
 | Registry publication | `rote-registry` plus `rote grammar registry` |
+
+Published-play adaptation starts only from an exact numbered local package with
+`installation_state: exact_local` and its local path. This includes authored snapshots and managed installs.
+Preserve the selected `operation_reference` and source provenance in the handoff, as described in
+`rote guidance play forking`. If direct user intent names an uninstalled
+registry reference, return to `rote-registry` for the exact-version pull. Resume authoring only
+after registry returns the installed identity, `installation_state: exact_local`, and local path.
 
 Browser TypeScript does not belong to the generic transformation route. Run `rote guidance browser
 play-authoring`, follow its typed-step, presentation, and legacy-SDK procedure, then return here for tests, lint, release,
@@ -309,11 +317,13 @@ HTTP, or unrelated SDK APIs.
 ## Test, Lint, Release, And Search
 
 Read `rote guidance play testing`, then run plays with frontmatter `steps:` (the default shape) through the play runner, from outside the
-active workspace, with representative parameter sets. For presentation plays, it executes effects
-first and then invokes the deprivileged presentation body:
+active workspace, with representative parameter sets. Use the current `play info` invocation for
+the cataloged draft. For presentation plays, it executes effects before presentation:
+
+Use `<development-reference>` from the run command printed by creation or `rote play info`; keep its namespace and `@development` suffix.
 
 ```bash
-rote play run /absolute/path/to/main.ts param=value
+cd /tmp && rote play run <development-reference> param=value
 ```
 
 Run an explicit legacy TypeScript play, with no frontmatter `steps:` block, through bundled Deno
@@ -345,7 +355,7 @@ Never use `rote play release --force` to satisfy a save/release/publish task. A 
 broken artifact state for humans to inspect, not an agent completion path.
 
 Before release, obtain explicit authorization unless the original request already asked to release,
-crystallize, finalize, make discoverable, save as reusable, or publish the play. After release,
+crystallize, finalize, make discoverable, save, or publish the play. After release,
 verify discoverability:
 
 ```bash
@@ -374,65 +384,51 @@ as a resume anchor after the released play is discoverable.
 
 ## Publication Offer After Release
 
-A successful release reports a `@@share` section (`data.share_nudge` under `--json`). It may carry a
-one-time publication offer. It is an offer, not a gate: the release is already complete, and the offer
-is made at most once for a released revision. Never read its presence as approval to publish, and
-never infer approval to publish from the save decision, from the release, or from the offer appearing.
+A successful local release completes saving the reusable play. Reserve **publish** for a registry
+write. Read `data.share_nudge` (`@@share` in human output) as agent instructions, then present only
+the user's unresolved decision: **keep local or publish**. A save request authorizes local release;
+never infer approval to publish from the save decision. Honor an existing local or publication
+choice without asking again, and preserve a recorded decline across skill handoffs.
 
-**Read `readiness` on every release, whatever else the section carries.** It describes the artifact
-and is reported every time — including on a revision already declined or published, and on one whose
-readiness could be assessed while publication was not on the table. It is never gated on an offer
-being made:
+For publication, `rote-registry` resolves the destination and visibility: the user's confirmed
+personal handle or an organization, and public or private. Ask only for missing choices. The
+selected outcome authorizes its routine release, snapshot, and local-copy preparation. Use fork
+only when changing a managed play requires an editable copy. Run the applicable commands internally;
+a missing snapshot is not a reason to ask permission to bump.
 
-- `blocked` — `readiness.blockers` names each blocker and the repair for it. Report every blocker and
-  its repair, fix the artifact, and release again. A blocked artifact is never offered for
-  publication, so it carries **no actions** — the blockers are the payload. Do not push it and do not
-  describe publication as available.
-- `not_assessed` — `readiness.gaps` names what could not be checked. Report what could not be
-  checked. An unchecked artifact is not a ready one.
-- `ready` — the artifact is fit to hand to someone else. That is all it means: `ready` is not an
-  offer and says nothing about whether one was made.
+Read `readiness` to prepare the selected outcome:
 
-**Whether publication was offered is a separate question, and only `actions` answers it.** On
-`--json`, act only when `data.share_nudge.actions` is non-empty; the `Action:` lines are the human
-rendering of that same collection. Those commands are deliberately absent from `@@next` and from
-`data.next` — publishing and recording a decline each need the user's decision, so neither is a
-"run this next" step, and nothing in `next` will ever offer you one. A `ready` readiness with no
-actions means the offer for this revision is already spent or not available; say nothing about
-publishing.
+- `needs_snapshot` — the local play is saved. If publishing, create the numbered snapshot with the
+  returned bump action, then continue through registry preflight. Keeping it local needs no bump.
+- `blocked` — fix the reported artifact problem before publication. Keep registry preflight strict;
+  report only an unresolved problem that prevents the user's requested outcome.
+- `not_assessed` — complete the missing checks when publishing. This does not undo local release.
+- `ready` — the artifact passes the local publication checks; registry preflight still applies.
 
-When actions are present, present the choice they name, then stop. Publishing needs the user's
-explicit decision on target and visibility; `rote-registry` owns the push once they have made it.
+The returned `actions` are mechanics for the chosen outcome, not questions to copy to the user.
+An offer does not authorize a push. Prior publication authorization remains valid when an offer is
+absent; an absent offer alone is no reason to repeat the question. In the normal local result,
+report the saved play and its run reference, without the readiness state or preparation commands.
 
-A suggested push is always private, one per namespace you are authorized to publish to. Public
-publication is always a separate, deliberate request; never widen visibility because the artifact
-looked harmless.
-
-If the user declines publication, record the decline so the offer is not repeated for this revision.
-Do this **after the release completes** — the flow must already be released, or the command refuses:
+After an explicit keep-local choice, record it on the released copy, including a versionless copy:
 
 ```bash
-rote play release <name> --keep-local
+rote play release <operation-reference> --keep-local
 ```
 
-That records a decision and nothing else: it does not undo the release, does not touch the flow, and
-does not block an explicit `rote registry play push` later. Run it only after an explicit decline. An
-unanswered offer stays unanswered — silence is not a decline, and recording one the user did not make
-suppresses the invitation they might have wanted.
-
-Once a version is published the decline is refused, and the command still exits 0 — read the
-`decision` field rather than the exit code: `published` means nothing was recorded.
+Use the exact operation reference or action returned by Rote. This records the choice and leaves
+the local play usable. An unanswered offer stays unanswered; silence is not a decline. Read the
+`decision` field rather than the exit code: `published` means no decline was recorded.
 
 ## Registry Handoff
 
-If the play should be shared, use `rote grammar registry` for the current push syntax. Confirm the
-target namespace before publishing, then hand off to
+If publication is selected, use `rote grammar registry` for the current push syntax, then hand off to
 `rote-registry` with play path, release status, owner/namespace, visibility, dependency notes, and
 the user's publish approval. A local release alone has no published Play URI. When `rote-registry`
 returns a `play_uri`, `bootstrap_uri`, resolved run reference, published-reference
 `execution_verification` status and evidence, and access guidance (resolution and execution audiences) after
-publication or an already-in-sync check, present and propagate them; do not construct or parse the
-URI in this skill. Treat the disclosure-only Play URI, advertised bootstrap transition, static
+publication or an already-in-sync check, carry them in the agent handoff; present the usable
+reference and relevant access or execution limits. Do not construct or parse the URI in this skill. Treat the disclosure-only Play URI, advertised bootstrap transition, static
 execution readiness, and successful execution as separate facts: propagate `play_run_eligible`, the
 execution variant, blockers, and verification status, and do not describe an unverified or failed
 version as successfully playable.
@@ -462,17 +458,18 @@ Return these fields to `rote`, `rote-flow-crystallization`, or `rote-registry`:
   for publication.
 - Preconditions: direct user intent defines the boundary, or `rote-flow-crystallization` supplies a
   usable plan, accepted/pre-approved decision, and exact pending scaffold command; any required API
-  shape can be discovered through rote before scaffolding.
+  shape can be discovered through rote before scaffolding. Published-play adaptation also requires
+  an exact numbered local package, `installation_state: exact_local`, and its local path.
 - Owns: contract elicitation, schema discovery, scaffold, implementation lifecycle, tests, lint,
   release, index/search verification, pending cleanup when applicable, and registry-ready return
   data.
 - Hands off to: live `rote guidance browser play-authoring` for browser TypeScript;
-  `rote-typescript-transformations` for non-browser TypeScript logic; `rote-registry` for sharing;
-  `rote-flow-run` for final execution verification; `rote-troubleshooting` after repeated unchanged
-  failures.
+  `rote-typescript-transformations` for non-browser TypeScript logic; `rote-registry` for an
+  uninstalled published source or sharing; `rote-flow-run` for final execution verification;
+  `rote-troubleshooting` after repeated unchanged failures.
 - Returns to: `rote` or `rote-flow-crystallization` with play path, parameter contract, verification
   status, release state, verified Play URI and sharing guidance when published, and next owner.
-- Stop when: the play is verified, a release/publish approval is needed, a required schema or
-  credential is missing, or troubleshooting becomes the correct owner.
+- Stop when: the local play is verified and the publication choice is resolved or awaiting the user,
+  a required schema or credential is missing, or troubleshooting becomes the correct owner.
 - Completion signal: play draft, release plus index/search verification and pending cleanup when
   applicable, publish handoff, or blocker is named with commands already run.

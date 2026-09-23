@@ -12,19 +12,19 @@ references are intentionally not task owners; workflow logic lives in standalone
 | Skill or reference | Owns | May hand off to | Returns | Stop condition |
 | --- | --- | --- | --- | --- |
 | `rote` | Entry rule, play-search-first gate, top-level route, platform adaptation, standard packet. | Any bundled companion skill, starting with `rote-flow-run`, `rote-task-routing`, and `rote-workspace` for daily execution. | User or another top-level route. | A companion owns the next step, a play fully satisfies the task, or a blocker needs user input. |
-| `rote-flow-run` | Matched-play execution, parameter mapping, output verification, full-play termination, and partial-baseline preservation. | `rote-task-routing`, `rote-flow-crystallization`, `rote-troubleshooting`. | `rote` with play name/path/parameters, execution command, output artifact, coverage, and verification result. | Play fully answers with no next skill, partially answers, cannot safely run, or lacks required parameters. |
+| `rote-flow-run` | Matched-play execution, parameter mapping, provider and installation-state classification, output verification, full-play termination, and behavior-preserving partial-baseline preservation. | `rote-task-routing` after a baseline, `rote-registry` for an uninstalled registry fork source, `rote-flow-authoring` for an exact local fork source, `rote-flow-crystallization`, `rote-troubleshooting`. | `rote` with play name/reference, optional path, installation state, parameters, execution command or skip reason, output artifact, coverage, and verification result. | Play fully answers with no next skill, a behavior-preserving baseline returns uncovered work, a behavior-changing source reaches its required owner, execution is unsafe, or parameters are missing. |
 | `rote-task-routing` | Explore/catalog gates, subagent-before-workspace decisions, adapter route selection, and fallback boundary after no full play match or a partial baseline. It does not own execution or completion. | `rote-flow-run`, `rote-workspace`, `rote-using-adapters`, `rote-adapter-create`, `rote-troubleshooting`. | `rote` with selected route, checked sources, baseline preservation, and next owner. | A route owner is selected, a verified full-play result should return to `rote`, no safe rote route exists, or approval/credential input is required. |
 | `rote-workspace` | Workspace init/entry for no-play or partial-play work, model identity, sequential commands, cached response preservation, recovery, and handoff summaries. | `rote-flow-run`, `rote-flow-crystallization`, `rote-troubleshooting`, `rote-registry`. | `rote` or delegating skill with workspace path, commands run, response IDs, result, save gate, and next owner. | Workspace result completes, a verified full-play result makes workspace execution not applicable, state cannot be recovered, or a required approval/credential blocks. |
 | `rote-shell` | Local CLI/files/logs/process work through `rote proc` and `rote deps`, process evidence capture, background leases, dependency preflight, and shell-specific authoring detail. | `rote-flow-crystallization` for reusable evidence, then `rote-flow-authoring`; `rote-typescript-transformations`, `rote-browse`, `rote-troubleshooting`. | `rote` or the delegating skill with commands run, response IDs, process leases, captured artifacts, result, cleanup state, and next owner. | Shell result is delivered, dependency provisioning needs approval, a cleanup/credential prompt blocks, browser/API ownership is required, or play authoring takes over. |
 | `rote-flow-crystallization` | Semantic crystallization plan for all new reusable evidence, save/discard, pending write/save where supported, and pending recovery. | `rote-flow-authoring`, `rote-registry`, `rote-troubleshooting`. | Caller with crystallization plan, optional pending stub/scaffold command, save decision, release recommendation, and verified Play URI plus sharing guidance when downstream publication completes. | Stub is saved or discarded, unchanged released-play reuse makes the save gate not applicable, decision is unclear, pending state is unrecoverable, or authoring owns the next step. |
-| `rote-flow-authoring` | Play contract elicitation, rote-driven schema discovery, scaffold, implementation, tests, lint, release, index, search verification, pending cleanup, and registry-ready handoff. | `rote-typescript-transformations`, `rote-registry`, `rote-flow-run`, `rote-troubleshooting`. | Caller with play path, parameter contract, verification status, release state, pending cleanup state, verified Play URI plus sharing guidance when published, and next owner. | Play is verified and pending cleanup is complete, release/publish approval is needed, required schema/credential is missing, or troubleshooting owns recovery. |
+| `rote-flow-authoring` | Play contract elicitation, rote-driven schema discovery, scaffold, implementation, tests, lint, release, index, search verification, pending cleanup, and registry-ready handoff. | `rote-typescript-transformations`, `rote-registry`, `rote-flow-run`, `rote-troubleshooting`. | Caller with play path, parameter contract, verification status, release state, pending cleanup state, verified Play URI plus sharing guidance when published, and next owner. | Play is verified and pending cleanup is complete, the keep-local or publish choice is unresolved, required schema/credential is missing, or troubleshooting owns recovery. |
 | `rote-command-patterns` | Task-focused command idioms after live grammar/guidance, including quoting, cwd, response IDs, registry, and browser command shapes. | `rote-workspace`, `rote-flow-authoring`, `rote-typescript-transformations`, `rote-registry`, `rote-browse`, `rote-troubleshooting`. | Owning skill with command pattern, caveats, live source checked, and resume point. | The owner has enough syntax, live grammar supersedes this guidance, or troubleshooting is needed. |
 | `rote-typescript-transformations` | TypeScript play logic, cached-response transformation, `FlowOutput` shape, execution rules, SDK import guidance, and transformation tests. | `rote-flow-authoring`, `rote-workspace`, `rote-command-patterns`, `rote-troubleshooting`. | Caller with input response IDs, transformation path, output shape, tests, and blockers. | Transformation is tested, jq is sufficient, required data is missing, or troubleshooting owns recovery. |
 | `rote-troubleshooting` | Repeated-failure diagnosis, no-blind-retry recovery, state inspection, route changes, and return-to-owner handoffs. | Original owning skill, `rote-command-patterns`, `rote-adapter-config`, `rote`. | Owning skill with cause, material change, remaining blocker, and resume point. | Cause changes, route changes, user approval/credential is needed, or no rote path remains. |
 | `rote-adapter-create` | Spec discovery, dry-run, auth research, toolset selection, create, post-create choices, and readiness probe. | `rote-adapter-config`, `rote-registry`, `rote`. | Caller with adapter id, spec source, dry-run summary, auth/toolset decisions, create/probe result, credential state, and next owner. | Dry-run fails, create/probe completes, credential/browser action is pending, or another skill owns the next step. |
 | `rote-adapter-config` | Existing-adapter show/confirm/apply/re-show loop and honest limits. | `rote-adapter-create`, `rote-troubleshooting`, `rote`. | Caller with adapter id, setting changed, command run, verification output, skipped operation, and pending credential/browser action. | Requested setting is verified, user declines, a credential/browser action blocks, or recreation is required. |
 | `rote-using-adapters` | Delegated single-adapter execution, probe/call/query loop, write guard, and return summary. Prefer `rote-workspace` for ordinary main-conversation execution. | `rote`, `rote-workspace`, `rote-flow-crystallization`, `rote-registry`. | `rote` or delegating skill with workspace, response IDs, result, write-guard state, save gate, blockers, and next owner. | Task completes, adapter cannot satisfy it, write approval or credential is missing, or save/release approval is unresolved. |
-| `rote-registry` | Registry auth, org/owner selection, existence checks, dry-run push, visibility, conflicts, published Play URI inspection, usage, and invites. | `rote-org`, `rote-adapter-create`, `rote-flow-crystallization`, `rote-flow-authoring`, `rote`. | Caller with artifact kind/id/path, owner, visibility, dry-run verdict, push or skip reason, version/conflict state, verified Play URI plus sharing guidance for a published play, invite results, and next owner. | Artifact is shared or in sync and any published Play URI is verified, auth/org/quota blocks, visibility is unconfirmed, or authoring/creation must resume. |
+| `rote-registry` | Registry auth, org/owner selection, existence checks, exact-version pull for uninstalled fork sources, dry-run push, visibility, conflicts, published Play URI inspection, usage, and invites. | `rote-org`, `rote-adapter-create`, `rote-flow-crystallization`, `rote-flow-authoring` after an exact fork source is installed or when authoring resumes, `rote`. | Caller with artifact kind/id/path, owner, visibility, dry-run verdict, push or skip reason, version/conflict state, exact pull command and installed identity/path when preparing a fork, verified Play URI plus sharing guidance for a published play, invite results, and next owner. | Artifact is shared or in sync and any published Play URI is verified, an exact fork source is installed, auth/org/quota blocks, visibility is unconfirmed, pull fails, or authoring/creation must resume. |
 | `rote-org` | Standalone organization administration, member roles, invites, pending invites, usage, and plan visibility. | `rote-registry`. | Caller with org slug, operation run, before/after member or invite state, role/quota result, permission blocker, and next registry action. | Admin task completes, privileges/quota are insufficient, destructive confirmation is missing, or registry publication should resume. |
 | `rote-browse` | Browser launch choice, page leases, snapshots, slices, waits, human gates, saved auth, replay, and browser play caveats. | `rote-flow-crystallization`, `rote-registry`, `rote`. | Caller with workspace, lease/session, launch mode, snapshot/page refs, human-gate status, saved-auth state, result, replayability signal, and next owner. | Browser result is delivered, human gate blocks, page lease is unrecoverable, action needs approval, or play crystallization owns the next step. |
 
@@ -37,7 +37,7 @@ These companion skills use the same contract shape as the standalone workflow sk
 | `rote-adapter-create` | Dry-run/create/probe, with returns to config, registry, or daily use. | Yes, when returning a created adapter or blocked create state. | No. |
 | `rote-adapter-config` | Show/confirm/apply/re-show loop and recreation fallback. | No. | No. |
 | `rote-using-adapters` | Delegated single-adapter work, write guard, response IDs, and save gate. | Yes. | Yes. |
-| `rote-registry` | Artifact share, org target, visibility, conflict, invite, and return data. | No, unless receiving one from creation/authoring. | No. |
+| `rote-registry` | Artifact share, org target, visibility, conflict, invite, or exact-version pull before a fork handoff. | Yes for a fork pull; otherwise no unless receiving one from creation/authoring. | No. |
 | `rote-org` | Standalone org mutation/read result and registry return. | No. | No. |
 | `rote-browse` | Browser lease/session, human gates, snapshots, saved auth, and replayability. | Yes. | Yes. |
 
@@ -48,11 +48,11 @@ skills so runtime discovery can activate each owner directly.
 
 | Skill | Entry trigger | Return fields |
 | --- | --- | --- |
-| `rote-flow-run` | A play search result may satisfy all or part of the request. | Play name, path, parameters, command, output artifact, coverage, verification result. |
+| `rote-flow-run` | A play search result may satisfy all or part of the request. | Play name/reference, optional path, installation state, parameters, command or skip reason, output artifact, coverage, verification result. |
 | `rote-task-routing` | Play search did not fully cover the request. | Selected route, adapter/catalog/subagent decision, checked sources, next skill. |
 | `rote-workspace` | Adapter work needs workspace state, cached responses, transformations, or subagent re-entry. | Workspace path, commands run, response IDs, result, reusability signal, handoff summary. |
 | `rote-flow-crystallization` | Workspace/browser/shell/manual work produced reusable results. | Crystallization plan, optional pending stub, save/discard decision, release recommendation, verified Play URI plus sharing guidance when published. |
-| `rote-flow-authoring` | User asks to create, edit, lint, release, or publish a play. | Play path, validation output, release status, registry next step, verified Play URI plus sharing guidance when published. |
+| `rote-flow-authoring` | User asks to create, lint, release, publish, or edit a local play. Published-play adaptation enters with an exact numbered local package, `installation_state: exact_local`, and a local path. | Play path, validation output, release status, registry next step, verified Play URI plus sharing guidance when published. |
 | `rote-command-patterns` | Live `rote grammar` is insufficient for task-focused command idioms. | Command pattern used, caveats, current grammar source. |
 | `rote-typescript-transformations` | TypeScript play logic or cached-response transformation is needed. | Input response IDs, transformation path, `FlowOutput` shape, tests. |
 | `rote-troubleshooting` | A rote command or workflow failed repeatedly without changed inputs. | Cause, changed route or command, remaining blocker, return skill. |
@@ -75,7 +75,7 @@ short and factual; omit fields only when they truly do not apply.
 - Process leases or captured artifacts: ...
 - Requirements: required sources/adapters, capabilities, live observations, artifact, and
   verification checks that must survive interruption, compaction, and handoff
-- Allowed commands: exact rote commands or play paths the target may run
+- Allowed commands: exact rote commands, with catalog references for steps plays
 - Stop conditions: unsafe action, missing credential, failed precondition, user approval needed
 - Return fields: result, artifacts, response IDs, save gate, verified Play URI and sharing guidance
   when published, next recommended skill
@@ -116,8 +116,14 @@ flowchart TD
   FlowSearch --> PartialFlow[matched play partially covers]
   FlowSearch --> NoFlow[no matching play]
   FullFlow --> FlowRun[rote-flow-run]
-  FlowRun --> Done[verified answer]
-  PartialFlow --> Baseline[run partial play as baseline]
+  PartialFlow --> FlowRun
+  FlowRun -->|full match verified| Done[return result or blocker]
+  FlowRun -->|partial match classified| BehaviorChange{matched play behavior must change?}
+  BehaviorChange -->|no: preserve behavior| Baseline[run partial play as baseline]
+  BehaviorChange -->|yes: exact local numbered source| Author
+  BehaviorChange -->|yes: uninstalled registry result| RegistryPull[rote-registry exact-version pull]
+  RegistryPull -->|exact version installed| Author
+  RegistryPull -->|pull blocked| Done
   Baseline --> Superplay[preserve baseline for composed superplay]
   Superplay --> TaskRouting[rote-task-routing]
   NoFlow --> TaskRouting
@@ -147,7 +153,12 @@ flowchart TD
   Materialize --> Release[release]
   Release --> IndexSearch[index and search verify]
   IndexSearch --> Discard[pending discard]
-  Discard --> Registry[rote-registry]
+  Discard --> PublicationDecision{keep local or publish, owned by authoring}
+  PublicationDecision -->|local or previously declined| Done
+  PublicationDecision -->|unclear| PublicationQuestion[ask missing choice]
+  PublicationQuestion --> PublicationDecision
+  PublicationDecision -->|publication approved| Registry[rote-registry]
+  Registry -->|unresolved blocker| Done
   Registry -->|published play| PlayUri[present installer URI, inspect run reference, run pinned acceptance test, readiness, verification evidence, blockers, and access guidance]
   Registry -->|adapter or non-play result| Done
   PlayUri --> Done

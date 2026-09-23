@@ -25,6 +25,8 @@ rote guidance shell essential
 
 Choose the narrowest rote primitive that preserves evidence:
 
+Use `<development-reference>` from the run command printed by creation or `rote play info`; keep its namespace and `@development` suffix.
+
 - one-shot command: `rote proc run -- <program> [args...]`
 - stdin from a file: `rote proc run --stdin-file input.txt -- <program>`
 - declared output file: `rote proc run --capture-file label:path -- <program>`
@@ -34,7 +36,7 @@ Choose the narrowest rote primitive that preserves evidence:
 - terminal-sensitive command: `rote proc pty run -- <program> [args...]`
 - dependency preflight: `rote deps check deps.toml`
 - legacy TypeScript replay: `rote deno run --allow-all ~/.rote/flows/<name>/main.ts`
-- declarative or presentation replay: `rote play run ~/.rote/flows/<name>/main.ts param=value`
+- declarative or presentation replay: `rote play run <development-reference> param=value`
 
 Do not replace these with ad hoc `command > file`, `tail -f`, or `ps | grep`
 when the evidence should be durable. Rote already stores typed responses,
@@ -661,7 +663,7 @@ Replay commands remain shape-specific:
 
 ```bash
 # Any play with frontmatter steps
-rote play run ~/.rote/flows/<name>/main.ts param=value
+rote play run <development-reference> param=value
 
 # Explicit legacy body with no steps
 rote deno run --allow-all ~/.rote/flows/<name>/main.ts [args]

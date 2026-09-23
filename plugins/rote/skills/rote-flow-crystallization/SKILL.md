@@ -190,8 +190,8 @@ captured scaffold command, target owner/namespace if known, and approval state t
 `rote-flow-authoring`; after release, that skill hands off to `rote-registry`. A local release alone
 has no published Play URI. When the downstream publication path returns a `play_uri`,
 `bootstrap_uri`, resolved run reference, published-reference `execution_verification` status and
-evidence, and access guidance (resolution and execution audiences), present and propagate them instead of constructing
-or parsing the URI here. Also propagate execution readiness and blockers; a published installer URI
+evidence, and access guidance (resolution and execution audiences), preserve them in the agent
+handoff. Present the usable reference and relevant limits; do not construct or parse the URI here. Also propagate execution readiness and blockers; a published installer URI
 is an advertised transition rather than the Play identity, and static eligibility is not proof of
 successful execution.
 
