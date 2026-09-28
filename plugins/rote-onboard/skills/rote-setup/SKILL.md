@@ -604,17 +604,17 @@ path returned by `rote play search "<intent>" --json` (each result's `callabilit
   cd /tmp && rote play run <owner>/<name>@<version> param=value …
   ```
 
-- **No `steps:` (legacy/sequential play — most curated plays)** → do **NOT** use
-  `rote play run` (it can fall back to a plain bash invocation instead of Deno). Run it via
-  the bundled Deno from the play's own directory:
+- **No `steps:` (legacy/sequential play — most curated plays)** → `rote play run` too, with the
+  body's positional args rather than named parameters. Run it from the play's own directory so a
+  relative import in the body resolves:
 
   ```bash
-  cd <play directory from rote output> && rote deno run --allow-all main.ts [args…]
+  cd <play directory from rote output> && rote play run main.ts [args…]
   ```
 
   Pass the play's positional args (from the `parameters:` block), e.g.
-  `… main.ts modiqo/rote`. `rote deno run` uses the bundled Deno from the active rote home.
-  The `cd && rote deno run` compound is one logical step. This `cd`s into the play directory
+  `… main.ts modiqo/rote`. The run executes the body under the bundled Deno from the active rote
+  home. The `cd && rote play run` compound is one logical step. This `cd`s into the play directory
   outside the project, so
   make sure the current environment has access if it requires filesystem approval.
 
@@ -637,10 +637,10 @@ adapter call). For single-adapter delegated work, spawn a subagent and tell it t
   success/failure visible on its own. Four allowed compounds are single logical steps: the
   selected canonical profile installer from the **Install choice**; `cd <workspace> && rote …`
   for adapter probes or calls that require a workspace cwd (see below);
-  `cd /tmp && rote play run <owner>/<name>@<version> param=value` for a `steps:` play whose runner must own the DAG
-  workspace (never point that `cd` at an active rote workspace); and
-  `cd <play directory> && rote deno run --allow-all main.ts [args…]` for a legacy no-steps play
-  (step 5 above).
+  `cd /tmp && rote play run <owner>/<name>@<version> param=value` for a `steps:` play, whose runner
+  owns the run's workspace (never point that `cd` at an active rote workspace); and
+  `cd <play directory> && rote play run main.ts [args…]` for a legacy no-steps play, which takes
+  positional args (step 5 above).
 - **Prefer non-interactive commands in agent-run shells.** Many agent command runners cannot
   answer terminal prompts. The non-interactive switch differs per command: installer →
   `ROTE_YES=1`; powerpack picker → `--yes`; `rote adapter new` →

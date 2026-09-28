@@ -37,11 +37,11 @@ browser API before checking this version-matched runtime guide.
 
 ## Execution Rules
 
-- Run legacy TypeScript plays, with no frontmatter `steps:` block, through
-  `rote deno run --allow-all`.
-- Run TypeScript plays with frontmatter `steps:` through `rote play run`. Raw `deno` skips the
-  effect plane and provides no presentation input; `rote deno run` reroutes `steps:` plays to the
-  play runner, but do not rely on the reroute — use `rote play run` directly.
+- Run every TypeScript play through `rote play run`: positional args for a legacy body with no
+  frontmatter `steps:` block, named `key=value` parameters for one that declares `steps:`.
+- Raw `deno` skips the effect plane and provides no presentation input. `rote deno run` reroutes
+  any declared play to the play runner, but do not rely on the reroute — use `rote play run`
+  directly.
 - Run play files from outside the active workspace.
 - Do not call system `deno` directly.
 - Do not prefix the binary with `~/.rote/bin/`; use `rote` on `PATH`.
@@ -49,7 +49,7 @@ browser API before checking this version-matched runtime guide.
 Typical execution:
 
 ```bash
-rote deno run --allow-all /absolute/path/to/main.ts [args]
+rote play run /absolute/path/to/main.ts [args]
 ```
 
 Use SDK imports exactly as shown by live rote guidance. Avoid npm-style package assumptions unless
@@ -139,8 +139,8 @@ If the transformation is part of a reusable play, return the proposed `FlowOutpu
 
 Test with representative cached data or fixture input before release. Cover no-result,
 partial-result, malformed/optional fields, and at least one user-provided edge case. After changes,
-rerun legacy TypeScript through `rote deno run --allow-all` and plays with frontmatter `steps:`
-through `rote play run`, rather than a standalone TypeScript runner.
+rerun the play through `rote play run` rather than a standalone TypeScript runner, whether or not
+its frontmatter declares `steps:`.
 
 If a cached response query fails, inspect the cached response first. If the response is an adapter
 error, fix the upstream call, auth, base URL, or arguments before adding transformation workaround

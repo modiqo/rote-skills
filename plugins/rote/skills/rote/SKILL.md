@@ -89,8 +89,9 @@ language does not support, or when the user explicitly asks for a no-steps body.
 fan-out, conditions, ordering, parallelism, and long finite commands are steps capabilities
 (`for_each`, `execution:`, `depends_on`, `max_concurrency`, `timeout_ms`) — a set whose width is
 only discovered at run time is not a legacy trigger.
-Every play containing `steps:` runs with `rote play run`; only no-steps legacy
-TypeScript uses `rote deno run --allow-all`. For the concrete step syntax use `rote grammar steps`;
+Every declared TypeScript play runs with `rote play run`, including no-steps legacy bodies.
+`rote deno run --allow-all` also routes declared plays through the owner; scripts without play
+frontmatter remain standalone. For the concrete step syntax use `rote grammar steps`;
 the complete assembled artifact lives in `rote guidance typescript play-creation`.
 
 ## Requirements Across Interruptions

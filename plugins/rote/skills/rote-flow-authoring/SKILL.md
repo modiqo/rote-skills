@@ -133,7 +133,7 @@ capability the step language is missing; if you cannot name one, the workflow is
 | --- | --- | --- | --- |
 | Default steps + presentation play | The reusable workflow has adapter, process, browser, or mixed effects and needs stable human/summary/JSON output. | Frontmatter `steps:` AND `metadata.execution_model: steps_with_presentation`; the TypeScript body is presentation-only. | Use template/export with no shape flags, or run the command emitted by pending save unchanged. |
 | Explicit steps-only DAG | The typed effect plan and runner report are the entire contract; no custom TypeScript rendering is wanted. | Frontmatter `steps:` WITHOUT `metadata.execution_model: steps_with_presentation`. | Request `--with-steps` for a template or `--format steps` for export, without a presentation flag. |
-| Explicit legacy TypeScript, no `steps:` | The workflow needs control flow or runtime interaction the step language does not support (name it — see the representability test above), or the user explicitly requested a plain no-steps body. | No frontmatter `steps:`; effects live in the TypeScript body. | Request `--legacy-body` where live help advertises it — `template create` still requires `--adapter`, so an adapterless shell-only play has no generator: hand-author it from the legacy example in the rote-shell skill or `rote guidance typescript play-creation`; run with `rote deno run --allow-all`. |
+| Explicit legacy TypeScript, no `steps:` | The workflow needs control flow or runtime interaction the step language does not support (name it — see the representability test above), or the user explicitly requested a plain no-steps body. | No frontmatter `steps:`; effects live in the TypeScript body. | Request `--legacy-body` where live help advertises it — `template create` still requires `--adapter`, so an adapterless shell-only play has no generator: hand-author it from the legacy example in the rote-shell skill or `rote guidance typescript play-creation`; run it with `rote play run`, as every play is run. |
 
 These shape defaults do not migrate the adapter contract scheme. Schema v1 remains the default;
 schema v2 is an explicit `--scheme 2` opt-in and must satisfy its own live contract/origin rules.
@@ -233,7 +233,7 @@ approved plan through no-shape-flag workspace export over the recorded `rote pro
 representability test above lands on a legacy body — a named gap in the step language, or an
 explicit user request — author
 `~/.rote/flows/<name>/main.ts` with `@rote-frontmatter`, create `deps.toml`, use the shell SDK, run
-dependency preflight, and test that legacy body with `rote deno run --allow-all`.
+dependency preflight, and test that legacy body with `rote play run`.
 
 A workspace export is a draft synthesized from one recording, not a finished play. Explicit
 `--params` safely reifies matching literals in typed string fields; auto-detected parameters leave
@@ -245,8 +245,8 @@ unchanged" rule protects the pending-save *scaffold command*, not the exported a
 
 ## Play Runtime Boundary
 
-Play code already runs under its owning runner (`rote play run` for any `steps:` play, bundled Deno
-only for an explicit no-steps legacy body); do not recreate rote lifecycle inside it.
+Play code already runs under its owning runner — `rote play run`, whether or not the frontmatter
+declares `steps:`; do not recreate rote lifecycle inside it.
 
 - Do not run `rote init` from inside a TypeScript play.
 - Do not shell out to `rote init` as a workaround for `Rote.workspace(...)` failures.
@@ -308,7 +308,7 @@ calls in frontmatter `steps:` and presentation reads their typed observations. O
 legacy body uses adapter handles returned by `runPreflight`. Do not add raw HTTP fetches to bypass
 missing adapter setup; fix the adapter route or hand back to `rote-task-routing`.
 
-If an explicit legacy body's `rote deno run` fails because the generated SDK import cannot find
+If an explicit legacy body's `rote play run` fails because the generated SDK import cannot find
 `mod.ts`, `Adapter.callBg` is undefined, or the runtime cannot find rote-managed Deno/SDK state,
 treat that as a scaffold/runtime issue. Inspect `rote deno status`, `rote sdk status`, `rote grammar
 deno`, and `rote guidance typescript play-creation`; do not hand-edit around it with raw Deno, raw
@@ -330,7 +330,7 @@ Run an explicit legacy TypeScript play, with no frontmatter `steps:` block, thro
 instead:
 
 ```bash
-rote deno run --allow-all /absolute/path/to/main.ts [args]
+rote play run /absolute/path/to/main.ts [args]
 ```
 
 The DAG runner takes named `key=value` parameters; the legacy body takes its declared positional

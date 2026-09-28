@@ -45,12 +45,12 @@ reference for `rote play run`; the artifact path and embedded help do not define
 
 2. If a lookup is needed, pick the execution mode from the play's frontmatter.
 
-Use `rote deno run --allow-all` for legacy `.ts` plays whose frontmatter has no `steps:` block,
-after checking the captured `--help` text or a `--dry-run` invocation for the body's actual
-argument syntax, from a directory outside the active workspace:
+Use `rote play run` for legacy `.ts` plays whose frontmatter has no `steps:` block, after checking
+the captured `--help` text for the body's actual argument syntax, from a directory outside the
+active workspace:
 
 ```bash
-rote deno run --allow-all /absolute/path/to/main.ts [arguments verified from --help or --dry-run]
+rote play run /absolute/path/to/main.ts -- [arguments verified from --help or --dry-run]
 ```
 
 Use `rote play run` for any play whose frontmatter has `steps:`, passing named `key=value`

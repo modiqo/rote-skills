@@ -35,7 +35,7 @@ Use `<development-reference>` from the run command printed by creation or `rote 
 - process stream: `rote proc stream follow-process proc-1 --stream stdout --until READY`
 - terminal-sensitive command: `rote proc pty run -- <program> [args...]`
 - dependency preflight: `rote deps check deps.toml`
-- legacy TypeScript replay: `rote deno run --allow-all ~/.rote/flows/<name>/main.ts`
+- legacy TypeScript replay: `rote play run ~/.rote/flows/<name>/main.ts`
 - declarative or presentation replay: `rote play run <development-reference> param=value`
 
 Do not replace these with ad hoc `command > file`, `tail -f`, or `ps | grep`
@@ -308,12 +308,12 @@ not a trigger. `rote-flow-authoring` owns the general representability test:
 | --- | --- | --- |
 | One finite command whose output is the fact | Default steps + presentation export with a typed `process.exec` step | No-shape-flag `rote workspace export ~/.rote/flows/<name>/main.ts` |
 | Command writes files that downstream work reads | Default steps + presentation export with declared `process.exec` captures | No-shape-flag `rote workspace export ~/.rote/flows/<name>/main.ts` |
-| A moving file or log must be followed to an until/readiness condition (the stream capability) | Explicit legacy body with `rote.followFile(path, options)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
-| Long finite job where other useful work runs mid-lease (the concurrent-work capability) | Explicit legacy body with `rote.execBackgroundAndJoin(request, async (job) => { ... }, options)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
-| Long service or daemon the play interacts with while it runs | Explicit legacy body with `rote.execBackground({ readyLog, capture })`, then status/follow/stop | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
-| Need to inspect progress mid-lease, inside a justified background escape | Explicit legacy body with `job.follow(...)` or `rote.followProcess(...)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
-| Need completion proof mid-lease, inside a justified background escape — a finite command with no concurrent work is a foreground `process.exec` step with `timeout_ms:` | Explicit legacy body with `job.wait(...)` or `rote.execWait(...)` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
-| Terminal behavior is the point | Explicit legacy body with `rote.ptyRun({ argv, input, cols, rows })` | Hand-author `main.ts` (legacy example below); run via `rote deno run --allow-all` |
+| A moving file or log must be followed to an until/readiness condition (the stream capability) | Explicit legacy body with `rote.followFile(path, options)` | Hand-author `main.ts` (legacy example below); run via `rote play run` |
+| Long finite job where other useful work runs mid-lease (the concurrent-work capability) | Explicit legacy body with `rote.execBackgroundAndJoin(request, async (job) => { ... }, options)` | Hand-author `main.ts` (legacy example below); run via `rote play run` |
+| Long service or daemon the play interacts with while it runs | Explicit legacy body with `rote.execBackground({ readyLog, capture })`, then status/follow/stop | Hand-author `main.ts` (legacy example below); run via `rote play run` |
+| Need to inspect progress mid-lease, inside a justified background escape | Explicit legacy body with `job.follow(...)` or `rote.followProcess(...)` | Hand-author `main.ts` (legacy example below); run via `rote play run` |
+| Need completion proof mid-lease, inside a justified background escape — a finite command with no concurrent work is a foreground `process.exec` step with `timeout_ms:` | Explicit legacy body with `job.wait(...)` or `rote.execWait(...)` | Hand-author `main.ts` (legacy example below); run via `rote play run` |
+| Terminal behavior is the point | Explicit legacy body with `rote.ptyRun({ argv, input, cols, rows })` | Hand-author `main.ts` (legacy example below); run via `rote play run` |
 | Several independent commands run at once | declarative `steps:` with sibling `process.exec` steps, no `depends_on` between them | Export first, then drop the synthesized `depends_on` edges per `rote grammar steps` |
 | Many independent commands share one shape | declarative `steps:` with `process.exec`, `for_each`, and `max_concurrency` | Export first, then add `for_each`/`max_concurrency` per `rote grammar steps` |
 | The item set is discovered at run time by another command or API call | declarative `steps:` fan-out sourced from the upstream step | NOT a legacy trigger; `rote grammar steps` has the bridge example for a process step's JSON stdout |
@@ -666,7 +666,7 @@ Replay commands remain shape-specific:
 rote play run <development-reference> param=value
 
 # Explicit legacy body with no steps
-rote deno run --allow-all ~/.rote/flows/<name>/main.ts [args]
+rote play run ~/.rote/flows/<name>/main.ts [args]
 ```
 
 Read `rote guidance play crystallization` for the plan, `rote guidance play shape` for the DAG, and

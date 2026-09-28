@@ -106,12 +106,12 @@ with `rote adapter new-from-mcp` or recreate the installed adapter.
 the declared steps first, then invokes the deprivileged presentation body; direct Deno would not
 receive the typed presentation input.
 
-Run legacy TypeScript plays (no frontmatter `steps:`) with rote's bundled Deno from a directory
+Run legacy TypeScript plays (no frontmatter `steps:`) through the play runner from a directory
 outside the active workspace — this keeps play-created workspaces from nesting inside the
 workspace you are using to inspect or author the play:
 
 ```bash
-rote deno run --allow-all /absolute/path/to/main.ts [arguments verified from --help or --dry-run]
+rote play run /absolute/path/to/main.ts -- [arguments verified from --help or --dry-run]
 ```
 
 Do not use `rote run` as a fallback for normal TypeScript play execution — stay with the
