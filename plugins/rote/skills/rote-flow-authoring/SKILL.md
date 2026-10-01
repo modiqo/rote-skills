@@ -28,7 +28,7 @@ Choose the implementation guide before editing the scaffold:
 | Browser navigation, snapshots, clicks, typing, browser auth, or replay | `rote guidance browser play-authoring` |
 | Cached-response transformation or general TypeScript logic | `rote-typescript-transformations` plus `rote grammar deno` |
 | Shell/process execution | The shell authoring route from `rote-shell` |
-| Registry publication | `rote-registry` plus `rote grammar registry` |
+| Adapter source selection or registry publication | `rote-registry` |
 
 Published-play adaptation starts only from an exact numbered local package with
 `installation_state: exact_local` and its local path. This includes authored snapshots and managed installs.
@@ -326,11 +326,11 @@ Use `<development-reference>` from the run command printed by creation or `rote 
 cd /tmp && rote play run <development-reference> param=value
 ```
 
-Run an explicit legacy TypeScript play, with no frontmatter `steps:` block, through bundled Deno
-instead:
+Run an explicit legacy TypeScript play, with no frontmatter `steps:` block, through the same
+runner; pass positional arguments after `--`:
 
 ```bash
-rote play run /absolute/path/to/main.ts [args]
+cd /tmp && rote play run <play-reference> -- [args]
 ```
 
 The DAG runner takes named `key=value` parameters; the legacy body takes its declared positional

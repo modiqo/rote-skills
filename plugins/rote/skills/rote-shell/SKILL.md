@@ -35,7 +35,7 @@ Use `<development-reference>` from the run command printed by creation or `rote 
 - process stream: `rote proc stream follow-process proc-1 --stream stdout --until READY`
 - terminal-sensitive command: `rote proc pty run -- <program> [args...]`
 - dependency preflight: `rote deps check deps.toml`
-- legacy TypeScript replay: `rote play run ~/.rote/flows/<name>/main.ts`
+- legacy TypeScript replay: `rote play run <name>@development -- [args]`
 - declarative or presentation replay: `rote play run <development-reference> param=value`
 
 Do not replace these with ad hoc `command > file`, `tail -f`, or `ps | grep`
@@ -289,7 +289,7 @@ When recorded shell exploration is reusable, hand its evidence to
 `rote-flow-crystallization` before exporting. That skill distills the reusable procedure into a
 semantic plan and resolves save approval; do not treat transcript order as the play design.
 After approval, pass the plan to `rote-flow-authoring`; authoring materializes it with
-`rote workspace export <path>` using no shape flags. The default artifact is schema-v1 steps plus
+`rote workspace export <owner/name>` using no shape flags. The default artifact is schema-v1 steps plus
 presentation: typed `process.exec` effects in `steps:` and a `steps_with_presentation` body.
 
 The export is a draft synthesized from one recording: replace recorded literal argv values (paths,
@@ -306,8 +306,8 @@ not a trigger. `rote-flow-authoring` owns the general representability test:
 
 | Exploration pattern | Crystallized shape | Author via |
 | --- | --- | --- |
-| One finite command whose output is the fact | Default steps + presentation export with a typed `process.exec` step | No-shape-flag `rote workspace export ~/.rote/flows/<name>/main.ts` |
-| Command writes files that downstream work reads | Default steps + presentation export with declared `process.exec` captures | No-shape-flag `rote workspace export ~/.rote/flows/<name>/main.ts` |
+| One finite command whose output is the fact | Default steps + presentation export with a typed `process.exec` step | No-shape-flag `rote workspace export <name>` |
+| Command writes files that downstream work reads | Default steps + presentation export with declared `process.exec` captures | No-shape-flag `rote workspace export <name>` |
 | A moving file or log must be followed to an until/readiness condition (the stream capability) | Explicit legacy body with `rote.followFile(path, options)` | Hand-author `main.ts` (legacy example below); run via `rote play run` |
 | Long finite job where other useful work runs mid-lease (the concurrent-work capability) | Explicit legacy body with `rote.execBackgroundAndJoin(request, async (job) => { ... }, options)` | Hand-author `main.ts` (legacy example below); run via `rote play run` |
 | Long service or daemon the play interacts with while it runs | Explicit legacy body with `rote.execBackground({ readyLog, capture })`, then status/follow/stop | Hand-author `main.ts` (legacy example below); run via `rote play run` |
@@ -666,7 +666,7 @@ Replay commands remain shape-specific:
 rote play run <development-reference> param=value
 
 # Explicit legacy body with no steps
-rote play run ~/.rote/flows/<name>/main.ts [args]
+rote play run <name>@development -- [args]
 ```
 
 Read `rote guidance play crystallization` for the plan, `rote guidance play shape` for the DAG, and

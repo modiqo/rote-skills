@@ -137,7 +137,7 @@ surfaces such as `rote start`, `rote guidance`, and `rote grammar` when syntax i
 
 Use `rote workspace stats <name> --json` for counts, sessions, and recorded purpose; omit `--json`
 for human output. See `rote guidance agent essential` → Quick Reference → Workspace for the
-`classification` meanings, their distinction from `execution_mode`, and the response-count
+`classification` meanings, the legacy fields that alias it, and the response-count
 checks required before `rote workspace delete`. Preserve needed work before deleting a non-empty
 workspace; never treat an unavailable count as proof that it is empty.
 

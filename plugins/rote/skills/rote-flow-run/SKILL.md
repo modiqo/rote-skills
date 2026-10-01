@@ -34,12 +34,13 @@ managed play in place or use `rote play run` as an installation shortcut for a f
   different execution contracts.
 - For a local result, use the printed `run:` command or `callability.command` verbatim when
   `callability.state` is `runnable`. `callability.location` is only the path. Use
-  `rote play info <name-or-path> --json` only for parameter defaults, ordered legacy arguments, or a
+  `rote play info <play-reference> --json` only for parameter defaults, ordered legacy arguments, or a
   missing runnable command.
 - For a registry card, preserve its exact pinned `owner/name@version` reference. Run the printed
   `rote play inspect <reference>` command and obey its blockers. Use its `rote play run <reference>`
   action only when the play will run unchanged. The runner verifies an installed copy or installs
-  and converges a missing one.
+  and converges a missing one. `--dry-run` needs an installed version; for an uninstalled registry
+  play use `rote play inspect <reference>`.
 - Before executing a partial match, decide whether its behavior can remain unchanged. For a behavior
   change, report whether the exact numbered source is already local. Send an uninstalled registry
   result to `rote-registry`; send an exact local source to `rote-flow-authoring`. Neither route runs
@@ -51,7 +52,7 @@ managed play in place or use `rote play run` as an installation shortcut for a f
 - Each provider ranks only its own results. Choose based on task coverage and provider order; never
   compare local and registry rank values.
 - For legacy TypeScript plays (no frontmatter `steps:` block), use the captured invocation help or
-  run the entrypoint with `--dry-run` to confirm whether the body accepts positionals, named flags,
+  run its reference with `-- --dry-run` to confirm whether the body accepts positionals, named flags,
   or another syntax. `argument_order` records frontmatter order only; it does not verify argv reads.
   Plays with frontmatter `steps:` take named `param=value` pairs through `rote play run` instead.
 - Ask one targeted question only when a required parameter cannot be inferred from the user intent.
@@ -75,14 +76,14 @@ rote play run <owner/name@version> [param=value ...] --yes
 Inspection may run recognized local interpreter version flags (bounded to five seconds
 and 64 KiB per output stream); it does not execute Play code, install dependencies, or start a daemon. Continue only when its execution report permits the run and the user has
 approved this play and these parameters; `--yes` asserts that approval. Do not convert the registry
-reference into a guessed local path.
+reference into a guessed local path. `--dry-run` works only on an installed version; it is refused
+on an uninstalled registry reference.
 
 For a local result, pick the mode from the Play's frontmatter. Use
-`rote play info <name-or-path> --json` when unsure. Do not use direct Deno for any Play with
-frontmatter `steps:`.
+`rote play info <play-reference> --json` when unsure. Do not use direct Deno for play files. Filesystem play targets are refused.
 
 Run any play whose frontmatter has `steps:` through the play runner, from a directory outside any
-active workspace. The runner creates and owns the DAG execution workspace for each fresh run:
+active workspace. The runner creates and owns the workspace for each fresh run:
 
 ```bash
 cd /tmp && rote play run <owner>/<name>@<version> [param=value ...]
@@ -111,7 +112,7 @@ outside the active workspace — this keeps play-created workspaces from nesting
 workspace you are using to inspect or author the play:
 
 ```bash
-rote play run /absolute/path/to/main.ts -- [arguments verified from --help or --dry-run]
+rote play run <play-reference> -- [arguments verified from --help or --dry-run]
 ```
 
 Do not use `rote run` as a fallback for normal TypeScript play execution — stay with the
@@ -119,23 +120,7 @@ execution-model-appropriate command above. A play with frontmatter `steps:` stay
 `rote play run` even when tracking is requested; never route a DAG through `rote run`. If no
 supported tracked wrapper exists, return that tracking limitation instead of changing runners.
 
-Only an explicit legacy TypeScript play with no frontmatter `steps:` may use `rote run` when the
-scenario or command output requires model tracking or cached workspace responses. For that legacy
-case, use this sequence:
-
-```bash
-rote init <workspace> --seq
-cd ${ROTE_HOME:-$HOME/.rote}/workspaces/<workspace>
-rote model set <model> --provider <provider> --confirmed-current
-rote run --inference-id $(uuidgen) \
-  --model <model> \
-  --model-type chat \
-  --model-version <version> \
-  /absolute/path/to/main.ts [arguments verified from --help or --dry-run]
-rote query @1 '.result' -r
-```
-
-Required tracking fields are `--inference-id`, `--model`, `--model-type`, and `--model-version`.
+If a legacy body needs tracked workspace responses, return that limitation. `rote run` and direct Deno do not bypass reference-only play execution.
 
 ## Verification Criteria
 
@@ -162,7 +147,7 @@ Required tracking fields are `--inference-id`, `--model`, `--model-type`, and `-
 
 ## Fallbacks
 
-- If local search JSON is unavailable, use `rote play info <name-or-path> --json`; do not rebuild a
+- If local search JSON is unavailable, use `rote play info <play-reference> --json`; do not rebuild a
   run command from `callability.location` or fall back to a second search ordering.
 - If a registry card cannot be inspected, return the pinned reference and inspection blocker. Do not
   substitute local `play info`, an unpinned reference, or a guessed path.
@@ -199,7 +184,7 @@ Return these fields to `rote` or the next skill:
 
 - Use when: a matched play may satisfy all or part of the user request.
 - Preconditions: `rote` completed the local-then-registry search gate, or the user explicitly
-  supplied a local Play path or pinned registry reference whose intent can be validated.
+  supplied a local Play reference or pinned registry reference whose intent can be validated.
 - Owns: branching on search provider, installation state, and whether a partial match preserves or
   changes behavior; reading local callability or registry inspection; resolving parameters; running
   unchanged Plays; preserving behavior-preserving baseline output/provenance; and verifying results.

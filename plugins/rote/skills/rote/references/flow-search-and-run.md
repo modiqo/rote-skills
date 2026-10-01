@@ -39,7 +39,7 @@ rote play search "<intent>" --json
 ```
 
 Run `data.search_results[0].items[].callability.command` verbatim when it is present and
-`state: runnable`. Use `rote play info <play-name-or-path> --json` only when the result is
+`state: runnable`. Use `rote play info <play-reference> --json` only when the result is
 blocked, lacks a command, or a legacy argument contract needs confirmation. Use the selected catalog
 reference for `rote play run`; the artifact path and embedded help do not define that target.
 
@@ -50,7 +50,7 @@ the captured `--help` text for the body's actual argument syntax, from a directo
 active workspace:
 
 ```bash
-rote play run /absolute/path/to/main.ts -- [arguments verified from --help or --dry-run]
+rote play run <play-reference> -- [arguments verified from --help or --dry-run]
 ```
 
 Use `rote play run` for any play whose frontmatter has `steps:`, passing named `key=value`

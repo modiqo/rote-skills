@@ -89,10 +89,12 @@ language does not support, or when the user explicitly asks for a no-steps body.
 fan-out, conditions, ordering, parallelism, and long finite commands are steps capabilities
 (`for_each`, `execution:`, `depends_on`, `max_concurrency`, `timeout_ms`) — a set whose width is
 only discovered at run time is not a legacy trigger.
-Every declared TypeScript play runs with `rote play run`, including no-steps legacy bodies.
-`rote deno run --allow-all` also routes declared plays through the owner; scripts without play
-frontmatter remain standalone. For the concrete step syntax use `rote grammar steps`;
-the complete assembled artifact lives in `rote guidance typescript play-creation`.
+Every declared TypeScript play runs with `rote play run`, including no-steps legacy bodies, but a
+legacy or v2 play stays local: `rote registry play push` and `rote registry play pull` refuse it.
+`rote deno run` refuses play files; run plays with `rote play run <play-reference>`. Ordinary
+scripts without play frontmatter still run through `rote deno run`. For the concrete step syntax
+use `rote grammar steps`; the complete assembled artifact lives in
+`rote guidance typescript play-creation`.
 
 ## Requirements Across Interruptions
 
@@ -559,7 +561,7 @@ only when the full companion graph or handoff packet shape is needed.
 - `rote guidance play` - progressive play design tree: `forking` for adapting a Play that almost
   fits, `crystallization` for the semantic plan, `shape` for the DAG, and `testing` for contract
   verification.
-- `rote play info <name-or-path> --json` - canonical local Play record: exact invocation, artifact
+- `rote play info <play-reference> --json` - canonical local Play record: exact invocation, artifact
   location, and parameters. Use it when a local result lacks a runnable command or legacy argument syntax
   needs confirmation. Registry cards use `rote play inspect <reference> --json` instead.
 - `rote play list` - inventory released local plays; do not use an empty search query as inventory.

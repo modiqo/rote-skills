@@ -488,7 +488,7 @@ Say this plainly so the user understands the handoff isn't friction, it's the se
 **Verify with cwd-independent checks only.** Do not run a play or `rote ready` merely to test a
 token: both exercise provider capabilities rather than reporting credential state. Direct adapter
 checks such as `rote ready` require an active workspace, while a `steps:` play must run outside
-every active workspace so its runner can create the DAG workspace. Verify the token itself with:
+every active workspace so its runner can create the run's workspace. Verify the token itself with:
 
 ```bash
 rote powerpack tokens
@@ -598,27 +598,21 @@ path returned by `rote play search "<intent>" --json` (each result's `callabilit
 
 - **Frontmatter has `steps:` (DAG play)** → run it from a directory outside every active rote
   workspace. Use the exact catalog reference from the current search or info invocation.
-  The play runner creates and owns its DAG execution workspace:
+  The play runner creates and owns the workspace for each fresh run:
 
   ```bash
   cd /tmp && rote play run <owner>/<name>@<version> param=value …
   ```
 
-- **No `steps:` (legacy/sequential play — most curated plays)** → `rote play run` too, with the
-  body's positional args rather than named parameters. Run it from the play's own directory so a
-  relative import in the body resolves:
+- **No `steps:` in an authored legacy play** → use its exact catalog reference and positional arguments:
 
   ```bash
-  cd <play directory from rote output> && rote play run main.ts [args…]
+  cd /tmp && rote play run <play-reference> -- [args…]
   ```
 
-  Pass the play's positional args (from the `parameters:` block), e.g.
-  `… main.ts modiqo/rote`. The run executes the body under the bundled Deno from the active rote
-  home. The `cd && rote play run` compound is one logical step. This `cd`s into the play directory
-  outside the project, so
-  make sure the current environment has access if it requires filesystem approval.
+  The bundled Deno runs the selected body. Relative imports resolve from its file, not the caller's directory. Registry-installed legacy stepless plays remain unsupported. Use the current info command's availability result.
 
-When unsure which mode, inspect frontmatter or run `rote play info <name-or-path> --json` first.
+When unsure which mode, inspect frontmatter or run `rote play info <play-reference> --json` first.
 Do not use direct Deno for any play with frontmatter `steps:`.
 
 Show the play's output to the user — that's the payoff.
@@ -639,7 +633,7 @@ adapter call). For single-adapter delegated work, spawn a subagent and tell it t
   for adapter probes or calls that require a workspace cwd (see below);
   `cd /tmp && rote play run <owner>/<name>@<version> param=value` for a `steps:` play, whose runner
   owns the run's workspace (never point that `cd` at an active rote workspace); and
-  `cd <play directory> && rote play run main.ts [args…]` for a legacy no-steps play, which takes
+  `cd /tmp && rote play run <play-reference> -- [args…]` for a legacy no-steps play, which takes
   positional args (step 5 above).
 - **Prefer non-interactive commands in agent-run shells.** Many agent command runners cannot
   answer terminal prompts. The non-interactive switch differs per command: installer →

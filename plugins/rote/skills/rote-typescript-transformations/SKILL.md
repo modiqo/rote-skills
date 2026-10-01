@@ -37,11 +37,9 @@ browser API before checking this version-matched runtime guide.
 
 ## Execution Rules
 
-- Run every TypeScript play through `rote play run`: positional args for a legacy body with no
-  frontmatter `steps:` block, named `key=value` parameters for one that declares `steps:`.
-- Raw `deno` skips the effect plane and provides no presentation input. `rote deno run` reroutes
-  any declared play to the play runner, but do not rely on the reroute — use `rote play run`
-  directly.
+- Run every TypeScript play through `rote play run`: positional args after `--` for a legacy body
+  with no frontmatter `steps:` block, named `key=value` parameters for one that declares `steps:`.
+- `rote deno run` refuses detected play files. Use `rote play run <play-reference>`; ordinary non-play TypeScript scripts still use Deno.
 - Run play files from outside the active workspace.
 - Do not call system `deno` directly.
 - Do not prefix the binary with `~/.rote/bin/`; use `rote` on `PATH`.
@@ -49,7 +47,7 @@ browser API before checking this version-matched runtime guide.
 Typical execution:
 
 ```bash
-rote play run /absolute/path/to/main.ts [args]
+rote play run <play-reference> -- [args]
 ```
 
 Use SDK imports exactly as shown by live rote guidance. Avoid npm-style package assumptions unless

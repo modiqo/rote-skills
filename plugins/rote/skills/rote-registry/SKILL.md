@@ -177,10 +177,6 @@ authorized in this task; ask only when it is missing.
   **adapter** push, remind them it ships config (base URL, auth scheme) — not token values, but
   still worth a glance.
 
-**Order matters: push the adapters first, then the play.** A play push verifies every adapter it
-depends on is already in the target namespace and hard-fails if one is missing — so the adapters
-have to land first.
-
 Before sharing a play, inspect each selected adapter's auth declaration:
 
 ```bash
@@ -195,6 +191,9 @@ version-conflict prediction, and — for plays — dependency reachability) and 
 artifact and report the status to the user, then re-run the *same command without `--dry-run`* to
 actually push to the hub.
 
+If a play preflight reports missing adapters or ambiguous adapter sources, read `rote grammar registry`.
+Publish missing adapters first. For ambiguity, edit development and create a new snapshot as the error directs.
+
 **Adapter** (pack + push):
 ```bash
 rote registry adapter publish <id> <slug> --dry-run   # verify + report; writes nothing
@@ -206,6 +205,9 @@ Add `--private` for a private push (omit for public).
 Release and create a numbered snapshot when needed, using Rote's returned operation reference or
 preparation action. Push the returned snapshot target with the selected namespace and visibility.
 Use the live command's dry run before the registry write. Local snapshot creation is not publication.
+Push, dry run included, refuses a play that `rote play run` refuses (stepless or v2, empty steps,
+undeclared browser runtime, unsupported setup) with that message. Report the blockers; the play
+stays local until it is re-authored as a steps play.
 
 If the target namespace needs a local copy, let the publication commands prepare it. Fork only when
 an editable copy of a managed source is needed. These mechanics do not require separate approval
@@ -247,10 +249,9 @@ Read `data.play_inspect.reference` and `data.play_inspect.execution` from the su
 Present `play_uri` as the URI to share, `bootstrap_uri` as an advertised transition rather than the
 identity of the Play, and `data.play_inspect.reference` separately as the resolved `rote play run`
 reference. Only recommend following the bootstrap transition when
-`data.play_inspect.execution.play_run_eligible` is `true`. When it is
-`false`, describe the
-published reference as inspectable but not executable by `play run`, show the reported blockers,
-and recommend the pull command plus the compatible local runner returned by the push result.
+`data.play_inspect.execution.play_run_eligible` is `true`. It is `false` only for a version
+published before push applied the run gate: describe it as inspectable but refused by `play pull`
+and `play run`, show the reported blockers, and recommend publishing a steps version.
 
 Eligibility and inspection are not execution verification. For an eligible Play, resolve
 representative parameters from the play's tested release contract. Present the inspection summary
