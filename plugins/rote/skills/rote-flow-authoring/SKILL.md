@@ -236,8 +236,10 @@ explicit user request — author
 dependency preflight, and test that legacy body with `rote play run`.
 
 A workspace export is a draft synthesized from one recording, not a finished play. Explicit
-`--params` safely reifies matching literals in typed string fields; auto-detected parameters leave
-recorded bytes unchanged. Before lint, prune inferred parameters outside the contract and fix only
+`--params` reifies a recorded string literal or whole integer field only when it matches the value of
+a same-named variable `rote set` before the call; export names the cause for each declared parameter
+it could not use. Auto-detected parameters leave recorded bytes unchanged. Before lint, prune
+inferred parameters outside the contract and fix only
 the residual step fields or extracted resources named by export warnings. Generalizing parameters
 and the presentation body is expected; changing the shape by hand (adding/removing `steps:` or
 `execution_model`) is not — re-export with the explicit flag instead. The "run the emitted command
