@@ -33,7 +33,7 @@ Core rules:
 - **Never `--yes` create from a discovered spec without a successful `--dry-run` first.** The
   dry-run is the validation gate at every discovery branch.
 - **Never stop at dry-run.** A dry-run emits analysis and creates no adapter. The adapter creation
-  task is incomplete until the real create command succeeds, `rote adapter info <id>` verifies the
+  task is incomplete until the real create command succeeds, `rote adapter info @development/<id>` verifies the
   install, and a readiness probe or explicit skip reason is recorded.
 - **Determine facts from live commands, never from memory.** (If the rote binary isn't on
   PATH, resolve it via the **narrow probe** — check `$HOME/.local/bin/rote` then
@@ -72,7 +72,7 @@ Return this packet when handing the created adapter to another skill:
 - Spec source: catalog id, spec URL, MCP URL, or local file path.
 - Dry-run summary: title, version, base URL, operation/toolset count, auth recommendation.
 - Decisions made: auth scheme, token env var, toolsets, base-url override, grouping.
-- Commands run: dry-run command, create command, `rote adapter info <adapter-id>`, and probe
+- Commands run: dry-run command, create command, `rote adapter info @development/<adapter-id>`, and probe
   command if any.
 - Credential state: configured, terminal handoff pending, OAuth browser pending, or not required.
 - Next owner: tuning, registry share, or daily rote use.
@@ -90,8 +90,8 @@ spec URL / file path)".
 
 **First, rule out an existing adapter.** Once you know which API, run `rote adapter list` as the
 inventory pass. If any listed adapter plausibly matches the target API, run
-`rote adapter info <id>` for each plausible match and use those details to decide whether it already
-covers the target API. If one adapter already covers it, stop — use it, or hand off to
+`rote adapter info <release>` with the reference the list prints for each plausible match, and use
+those details to decide whether it already covers the target API. If one adapter already covers it, stop — use it, or hand off to
 **rote-adapter-config** to tune it (auth, base URL, etc.); only continue to create a new one if the
 user explicitly wants a second. If **several** installed adapters plausibly cover it (e.g. a REST
 and an MCP adapter for the same provider), present them and let the user choose — do not silently
@@ -200,9 +200,9 @@ OAuth/DCR often still appears as a bearer token at runtime.
 |------|---------|-----------|
 | Static bearer/API key | `auth.type` is `bearer`, `api_key_header`, `api_key_query`, or `basic` with no OAuth metadata | Use masked credential handoff. If the user explicitly opts into a terminal command, use `rote token set <ENV> --stdin`. |
 | OAuth client id/secret | OpenAPI `oauth2_schemes`, dry-run `auth_scoring`, or provider docs list authorization-code/client-credentials | Configure the OAuth scheme during create; surface client id/secret, redirect URI, scopes, and token URL requirements. |
-| OAuth DCR / MCP PRM | Catalog entry is MCP, provider advertises dynamic client registration, or MCP handshake redirects to auth | Use `rote adapter new-from-mcp`, then `rote adapter reauth <id>` if needed. Do not ask for a static bearer token. |
-| Google Discovery | Spec source is Google Discovery or adapter is a Google API | Use `rote oauth setup google --adapter <id> --scopes ...`; do not ask for a pasted token. |
-| Unknown installed bearer | Existing adapter reports bearer but the token provenance is unclear | Inspect `rote adapter list <id> --json --health` before advising. OAuth-backed bearers recover with reauth; static bearers use token set. |
+| OAuth DCR / MCP PRM | Catalog entry is MCP, provider advertises dynamic client registration, or MCP handshake redirects to auth | Use `rote adapter new-from-mcp`, then `rote adapter reauth @development/<id>` if needed. Do not ask for a static bearer token. |
+| Google Discovery | Spec source is Google Discovery or adapter is a Google API | Use `rote oauth setup google --adapter @development/<id> --scopes ...`; do not ask for a pasted token. |
+| Unknown installed bearer | Existing adapter reports bearer but the token provenance is unclear | Inspect `rote adapter list <release> --json --health` before advising. OAuth-backed bearers recover with reauth; static bearers use token set. |
 
 ---
 
@@ -318,9 +318,9 @@ Recommended: OAuth2 authorization_code  (provider docs URL)
 - **The token value is a secret** — see Stage 5 for the masked handoff. Research produces
   *how to obtain* it and the *header format*, never the value.
 - **The probe → real call is the final gate — and the fallback arbiter.** Research raises
-  confidence and yields correct setup, but `<id>_probe` only *finds* operations (local
+  confidence and yields correct setup, but `rote probe` only *finds* operations (local
   capability search — it comes back green even with broken auth). What actually proves auth is
-  Stage 6's real `<id>_call` on the probe's top hit. When auth went in unverified (low
+  Stage 6's real `rote call` on the probe's top hit. When auth went in unverified (low
   confidence, no doc-backed confirmation), that call is **mandatory, not offered**: any `4xx`
   whose body reads as an auth/token problem (usually `401`/`403`, but some providers signal a
   wrong header scheme with `400`) means adjust the scheme (`rote adapter auth update`) and
@@ -385,9 +385,9 @@ rote adapter new-from-mcp <id> <mcp-url> --headless
   If MCP creation reports an anonymous catalog, do not treat its tool count as complete; follow
   the emitted store/delete/recreate sequence. See `rote guidance adapters essential` for the
   static-bearer versus OAuth decision. (Same secrets discipline as the setup skill.)
-- **Write guard**: `rote adapter guard init <id>`
-- **Sensitivity**: `rote sensitivity upgrade` (if needed) then `rote sensitivity apply <id> --json`
-- **Capability index**: `rote adapter capability rebuild`
+- **Write guard**: `rote adapter guard init @development/<id>`
+- **Sensitivity**: `rote sensitivity upgrade` (if needed) then `rote sensitivity apply @development/<id> --json`
+- **Explore search data**: `rote adapter capability rebuild`
 
 > Adapter helper templates are opt-in. Do not generate or install one unless the user explicitly
 > asks for a reusable adapter-specific helper.
@@ -397,7 +397,7 @@ rote adapter new-from-mcp <id> <mcp-url> --headless
 ## Stage 6 — Confirm + hand off
 
 ```bash
-rote adapter info <id>
+rote adapter info @development/<id>
 ```
 
 Show it's ready (tools/toolsets/auth). Offer to:
@@ -410,10 +410,10 @@ Show it's ready (tools/toolsets/auth). Offer to:
   rote init proof --seq --force
   ```
   ```bash
-  cd ${ROTE_HOME:-$HOME/.rote}/workspaces/proof && rote <id>_probe "<query>"
+  cd ${ROTE_HOME:-$HOME/.rote}/workspaces/proof && rote probe @development/<id> "<query>"
   ```
   ```bash
-  cd ${ROTE_HOME:-$HOME/.rote}/workspaces/proof && rote <id>_call <top-probe-hit> '<minimal-args>'
+  cd ${ROTE_HOME:-$HOME/.rote}/workspaces/proof && rote call @development/<id> <top-probe-hit> '<minimal-args>'
   ```
   Read the call's verdict by failure class — judge auth by the response *body*, not the status
   code alone. Any whole-response `4xx` whose body points at the token, key, or header format is
@@ -421,7 +421,7 @@ Show it's ready (tools/toolsets/auth). Offer to:
   the scheme (`rote adapter auth update`) and re-call. A single *field* erroring inside an
   otherwise-green GraphQL response is **not** auth — don't touch the scheme; invoke the
   **rote-adapter-config** skill and use its GraphQL field filter
-  (`rote adapter tool-spec <id> --add --action skip --field <Type.field>`), then re-call.
+  (`rote adapter tool-spec @development/<id> --add --action skip --field <Type.field>`), then re-call.
 
 Then offer to:
 - **Tune it** — invoke **rote-adapter-config** for base-url, auth schemes, sensitivity, etc.

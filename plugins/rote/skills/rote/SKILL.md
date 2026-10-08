@@ -52,7 +52,7 @@ MCP calls, provider CLIs, browser automation, registry commands, or custom scrip
   session. If model identity is not visible, skip it rather than guessing.
 - Before installing a catalog adapter, inspect related installed adapters. If an installed adapter
   matches the provider/capability but has a wrong `base_url`, auth, or config, run
-  `rote adapter info`, dry-run the candidate repair with `rote adapter set <id> base_url <url>
+  `rote adapter info`, dry-run the candidate repair with `rote adapter set <release> base_url <url>
   --dry-run`, then apply and probe/call the installed adapter through rote.
 - A successful `--dry-run` is analysis only, not setup completion. Do not answer or proceed as if an
   adapter, play, registry push, or runtime action exists until the non-dry-run command has run and
@@ -91,6 +91,8 @@ fan-out, conditions, ordering, parallelism, and long finite commands are steps c
 only discovered at run time is not a legacy trigger.
 Every declared TypeScript play runs with `rote play run`, including no-steps legacy bodies, but a
 legacy or v2 play stays local: `rote registry play push` and `rote registry play pull` refuse it.
+Push also refuses an adapter-calling play without an `adapters:` map; `rote play upgrade <play>`
+converts its development copy.
 `rote deno run` refuses play files; run plays with `rote play run <play-reference>`. Ordinary
 scripts without play frontmatter still run through `rote deno run`. For the concrete step syntax
 use `rote grammar steps`; the complete assembled artifact lives in

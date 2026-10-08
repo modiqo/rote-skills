@@ -47,8 +47,8 @@ unless the result is a blocker that prevents any safe rote path.
 | --- | --- |
 | Missing model identity | In the workspace, run `rote model set <model> --provider <provider> --confirmed-current` when the current model/provider is known. If unknown, skip rather than fabricate unless the command requires it. |
 | Wrong play path shape | Rerun `rote play search "<intent>" --json` and use the returned `callability.location` verbatim. Do not construct play paths by hand. |
-| Wrong endpoint form | Run `rote inventory`, then use endpoint names exactly as shown. Adapter sessions usually use `adapter/<id>`; shorthand commands use the adapter id with hyphens converted to underscores. |
-| Adapter auth mismatch | Compare `rote adapter catalog info <id>`, `rote adapter info <id>`, and `rote adapter keys <id>`. Leave the workspace for adapter auth updates when rote says to. |
+| Wrong endpoint form | Run `rote inventory`, then use endpoint names exactly as shown. Adapter endpoints use `adapter/<release>`; `rote probe`, `rote call`, and `rote batch-call` take the bare `<release>` from `rote adapter list`, with the version. |
+| Adapter auth mismatch | Compare `rote adapter catalog info <id>`, `rote adapter info <release>`, and `rote adapter keys <release>`. Leave the workspace for adapter auth updates when rote says to. |
 | Adapter base URL mismatch | Inspect installed adapter config before catalog install. If the installed provider-equivalent adapter has the wrong base URL, route to `rote-adapter-config`, repair it, then rerun the original probe/call. |
 | Stale subagent workspace context | Do not delegate after workspace calls start. Require workspace name, response IDs, result, and save-gate status before continuing. |
 | Catalog-search drift | Run `rote adapter catalog search "<intent>"` before direct MCP, WebFetch, curl, or scripts when no installed adapter fits. |

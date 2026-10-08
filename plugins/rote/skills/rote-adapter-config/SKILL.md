@@ -1,11 +1,11 @@
 ---
 name: rote-adapter-config
 description: >
-  Tune an existing rote adapter — auth, base URL, write guard, sensitivity, capability index,
+  Tune an existing rote adapter — auth, base URL, write guard, sensitivity, explore search data,
   OAuth re-auth, GraphQL field filter, policies, adapter guidance, grouping, versioning. A menu
   of small show → confirm → apply → re-show operations on an adapter you already created. Use
   when the user says "configure <adapter>", "change the base url", "re-auth notion", "rebuild
-  the capability index", "enable an auth scheme", or "set up sensitivity / write guard". For
+  the explore search data", "enable an auth scheme", or "set up sensitivity / write guard". For
   creating a NEW adapter, use rote-adapter-create instead.
 ---
 
@@ -40,7 +40,7 @@ Rules:
 ## Handoff Contract
 
 - Use when: the user wants to tune an existing adapter's auth, base URL, write guard, sensitivity,
-  OAuth session, GraphQL field filter, capability index, policies, grouping, or version.
+  OAuth session, GraphQL field filter, explore search data, policies, grouping, or version.
 - Preconditions: the adapter already exists; the requested operation can be mapped to a live `rote`
   command; secrets will be handled only through masked terminal handoff or explicit opt-in.
 - Owns: the show -> confirm -> apply -> re-show loop for one adapter configuration operation at a
@@ -60,16 +60,18 @@ Rules:
 
 ## Open — show current state
 
-Identify the adapter and show what's there now:
+Identify the adapter and show what's there now. Every command below takes the release reference
+that `rote adapter list` prints (`<publisher>/<name>@<version>` or `@development/<name>`); the
+version is always required.
 
 ```bash
 rote adapter list
 ```
 ```bash
-rote adapter info <id>
+rote adapter info <release>
 ```
 ```bash
-rote adapter keys <id> --json
+rote adapter keys <release> --json
 ```
 
 Then present the operation menu. Run only what the user picks; re-show the relevant state after
@@ -85,10 +87,10 @@ bearer env var, so never treat "Bearer" alone as proof of a static token.
 | Shape | How to recognize | Correct repair |
 |------|------------------|----------------|
 | Static bearer/API key | Health shows missing static env var or user is rotating a known API key | Use masked terminal handoff or `rote token set <ENV> --stdin`; never echo the value. |
-| OAuth client id/secret | Scheme metadata is OAuth2 or OpenAPI `oauth2_schemes` is present | Use `rote adapter auth scheme add <id> <scheme> [descriptor] --oauth2` when adding a scheme, or rerun the create flow if the whole adapter must change. |
-| OAuth DCR / MCP PRM | Token metadata says OAuth/DCR, MCP auth redirects, or provider registration was dynamic | Use `rote adapter reauth <id> [--scheme <name>]`; use `rote adapter reauth <id> --force-reregister` only when the provider pruned the dynamic client. |
-| Google Discovery | Google API adapter, or the manifest declares `google_discovery` setup | Use `rote oauth setup google --adapter <id> --scopes ...`; do not ask for a pasted bearer token. |
-| Unknown bearer | Installed adapter reports bearer but provenance is unclear | Run `rote adapter list <id> --json --health` before advising token set vs reauth. |
+| OAuth client id/secret | Scheme metadata is OAuth2 or OpenAPI `oauth2_schemes` is present | Use `rote adapter auth scheme add <release> <scheme> [descriptor] --oauth2` when adding a scheme, or rerun the create flow if the whole adapter must change. |
+| OAuth DCR / MCP PRM | Token metadata says OAuth/DCR, MCP auth redirects, or provider registration was dynamic | Use `rote adapter reauth <release> [--scheme <name>]`; use `rote adapter reauth <release> --force-reregister` only when the provider pruned the dynamic client. |
+| Google Discovery | Google API adapter, or the manifest declares `google_discovery` setup | Use `rote oauth setup google --adapter <release> --scopes ...`; do not ask for a pasted bearer token. |
+| Unknown bearer | Installed adapter reports bearer but provenance is unclear | Run `rote adapter list <release> --json --health` before advising token set vs reauth. |
 
 ---
 
@@ -97,16 +99,28 @@ bearer env var, so never treat "Bearer" alone as proof of a static token.
 ### Settable keys — base URL, name, description, tags, sensitivity tier
 
 ```bash
-rote adapter set <id> base_url <url>
+rote adapter set <release> base_url <url>
 ```
 Other settable keys (same command): `name`, `description`, `tags` (csv),
 `sensitivity_tier` (`low|medium|high`), `additional_headers.<name>` (`""` deletes),
-`enable_parameter_cleaning` (bool). Check current values first with `rote adapter keys <id>`.
+`enable_parameter_cleaning` (bool). Check current values first with `rote adapter keys <release>`.
+A registry release refuses `name`, `description`, `tags`, and `bump`, and keeps the other
+settings in its config overlay (`rote guidance adapters essential`). To change a refused field,
+fork the release into an editable development adapter, then re-show `rote adapter info` for the
+returned reference and edit that:
+
+```bash
+rote adapter fork <publisher>/<name>@<version> [name]   # -> @development/<name>; name defaults to the release's
+```
+The fork's manifest takes the release's settings, `info` shows `Forked from:`, and the release is
+left unchanged. A fork under another name records its own fingerprint, so only the release's
+bundled default policy applies to it; re-add other policies with `rote policy add`. Fork refuses
+when `@development/<name>` already exists; pass another name.
 
 ### Auth — single scheme
 
 ```bash
-rote adapter auth update <id> --bearer-token <ENV_VAR>
+rote adapter auth update <release> --bearer-token <ENV_VAR>
 ```
 Variants: `--api-key-header <name=ENV>`, `--api-key-query <name=ENV>`, `--basic <USER_ENV>`
 (password read from `<USER_ENV>_PASSWORD`, or `--basic <USER_ENV>=<PASS_ENV>` to name both),
@@ -118,18 +132,18 @@ token.
 ### Auth — multi-scheme (per-operation adapters)
 
 ```bash
-rote adapter auth scheme list <id>
+rote adapter auth scheme list <release>
 ```
 ```bash
-rote adapter auth scheme enable <id> <scheme>      # idempotent; descriptor optional
-rote adapter auth scheme add <id> <scheme> [descriptor]   # (re-)binds + runs credential flow
-rote adapter auth scheme disable <id> <scheme> [--force]  # --force to disable the default
+rote adapter auth scheme enable <release> <scheme>      # idempotent; descriptor optional
+rote adapter auth scheme add <release> <scheme> [descriptor]   # (re-)binds + runs credential flow
+rote adapter auth scheme disable <release> <scheme> [--force]  # --force to disable the default
 ```
 
 ### Re-authorize OAuth
 
 ```bash
-rote adapter reauth <id> [--scheme <name>] [--force-reregister]
+rote adapter reauth <release> [--scheme <name>] [--force-reregister]
 ```
 For an installed MCP adapter with a missing DCR credential, this registers and authorizes in place;
 it does not recreate the adapter. `--force-reregister` re-runs DCR when the provider pruned the
@@ -138,8 +152,8 @@ client (rare).
 ### Write guard
 
 ```bash
-rote adapter guard show <id>
-rote adapter guard init <id>
+rote adapter guard show <release>
+rote adapter guard init <release>
 ```
 `init` generates `write_guard.json` from the adapter's tools (allow/confirm/deny gradient).
 **There is no first-class "disable" command** — say so; disabling means removing the guard
@@ -149,11 +163,16 @@ files manually.
 
 ```bash
 rote sensitivity upgrade            # download/update the index (first time)
-rote sensitivity apply <id> --json  # classify this adapter's fields
-rote sensitivity lookup <id> --json # show current classification
+rote sensitivity apply <release> --json  # classify this adapter's fields
+rote sensitivity lookup <release> --json # show current classification
 ```
 
-### Capability index
+### Explore search data
+
+`rote explore` reads each adapter's tool index and the IDF cache; `status` reports which are
+missing and the fix for each. `rebuild` rebuilds the IDF cache and development tool indexes; a
+registry release keeps the tool index it shipped with, so restore it with
+`rote registry adapter pull <release>`.
 
 ```bash
 rote adapter capability status
@@ -163,7 +182,7 @@ rote adapter capability rebuild
 ### GraphQL field filter (GraphQL adapters only)
 
 ```bash
-rote adapter tool-spec <id> --show
+rote adapter tool-spec <release> --show
 ```
 Then `--add` / `--rm <INDEX>` / `--action <skip|keep>` with `--tool`/`--type`/`--field`/
 `--desc-prefix`/`--desc-contains` to scope which fields the selection set requests. Skip
@@ -172,16 +191,18 @@ entirely for non-GraphQL adapters.
 ### Policies (rate limit, cost, retry, cache, circuit breaker)
 
 ```bash
-rote adapter policies <id>
+rote adapter policies <release>
 ```
-Generate from a preset: `rote adapter policies <id> --generate --preset <github|conservative|custom>`.
+Generate from a preset: `rote adapter policies <release> --generate --preset <github|conservative|custom>`.
 
 ### Group / version
 
 ```bash
-rote adapter group set <id> <group>     # also: group unset <id>, group list
-rote adapter bump <id> [--minor|--major]
+rote adapter group set <release> <group>     # also: group unset <release>, group list
+rote adapter bump <release> [--minor|--major]
 ```
+`bump` takes a development adapter only; a registry release's version is fixed as published. Fork
+it first (`rote adapter fork <release> [name]`) and bump the returned `@development/<name>`.
 
 ---
 

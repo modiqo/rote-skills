@@ -37,11 +37,12 @@ If live grammar conflicts with this skill, live grammar wins.
 Start in `rote-workspace`, then inspect before calling:
 
 ```bash
-rote <adapter_id>_probe "<operation intent>"
-rote <adapter_id>_call <operation> '<args-json>'
+rote probe <release> "<operation intent>"
+rote call <release> <operation> '<args-json>'
 ```
 
-Convert hyphenated adapter IDs to underscores in the command name. Read the full probe response,
+`<release>` is the exact reference from `rote adapter list` (`<publisher>/<name>@<version>` or
+`@development/<name>`); the version is always required. Read the full probe response,
 copy the exact operation name and required JSON shape, then call through rote. Read `@@next`,
 `@@mandatory`, `@@plays`, warnings, and cached response ids before continuing.
 

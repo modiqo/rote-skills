@@ -101,14 +101,13 @@ Use live help for current syntax:
 Typical sequence:
 
 ```bash
-rote <adapter_id>_probe "<operation intent>"
-rote <adapter_id>_call <tool-or-operation> '<args-json>'
+rote probe <release> "<operation intent>"
+rote call <release> <tool-or-operation> '<args-json>'
 rote query @1 '<jq-filter>' -r
 ```
 
-Use adapter shorthand commands that rote installs for each adapter. Convert hyphenated adapter IDs
-to underscores in the command name. Probe first, read the exact tool name and input schema, then call
-that tool with JSON arguments. Add `-s` or `--session` when the operation needs session state.
+Pass the exact release reference that `rote adapter list` prints. Probe first, read the exact tool
+name and input schema, then call that tool with JSON arguments. Add `-s` or `--session` when the operation needs session state.
 
 Use cached `@N` response IDs instead of copying large JSON between commands. If a response suggests
 a play through `@@plays`, pause adapter exploration and return to `rote-flow-run`.

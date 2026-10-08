@@ -90,7 +90,8 @@ Read the full response before acting:
 - If `@@plays` names a usable existing play, hand off to `rote-flow-run`.
 - If the uncovered work is local CLI, files, logs, build/test/release checks, generated artifacts,
   or process lifecycle, hand off to `rote-shell`.
-- If the response identifies one installed adapter, choose the single-adapter branch.
+- If the response identifies one installed adapter, choose the single-adapter branch. A row that
+  lists several release references is one contract, so it counts as one adapter.
 - If the response requires multiple adapters or orchestration, keep the work in the main agent and
   use `rote-workspace`.
 - If explore says no tools or no installed adapter fits, run an installed-adapter inventory before
@@ -98,7 +99,7 @@ Read the full response before acting:
 
 ```bash
 rote adapter list
-rote adapter info <candidate-id>
+rote adapter info <release>
 ```
 
 Use this inventory to find provider-equivalent adapters that need repair. Search the catalog only
@@ -203,8 +204,8 @@ call it through rote before direct MCP, WebFetch, curl, or custom scripts.
 If you use `rote adapter new <id> ... --dry-run`, treat the result as a preflight only. The adapter
 is not installed, its probe/call commands do not exist yet, and the task cannot be complete. Hand
 off to `rote-adapter-create` for the real install (it follows the catalog-provided command,
-including the MCP route), verify with `rote adapter info <id>` or `rote adapter list`, then run
-`<id>_probe` and `<id>_call` for the required capability before answering.
+including the MCP route), verify with `rote adapter info @development/<id>` or `rote adapter list`, then run
+`rote probe` and `rote call` against that reference for the required capability before answering.
 
 Do not use catalog install to dodge a repairable installed adapter. A newly installed adjacent
 adapter is a regression when the task expects the installed adapter's config to be fixed.

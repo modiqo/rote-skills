@@ -28,7 +28,7 @@ Consume this packet from `rote`, `rote-task-routing`, or a generated adapter hel
 
 - Origin skill: `rote`, `rote-task-routing`, `rote-workspace`, or a generated helper.
 - Target skill: `rote-using-adapters`.
-- Adapter: `<adapter-id>`.
+- Adapter: `<release>` (the reference `rote adapter list` prints).
 - Task: the user request being delegated.
 - Existing workspace: path, only for resumptions.
 - Cached responses: `@N` ids and their meanings, if any.
@@ -57,7 +57,7 @@ Consume this packet from `rote`, `rote-task-routing`, or a generated adapter hel
 If probe/call fails for missing or invalid auth, classify before advising:
 
 ```bash
-rote adapter list <id> --json --health
+rote adapter list <release> --json --health
 ```
 
 - Do not assume Bearer means static token. OAuth, OAuth DCR / MCP PRM, and Google Discovery can
@@ -65,8 +65,8 @@ rote adapter list <id> --json --health
 - Static bearer/API key: hand off to masked credential entry or `rote token set <ENV> --stdin`
   only as explicit terminal opt-in.
 - OAuth client id/secret or OAuth DCR / MCP PRM: return a blocker recommending
-  `rote adapter reauth <id>` or `rote adapter reauth <id> --scheme <name>`.
-- Google Discovery: return a blocker recommending `rote oauth setup google --adapter <id> --scopes ...`.
+  `rote adapter reauth <release>` or `rote adapter reauth <release> --scheme <name>`.
+- Google Discovery: return a blocker recommending `rote oauth setup google --adapter <release> --scopes ...`.
 - Unknown bearer: report the health output and route to `rote-adapter-config`; do not request a
   pasted token.
 
@@ -124,17 +124,18 @@ invent values.
 Find the exact operation and input schema:
 
 ```bash
-rote <adapter_id>_probe "<natural language operation>"
+rote probe <release> "<natural language operation>"
 ```
 
-Hyphens in the adapter id become underscores in the command name (`my-api` → `my_api_probe`).
+`<release>` is the exact reference from `rote adapter list`: `<publisher>/<name>@<version>` for a
+registry release, `@development/<name>` for a development adapter. The version is always required.
 Use the exact operation name from the probe result. Read required parameters, optional
 parameters, and response shape before making the call.
 
 Then call through rote:
 
 ```bash
-rote <adapter_id>_call <operation_name> '{"param": "value"}' -s
+rote call <release> <operation_name> '{"param": "value"}' -s
 ```
 
 Use `-s` when the adapter may need session state.
@@ -205,7 +206,7 @@ follow-up:
 
 - Active skill: `rote-using-adapters`
 - Origin skill: `rote` or delegated helper
-- Adapter: <adapter-id>
+- Adapter: <release>
 - User intent: ...
 - Workspace path: ...
 - Commands run: probe/call/query commands
@@ -223,12 +224,15 @@ follow-up:
 In the default steps + presentation play, registered adapter effects belong in frontmatter `steps:`. The
 `steps_with_presentation` body imports only `__ROTE_PRESENTATION_SDK__` and reads typed recorded
 observations plus `ctx.params`; it must not call adapters, `fetch`, Deno file APIs, or
-subprocesses. An adapter step is `endpoint` + `method` + `params` with `$param` substitution:
+subprocesses. The top-level `adapters:` map pins each release under an adapter key, and an adapter
+step is `adapter` (the key) + `method` + `params` with `$param` substitution:
 
 ```yaml
+adapters:
+  github: orga/github@1.0.0
 steps:
   fetch_issues:
-    endpoint: adapter/github
+    adapter: github
     method: issues/list-for-repo
     params: { owner: $owner, repo: $repo, per_page: $limit }
 ```

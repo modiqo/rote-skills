@@ -344,7 +344,7 @@ choices when the environment supports it:
 | **Build an adapter** | Catalog / web / local spec → dry-run-first create. **Delegates to `rote-adapter-create`.** | invoke the `rote-adapter-create` skill |
 | **Configure an adapter** | Tune auth, base-url, sensitivity, guard, etc. **Delegates to `rote-adapter-config`.** | invoke the `rote-adapter-config` skill |
 | **Set up credentials** | Token wizard for installed adapters. **Secrets — see 3c.** | `rote powerpack credentials` (run in user's own terminal) |
-| **Connect Google (OAuth)** | Browser OAuth for Google adapters (gmail/calendar). **Non-interactive — see 3d.** | `rote oauth setup google --adapter <id> --scopes <list>` |
+| **Connect Google (OAuth)** | Browser OAuth for Google adapters (gmail/calendar). **Non-interactive — see 3d.** | `rote oauth setup google --adapter <release> --scopes <list>` |
 | **Install the agent skill** | Installs the rote skills for supported local agents. | `rote install skill` |
 | **Explore / learn** | Onboarding tree + human-friendly help. | `rote how`, then `rote human` |
 
@@ -382,7 +382,9 @@ rote registry adapter pull bootstrap/github --yes
 
 `--yes` keeps it non-interactive. After each, note whether it needs a credential and carry
 that into Step 3c. Then reindex once at the end if needed (`rote adapter list` to confirm
-ready state). Adapters that need an API token will surface their env var name; Google
+ready state). `rote adapter list` prints each release reference, e.g. `modiqo/github@1.0.0`
+(`bootstrap` is an alias for `modiqo` and never appears in a reference). Later commands take that
+exact reference; the version is always required. Adapters that need an API token will surface their env var name; Google
 adapters (gmail/calendar) use OAuth via Step 3d, not a static token.
 
 **Credential gate — do NOT proceed past an unset required token** (real bug: an adapter was
@@ -405,16 +407,19 @@ adapter — its curated plays are separate, and the value-proof closer (Step 5) 
 least one play present. For each adapter just installed, find and pull its plays:
 
 ```bash
-rote registry play find-by-adapter github
+rote registry play find-by-adapter modiqo/github@1.0.0
 ```
 
-That lists `<org>/<name>` plays associated with the adapter (e.g.
-`modiqo/list-top-committers`, `modiqo/retrieve-recent-emails`,
-`modiqo/check-calendar-meetings`). Pull them non-interactively — `--yes` is **required**
-because the pull confirmation prompt may not work in an agent-run command:
+Pass the release reference `rote adapter list` printed for that adapter; a `@development/<name>`
+reference is refused. It prints one `<org>/<name>@<version>` line per play, at the newest version
+that uses that release (e.g. `modiqo/list-top-committers@1.2.0`): its published `adapter_releases`
+names the release, or, for a play published without them, its dependencies require the release's
+fingerprint.
+Pull each by the exact line it printed, non-interactively. `--yes` is **required** because the
+pull confirmation prompt may not work in an agent-run command:
 
 ```bash
-rote registry play pull modiqo/list-top-committers --yes
+rote registry play pull modiqo/list-top-committers@1.2.0 --yes
 ```
 
 Pull a couple of the most useful per adapter (don't bulk-pull all of them). These land in
@@ -440,9 +445,9 @@ These credential shapes are handled differently:
 |------|----------|-----------------|
 | Static bearer/API key | github `GITHUB_TOKEN`, linear `LINEAR_API_TOKEN`, stripe | Use masked terminal handoff; `rote token set <ENV> --stdin` only as explicit terminal opt-in. |
 | OAuth client id/secret | OAuth2 OpenAPI adapters with `oauth2_schemes` | Register the app, collect client id/secret through the OAuth flow, and avoid pasted bearer tokens. |
-| OAuth DCR / MCP PRM | MCP adapters with automatic browser redirect and dynamic registration | Pull/create the adapter, then run `rote adapter reauth <name>` if auth is not already complete. |
-| Google Discovery | gmail, calendar, drive | Use `rote oauth setup google --adapter <id> --scopes ...`; no static token. |
-| Unknown installed bearer | Existing adapter says bearer but provenance is unclear | Run `rote adapter list <id> --json --health` before telling the user to set a token. |
+| OAuth DCR / MCP PRM | MCP adapters with automatic browser redirect and dynamic registration | Pull/create the adapter, then run `rote adapter reauth <release>` if auth is not already complete. |
+| Google Discovery | gmail, calendar, drive | Use `rote oauth setup google --adapter <release> --scopes ...`; no static token. |
+| Unknown installed bearer | Existing adapter says bearer but provenance is unclear | Run `rote adapter list <release> --json --health` before telling the user to set a token. |
 
 - **Browser-OAuth adapters** → no static token at all; the browser redirect keeps the secret out
   of chat and command history. Always prefer this shape when the adapter supports it. For Google
@@ -504,8 +509,8 @@ do you need?"). Drive it non-interactively with **`--adapter` and `--scopes`** �
 adapter, passing only that adapter's scopes:
 
 ```bash
-rote oauth setup google --adapter gmail --scopes gmail.readonly
-rote oauth setup google --adapter calendar --scopes calendar.calendarlist.readonly,calendar.calendars.readonly,calendar.events.readonly,calendar.events.freebusy
+rote oauth setup google --adapter modiqo/gmail@1.4.0 --scopes gmail.readonly
+rote oauth setup google --adapter modiqo/calendar@1.2.0 --scopes calendar.calendarlist.readonly,calendar.calendars.readonly,calendar.events.readonly,calendar.events.freebusy
 ```
 
 `--adapter` stores the grant in the credential that adapter declares (`GMAIL_TOKEN`,
@@ -519,7 +524,7 @@ Scopes are comma-separated, no spaces, and belong to the adapters being authoriz
 before the browser opens. Adapters sharing one credential share one grant, so a scope any of them
 uses is accepted. When any of those adapters declares no scope profile the run warns instead of
 refusing, and the requested scopes are stored unchecked. Each run opens a **browser** for the Google consent screen; tell
-the user to complete it there, then confirm with `rote adapter list <adapter-id> --json --health`
+the user to complete it there, then confirm with `rote adapter list <release> --json --health`
 — that proves a refreshable credential exists, not which scopes it carries.
 
 ### Step 3e — OAuth DCR adapters (reference)
@@ -528,7 +533,7 @@ Some MCP adapters authenticate via **OAuth Dynamic Client Registration (DCR)** r
 a static token — for those, after `rote registry adapter pull bootstrap/<name> --yes`, run:
 
 ```bash
-rote adapter reauth <name>
+rote adapter reauth <release>
 ```
 
 The first run registers a DCR client (RFC 7591) and opens a PKCE browser play; tell the
@@ -568,10 +573,10 @@ Use the `rote-flow-run` execution rules when a matched play owns the proof. The 
 applied here:
 
 **1. Find a play for a credentialed adapter.** Use `rote explore "<intent>"` to discover what
-can handle the intent, and/or list adapter-matched plays:
+can handle the intent, and/or list adapter-matched plays for its release reference:
 
 ```bash
-rote registry play find-by-adapter github
+rote registry play find-by-adapter modiqo/github@1.0.0
 ```
 
 **Only pick a play whose adapter's credential is actually configured** (you verified this with
@@ -581,10 +586,11 @@ write/create plays for the proof.
 
 **2. Let the user pick one.**
 
-**3. Ensure it's pulled.** If not already local, pull it (`--yes` required):
+**3. Ensure it's pulled.** If not already local, pull the exact reference `find-by-adapter`
+printed (`--yes` required):
 
 ```bash
-rote registry play pull modiqo/list-top-committers --yes
+rote registry play pull modiqo/list-top-committers@1.2.0 --yes
 ```
 
 **4. Read the frontmatter — for BOTH the params AND the execution mode.** Read the play at the
@@ -621,7 +627,7 @@ Show the play's output to the user — that's the payoff.
 
 Suggest the main **rote** skill for day-to-day use (`rote play search "<intent>"` before any direct
 adapter call). For single-adapter delegated work, spawn a subagent and tell it to use
-**rote-using-adapters** with the adapter id and task.
+**rote-using-adapters** with the release reference and task.
 
 ---
 
@@ -649,7 +655,7 @@ adapter call). For single-adapter delegated work, spawn a subagent and tell it t
   with a rotate-afterward warning. Never echo a token back or read the secrets dir.
 - **Verify without a workspace where possible.** To check a credential, use
   `rote powerpack tokens` / `rote token get` — these work anywhere. But **anything that probes
-  an adapter or calls an API directly needs a workspace cwd** (`rote <adapter-id>_probe`,
+  an adapter or calls an API directly needs a workspace cwd** (`rote probe <release>`,
   `rote ready`, `rote POST`) — outside one they fail with
   `not in a workspace directory` / `Permission denied (os error 13)`.
 - **Running a workspace-scoped command (the correct pattern).** Do not assume the command runner
@@ -659,7 +665,7 @@ adapter call). For single-adapter delegated work, spawn a subagent and tell it t
 
   ```bash
   rote init proof --seq --force
-  cd ${ROTE_HOME:-$HOME/.rote}/workspaces/proof && rote <adapter-id>_probe "<intent>"
+  cd ${ROTE_HOME:-$HOME/.rote}/workspaces/proof && rote probe <release> "<intent>"
   ```
 
   The workspace lives at `${ROTE_HOME:-$HOME/.rote}/workspaces/<name>`. This `cd && rote …` compound is a

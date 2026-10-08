@@ -39,8 +39,8 @@ managed play in place or use `rote play run` as an installation shortcut for a f
 - For a registry card, preserve its exact pinned `owner/name@version` reference. Run the printed
   `rote play inspect <reference>` command and obey its blockers. Use its `rote play run <reference>`
   action only when the play will run unchanged. The runner verifies an installed copy or installs
-  and converges a missing one. `--dry-run` needs an installed version; for an uninstalled registry
-  play use `rote play inspect <reference>`.
+  and converges a missing one, installing exactly the adapter releases the play pins. `--dry-run`
+  needs an installed version; for an uninstalled registry play use `rote play inspect <reference>`.
 - Before executing a partial match, decide whether its behavior can remain unchanged. For a behavior
   change, report whether the exact numbered source is already local. Send an uninstalled registry
   result to `rote-registry`; send an exact local source to `rote-flow-authoring`. Neither route runs
@@ -154,6 +154,11 @@ If a legacy body needs tracked workspace responses, return that limitation. `rot
 - If local JSON lookup is unavailable, resolve the Play from rote's local listing and inspect only
   its frontmatter for parameters.
 - Prefer upgrading rote or using live `rote grammar` guidance over filesystem searches.
+- If a run fails with `` adapter/<name> is not pinned; run `rote play upgrade <play>` ``, run that
+  upgrade, then rerun the play unchanged. Upgrade pins the one installed release or development
+  adapter with each name, so the steps call what they called before. When it lists zero or several
+  candidates, it wrote nothing: return the candidates as the blocker and do not pick one. Pinning a
+  chosen release is an authoring edit (`rote guidance typescript play-creation`).
 - If execution is unsafe or parameters are missing, stop play execution and return the reason plus
   the preserved state. A behavior-changing partial match returns its source and installation state
   to the next owner without baseline execution.

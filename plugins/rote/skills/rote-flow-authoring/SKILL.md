@@ -99,10 +99,18 @@ Hard rules for reusable adapter parameters:
   passthrough flag such as `--filter` or `--body` unless live guidance says not to.
 - Keep frontmatter parameters in lockstep with CLI flags: same names, types, defaults, required
   state, and descriptions that mention the underlying API field.
-- For a schema-1 steps play, declare every single-segment `adapter/<id>` used by `steps[].endpoint`
-  in `metadata.requires_endpoints` or the matching `metadata.mcp_servers` key. Fix
-  `FLOW_ENDPOINT_UNDECLARED` before release. Schema-2 plays use their `adapter:` declaration. See
-  `rote guidance typescript play-creation` for declaration forms.
+- A steps play that calls adapters is a pinned play: its top-level `adapters:` map pins one exact
+  release per adapter key (`github: orga/github@1.0.0`, or `my-api: "@development/my-api"` for an
+  adapter you created or forked), and every adapter step, auth steps included, names its key with
+  `adapter:`. A pinned play rejects `requires_endpoints` adapter entries, `mcp_servers`,
+  `adapter_sources`, and step `endpoint: adapter/…`. To move to a newer release, edit its
+  `adapters:` line, then release and bump. Keep a development pin for publication: play push
+  publishes that adapter with the play, so never push it first. Do not author legacy plays (no
+  `adapters:` map). Convert one with `rote play upgrade <play>`, the command its
+  `adapter/<name> is not pinned` run error names; in one that stays legacy, fix
+  `FLOW_ENDPOINT_UNDECLARED` by declaring the step's `adapter/<name>` in
+  `metadata.requires_endpoints`. See `rote guidance typescript play-creation` for keys, the
+  scheme-2 entry, the development-pin push, and upgrade.
 - Test different server-side dimensions, not only the same pagination or output knob with different
   values.
 
@@ -158,16 +166,18 @@ parameters:            # top level, not under metadata:
   required: true
   description: "GitHub repository owner"
 # …declares other parameters (root, repo, title, head) in a similar way
+adapters:              # top level: one exact release per adapter key
+  github: orga/github@1.0.0
 steps:
   changelog:                          # local command: typed process.exec, argv list
     type: process.exec
     argv: [git, -C, $root, log, --oneline, -n, "20"]
-  create_pr:                          # adapter call: endpoint + method + params
-    endpoint: adapter/github
+  create_pr:                          # adapter call: adapter key + method + params
+    adapter: github
     method: pulls/create
     params: { owner: $owner, repo: $repo, title: $title, head: $head, base: main }
-  verify_pr:                          # adapter call: endpoint + method + params, consumes create_pr's unwrapped body
-    endpoint: adapter/github
+  verify_pr:                          # adapter call, consumes create_pr's unwrapped body
+    adapter: github
     method: pulls/get
     depends_on: [create_pr]
     params: { owner: $owner, repo: $repo, pull_number: "@create_pr{.number}" }
@@ -208,9 +218,11 @@ that handoff. A declined decision has already discarded the pending stub; an unc
 back in crystallization. Never interpret approval independently in this skill.
 
 The emitted scaffold command already encodes the pending artifact's steps + presentation shape. Run it
-unchanged, exactly once. Never append shape flags, rebuild it from memory, or replace it with a second
+unchanged, exactly once per draft. Never append shape flags, rebuild it from memory, or replace it with a second
 scaffold command; doing so can discard the recorded adapters, browser sessions, workspace, or
-execution model. Crystallization and substrate skills preserve this command but never execute it.
+execution model. To re-scaffold after `rote skip <seq>`, delete the draft by its exact reference,
+as the scaffold notes print it (`rote play delete <owner>/<name>@development`), and run the same
+command again. Crystallization and substrate skills preserve this command but never execute it.
 
 For adapter-backed or mixed adapter/shell work, "save this" means preserve workspace history, run
 pending write/save, and scaffold from rote with `rote play template create`. It does not authorize
@@ -238,9 +250,10 @@ dependency preflight, and test that legacy body with `rote play run`.
 A workspace export is a draft synthesized from one recording, not a finished play. Explicit
 `--params` reifies a recorded string literal or whole integer field only when it matches the value of
 a same-named variable `rote set` before the call; export names the cause for each declared parameter
-it could not use. Auto-detected parameters leave recorded bytes unchanged. Before lint, prune
-inferred parameters outside the contract and fix only
-the residual step fields or extracted resources named by export warnings. Generalizing parameters
+it could not use. Auto-detected parameters leave recorded bytes unchanged. Before lint, resolve the
+suspect steps the notes list (`rote guidance play crystallization`), prune inferred parameters
+outside the contract, and fix only the residual step fields or extracted resources named by export
+warnings. Generalizing parameters
 and the presentation body is expected; changing the shape by hand (adding/removing `steps:` or
 `execution_model`) is not — re-export with the explicit flag instead. The "run the emitted command
 unchanged" rule protects the pending-save *scaffold command*, not the exported artifact.
@@ -305,7 +318,7 @@ never runs shell SDK calls. Only an explicit no-steps legacy body uses `rote.exe
 `rote.execBackground`, `rote.followFile`, and related wrappers. Never add raw child-process code,
 shell pipelines, inline script snippets, or `rote proc run` to either body.
 
-When the implementation needs provider/API data, default steps + presentation plays put adapter endpoint/method
+When the implementation needs provider/API data, default steps + presentation plays put adapter key/method
 calls in frontmatter `steps:` and presentation reads their typed observations. Only an explicit
 legacy body uses adapter handles returned by `runPreflight`. Do not add raw HTTP fetches to bypass
 missing adapter setup; fix the adapter route or hand back to `rote-task-routing`.
@@ -336,7 +349,10 @@ cd /tmp && rote play run <play-reference> -- [args]
 ```
 
 The DAG runner takes named `key=value` parameters; the legacy body takes its declared positional
-argument order.
+argument order, and named parameters passed to it fill that order. Every name must be declared:
+`rote play run` refuses undeclared or repeated names and values outside declared choices. A bare
+`--` ends named parameters: the legacy body receives every later token verbatim as a raw argument,
+and a DAG play refuses them.
 
 Whichever runner applies, cover the common case, empty or no-result case, optional defaults, and
 at least one user-provided edge case. For every process-backed play, also run a deliberately fatal

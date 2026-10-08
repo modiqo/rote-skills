@@ -68,7 +68,7 @@ Typical shape:
 ```bash
 rote play pending write <workspace-name> \
   --name <suggested-play-name> \
-  --adapter <adapter-id> \
+  --adapter <release> \
   --description "<one-sentence purpose>" \
   --query '<validated jq query>' \
   --response-path '<validated jq path>' \

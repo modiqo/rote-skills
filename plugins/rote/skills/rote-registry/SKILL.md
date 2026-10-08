@@ -139,7 +139,7 @@ Then check the selected namespace in Stage 2.
 For an **adapter** named `<id>`, compare the local fingerprint to what's published per org:
 
 ```bash
-rote adapter info <id>
+rote adapter info @development/<id>
 ```
 (grab the `Fingerprint` and `Version` lines from the output), then for each org slug:
 ```bash
@@ -180,7 +180,7 @@ authorized in this task; ask only when it is missing.
 Before sharing a play, inspect each selected adapter's auth declaration:
 
 ```bash
-rote adapter info <id> --json
+rote adapter info <release> --json
 ```
 
 Use the selected release's auth declaration for credential setup. Catalog vendor links are optional and never block publication. Keep credential values local.
@@ -191,15 +191,15 @@ version-conflict prediction, and — for plays — dependency reachability) and 
 artifact and report the status to the user, then re-run the *same command without `--dry-run`* to
 actually push to the hub.
 
-If a play preflight reports missing adapters or ambiguous adapter sources, read `rote grammar registry`.
-Publish missing adapters first. For ambiguity, edit development and create a new snapshot as the error directs.
-
 **Adapter** (pack + push):
 ```bash
-rote registry adapter publish <id> <slug> --dry-run   # verify + report; writes nothing
-rote registry adapter publish <id> <slug>             # push for real
+rote registry adapter publish <release> <slug> --dry-run   # verify + report; writes nothing
+rote registry adapter publish <release> <slug>             # push for real
 ```
-Add `--private` for a private push (omit for public).
+`<release>` is the reference `rote adapter list` prints, e.g. `@development/<name>` for an adapter you created.
+Add `--private` for a private push (omit for public). A real push also installs the uploaded release
+and names it (`published and installed <publisher>/<name>@<version>`); `@development/<name>` stays
+editable. An "already current" skip installs nothing.
 
 **Play** — complete the authorized publication using `rote grammar play` and `rote grammar registry`.
 Release and create a numbered snapshot when needed, using Rote's returned operation reference or
@@ -209,10 +209,18 @@ Push, dry run included, refuses a play that `rote play run` refuses (stepless or
 undeclared browser runtime, unsupported setup) with that message. Report the blockers; the play
 stays local until it is re-authored as a steps play.
 
+A play's `@development/<name>` pins publish with the play, so never push those adapters first; a
+new adapter takes the play's visibility, and `rote guidance typescript play-creation` has the
+rules. Push refuses a legacy play (no `adapters:` map): run `rote play upgrade <play>` on its
+development copy, then release, bump, and push the new snapshot. For any other dependency blocker
+in the preflight, read `rote grammar registry`.
+
 If the target namespace needs a local copy, let the publication commands prepare it. Fork only when
 an editable copy of a managed source is needed. These mechanics do not require separate approval
-once the user has chosen the outcome. On a version conflict, apply the normal patch bump and retry
-preflight; ask only if the user must choose a different version policy or outcome.
+once the user has chosen the outcome. On a play version conflict, apply the normal patch bump and
+retry preflight. When `<slug>/<name>@<version>` already exists with different adapter content, run
+the `rote adapter bump @development/<name>` the error names and push the same snapshot again; the
+play needs no new bump. Ask only if the user must choose a different version policy or outcome.
 
 On success, state what landed where (id, namespace, visibility, version). For a play, continue to Stage P;
 for an organization-owned adapter, go to Stage 4. Personal publication is complete.
@@ -321,7 +329,11 @@ rote registry play pull <org>/<name>@<version> --yes
 Hand off to `rote-flow-authoring` and name `rote guidance play forking` only after pull reports the
 exact managed identity and local path. The handoff is complete when that exact version is installed
 and selectable for authoring. Return `installation_state: exact_local` with the installed identity
-and path. If pull fails, keep ownership here and return its blocker.
+and path. If pull fails, keep ownership here and return its blocker. Pull converges adapter
+releases the same way `rote play run` does: it installs exactly the releases the published
+`adapter_releases` names, even when newer ones exist, and pins a legacy play without them to the
+release it installed. A missing release, an ambiguous publisher, or a failed adapter download fails
+the pull after the play generation is installed, and the error names it.
 
 ---
 
