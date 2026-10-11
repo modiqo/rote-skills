@@ -416,15 +416,15 @@ scrollback, untracked temp files, or raw pipelines as the only record.
 Treat every `@N` as the handle for what just happened. The handle is saved
 evidence, not always the raw business payload. Route by type.
 
-After a command finishes, read `@@result` first:
+After a command finishes, read `@@result` for facts and `@@next` for actions:
 
 - `response_id` is the saved evidence handle
 - `response_kind` tells you how to query the evidence
-- `primary_query`, `primary_stdout_query`, and `primary_stderr_query`
-  retrieve the selected output from the saved response
-- `@@next` remains the immediate next-action guide
+- `@@next` lists the exact query commands for that response; the first
+  `rote query` entry reads the primary output, and output with zero bytes
+  gets no query
 
-For one-shot process output, prefer the typed query fields from `@@result`:
+For one-shot process output, run the `@@next` queries:
 
 ```bash
 rote query @proc.1.stdout '.text' -r
@@ -446,9 +446,8 @@ rote query @proc.1.exit '.' -r
 rote query @proc.last.transcript '.text' -r
 ```
 
-When `@@result` gives an exact query such as
-`rote query @proc.4.transcript '.text' -r`, prefer it over `@proc.last` if any
-other command may run before you query. Use `rote @N .` for full provenance
+Prefer the exact `@proc.N` query from `@@next` over `@proc.last` if any other
+command may run before you query. Use `rote @N .` for full provenance
 inspection, not as a shortcut for stdout or PTY transcript text.
 
 Do not summarize from terminal scrollback when a structured query exists.

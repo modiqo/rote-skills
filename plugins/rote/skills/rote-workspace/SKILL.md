@@ -114,8 +114,8 @@ a play through `@@plays`, pause adapter exploration and return to `rote-flow-run
 
 For response inspection and transformation, stay inside rote first:
 
-- Use `rote query @N '<jq-filter>' -r` and the exact `primary_query` or
-  `response_path` surfaces printed by rote.
+- Use `rote query @N '<jq-filter>' -r` and the exact query commands that rote
+  prints in `@@next`.
 - If `rote query` returns nothing, do not inspect `.rote/responses` directly.
   Run `rote ls`, `rote query schema @N`, and retry against `@` when the latest response is likely intended.
   Use `rote guidance query essential` for cached response parsing patterns.
