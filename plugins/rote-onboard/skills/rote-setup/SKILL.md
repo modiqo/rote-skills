@@ -444,7 +444,7 @@ These credential shapes are handled differently:
 | Shape | Examples | Setup direction |
 |------|----------|-----------------|
 | Static bearer/API key | github `GITHUB_TOKEN`, linear `LINEAR_API_TOKEN`, stripe | Use masked terminal handoff; `rote token set <ENV> --stdin` only as explicit terminal opt-in. |
-| OAuth client id/secret | OAuth2 OpenAPI adapters with `oauth2_schemes` | Register the app, collect client id/secret through the OAuth flow, and avoid pasted bearer tokens. |
+| OAuth client id/secret | OAuth2 OpenAPI adapters with `oauth2_schemes` | Register the app, collect client id/secret through the OAuth flow, and avoid pasted bearer tokens; for an installed single-scheme adapter run `rote adapter reauth <release>` from a terminal. |
 | OAuth DCR / MCP PRM | MCP adapters with automatic browser redirect and dynamic registration | Pull/create the adapter, then run `rote adapter reauth <release>` if auth is not already complete. |
 | Google Discovery | gmail, calendar, drive | Use `rote oauth setup google --adapter <release> --scopes ...`; no static token. |
 | Unknown installed bearer | Existing adapter says bearer but provenance is unclear | Run `rote adapter list <release> --json --health` before telling the user to set a token. |

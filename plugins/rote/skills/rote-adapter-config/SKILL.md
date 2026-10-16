@@ -87,7 +87,7 @@ bearer env var, so never treat "Bearer" alone as proof of a static token.
 | Shape | How to recognize | Correct repair |
 |------|------------------|----------------|
 | Static bearer/API key | Health shows missing static env var or user is rotating a known API key | Use masked terminal handoff or `rote token set <ENV> --stdin`; never echo the value. |
-| OAuth client id/secret | Scheme metadata is OAuth2 or OpenAPI `oauth2_schemes` is present | Use `rote adapter auth scheme add <release> <scheme> [descriptor] --oauth2` when adding a scheme, or rerun the create flow if the whole adapter must change. |
+| OAuth client id/secret | Scheme metadata is OAuth2 or OpenAPI `oauth2_schemes` is present | From a terminal, run `rote adapter reauth <release>` for an installed single-scheme adapter, or `rote adapter reauth <release> --scheme <scheme>` for a multi-scheme adapter's OAuth2 scheme. Use `rote adapter auth scheme add <release> <scheme> [descriptor] --oauth2` when adding a scheme. On a scheme declaring both authorization-code and client-credentials, reauth re-runs the held grant's flow, or authorization-code when none is held. If `rote adapter auth scheme list` shows `oauth2 (authorization_code)` for a scheme holding a client-credentials grant, the adapter predates two-flow support; recreate it. |
 | OAuth DCR / MCP PRM | Token metadata says OAuth/DCR, MCP auth redirects, or provider registration was dynamic | Use `rote adapter reauth <release> [--scheme <name>]`; use `rote adapter reauth <release> --force-reregister` only when the provider pruned the dynamic client. |
 | Google Discovery | Google API adapter, or the manifest declares `google_discovery` setup | Use `rote oauth setup google --adapter <release> --scopes ...`; do not ask for a pasted bearer token. |
 | Unknown bearer | Installed adapter reports bearer but provenance is unclear | Run `rote adapter list <release> --json --health` before advising token set vs reauth. |
@@ -125,6 +125,9 @@ rote adapter auth update <release> --bearer-token <ENV_VAR>
 Variants: `--api-key-header <name=ENV>`, `--api-key-query <name=ENV>`, `--basic <USER_ENV>`
 (password read from `<USER_ENV>_PASSWORD`, or `--basic <USER_ENV>=<PASS_ENV>` to name both),
 `--none` (remove auth).
+`rote adapter auth scheme list <release>` also works here: it shows the spec's declared schemes,
+whether this binding carries them, and how each OAuth2 credential is acquired on this
+machine. The other `scheme` subcommands are multi-scheme only.
 The token **value** is a secret — set it via the masked `rote powerpack credentials` (user's
 own terminal) or `rote token set <ENV> --stdin` as an explicit terminal opt-in. Never echo a
 token.

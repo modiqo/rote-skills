@@ -193,6 +193,8 @@ the default never widens a layer. Plain concurrency is not a legacy-body
 trigger. Browser work serializes its layer. See `rote grammar steps` for runtime semantics and
 `rote guidance typescript play-creation` for examples.
 
+Declare `param_type: array` for string lists; see `rote grammar steps` for invocation and default rules.
+
 `$param` substitutes into every step string field — adapter `params:` values and `process.exec`
 `argv` elements alike; an unresolved token passes through as a literal, not an error. `@step{.path}`
 reads a completed step's unwrapped body (never `.result.content[0].text`); `for_each: '$.items'`

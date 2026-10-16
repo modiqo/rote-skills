@@ -34,8 +34,8 @@ capability, play lint/runtime errors, and process evidence not being captured.
    environment, approval, or route owner.
 5. Return to the owning skill once the cause changes or the route changes.
 
-Stop and ask one targeted question only when a missing credential, destructive approval, or model
-identity cannot be inferred.
+Stop and ask one targeted question when reporting needs user consent, or when a missing credential,
+destructive approval, or model identity cannot be inferred.
 
 Troubleshooting is not a terminal state. After changing config, route, cwd, SDK state, or play code,
 return to the owner with the failed command or gate to rerun. Do not final-answer from this skill
@@ -59,6 +59,7 @@ unless the result is a blocker that prevents any safe rote path.
 | Shell expansion prompts | Quote user-provided strings and jq filters. Run one rote command at a time so prompts and errors are visible. |
 | Untracked process evidence | Switch to `rote-shell`: rerun through `rote proc run`, capture files/stdout/stderr, and query the saved response before using the result in an artifact or completion claim. |
 | Direct filesystem inspection pitfalls | Inspect workspace state and cached responses through rote commands before reading managed files directly. Direct `.rote/responses/@N.json` reads are allowed only when rote-native query/state commands cannot expose the data needed to diagnose the failure; record that reason and return to rote commands once recovered. |
+| Suspected rote bug after diagnosis | Read `rote guidance report` before proposing `rote report bug`. Ask the user before any report command, including dry runs. |
 
 ## State Inspection Commands
 

@@ -40,8 +40,9 @@ MCP calls, provider CLIs, browser automation, registry commands, or custom scrip
 - When rote commands fail repeatedly, invoke the `rote-troubleshooting` skill and fix the cause.
   Do not record a memory, note, or instruction to avoid rote for this task class — a failed run
   is a configuration or routing problem to repair, not a verdict on the tool.
-- On a suspected rote bug, read `rote guidance report`, then ask the user whether to file it.
-  File only after a yes.
+- For suspected rote bugs, use `rote report bug`; for missing functionality or workflow suggestions,
+  use `rote report feedback`. Read `rote guidance report` first for consent, redaction, and preview
+  rules. Run either command only after user consent, including dry runs.
 - If a companion skill is the better owner, invoke that skill deliberately instead of continuing
   from general prose.
 - Run rote commands one at a time, read each result fully, and obey `@@status`, `@@next`,

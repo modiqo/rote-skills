@@ -159,6 +159,9 @@ If a legacy body needs tracked workspace responses, return that limitation. `rot
   adapter with each name, so the steps call what they called before. When it lists zero or several
   candidates, it wrote nothing: return the candidates as the blocker and do not pick one. Pinning a
   chosen release is an authoring edit (`rote guidance typescript play-creation`).
+- If a run fails on an endpoint call, run the `rote ps --run <run_id> --errors` command its error
+  prints before retrying; `rote play stats <play>` shows which endpoints its runs keep failing
+  (`rote guidance typescript play-creation` → Diagnosing a Failing Play).
 - If execution is unsafe or parameters are missing, stop play execution and return the reason plus
   the preserved state. A behavior-changing partial match returns its source and installation state
   to the next owner without baseline execution.

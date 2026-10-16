@@ -199,7 +199,7 @@ OAuth/DCR often still appears as a bearer token at runtime.
 | Shape | Signals | Direction |
 |------|---------|-----------|
 | Static bearer/API key | `auth.type` is `bearer`, `api_key_header`, `api_key_query`, or `basic` with no OAuth metadata | Use masked credential handoff. If the user explicitly opts into a terminal command, use `rote token set <ENV> --stdin`. |
-| OAuth client id/secret | OpenAPI `oauth2_schemes`, dry-run `auth_scoring`, or provider docs list authorization-code/client-credentials | Configure the OAuth scheme during create; surface client id/secret, redirect URI, scopes, and token URL requirements. |
+| OAuth client id/secret | OpenAPI `oauth2_schemes`, dry-run `auth_scoring`, or provider docs list authorization-code/client-credentials | Configure the OAuth scheme during create; surface client id/secret, redirect URI, scopes, and token URL requirements. For an installed single-scheme adapter run `rote adapter reauth @development/<id>` from a terminal. |
 | OAuth DCR / MCP PRM | Catalog entry is MCP, provider advertises dynamic client registration, or MCP handshake redirects to auth | Use `rote adapter new-from-mcp`, then `rote adapter reauth @development/<id>` if needed. Do not ask for a static bearer token. |
 | Google Discovery | Spec source is Google Discovery or adapter is a Google API | Use `rote oauth setup google --adapter @development/<id> --scopes ...`; do not ask for a pasted token. |
 | Unknown installed bearer | Existing adapter reports bearer but the token provenance is unclear | Inspect `rote adapter list <release> --json --health` before advising. OAuth-backed bearers recover with reauth; static bearers use token set. |

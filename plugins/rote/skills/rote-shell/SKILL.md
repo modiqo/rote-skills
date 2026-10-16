@@ -190,7 +190,7 @@ Use only shipped commands. Do not invent aliases from the roadmap.
 
 | Need | Shipped command | Notes |
 | --- | --- | --- |
-| One-shot process capture | `rote proc run -- <program> [args...]` | Direct argv by default. |
+| One-shot process capture | `rote proc run --timeout-ms 120000 -- <program> [args...]` | Direct argv; omit the flag for the 30-second default. |
 | File stdin | `rote proc run --stdin-file input.txt -- <program>` | Records stdin provenance. |
 | Declared output file | `rote proc run --capture-file label:path -- <program>` | Captures file metadata and artifact pointer. |
 | Saved stdout/stderr files | `rote proc run --stdout-file out.txt --stderr-file err.txt -- <program>` | Use for durable stream files. |
@@ -202,6 +202,9 @@ Use only shipped commands. Do not invent aliases from the roadmap.
 | Background stdout/stderr follow | `rote proc stream follow-process proc-1 --stream stdout --until READY` | Reads from background log artifacts. |
 | Background stop and cleanup | `rote proc stop proc-1` | On Unix, stops the process group and records cleanup facts. |
 | One-shot terminal transcript | `rote proc pty run -- <program> [args...]` | Use when the command must see a terminal. |
+
+For foreground budgets, timeout diagnostics, export behavior, and background
+lease deadlines, read `rote guidance shell essential`.
 
 Deferred or not shipped as commands yet:
 
@@ -685,7 +688,9 @@ Presentation code must still tolerate legacy adapter envelope residue when norma
 observations, but new `@step` references never navigate that envelope. For process steps, the
 response body is `process.exec`, so downstream steps can
 reference fields such as `.stdout.text` or captured file metadata. Keep
-`process.exec` `argv`, stdin paths, and capture paths scalar after resolution.
+stdin paths and capture paths scalar after resolution. Declared array input and structured
+step output use whole-value substitution; see `rote grammar steps` for JSON argv and
+array invocation rules.
 Do not pass large adapter/browser payloads through argv when a file bridge or a
 small scalar projection is clearer.
 
