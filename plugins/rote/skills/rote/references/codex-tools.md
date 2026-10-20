@@ -7,7 +7,7 @@ rules affect the next action.
 
 | Rote skill action | Codex equivalent |
 | --- | --- |
-| Invoke a companion skill | Load the named skill through the runtime's skill mechanism when available; otherwise follow the installed `SKILL.md` exactly. |
+| Invoke a companion skill | Rote skills are hidden from Codex's skill list. Read `../<name>/SKILL.md` relative to the loaded `rote` skill's path and follow it exactly. |
 | Run a rote command | Use the shell command tool with one `rote ...` command at a time. |
 | Read or edit files | Use the runtime's file tools or patch mechanism; avoid shell file edits when a safer edit tool exists. |
 | Dispatch a subagent | If subagents are unavailable, keep ownership in the active skill and preserve the handoff packet in the response or workspace summary. |
@@ -27,5 +27,6 @@ rules affect the next action.
   `rote play list --json`.
 - When a workflow says to write a handoff summary, write it through the available file-editing tool
   in the named workspace or artifact path.
-- If the runtime cannot load another skill directly, continue from the current context but keep the
-  target skill name and handoff packet visible.
+- Every rote skill ships `agents/openai.yaml` with `allow_implicit_invocation: false`, so Codex
+  lists no rote skill: the user loads `rote` by naming it (`$rote`), and companions load by path as
+  above.

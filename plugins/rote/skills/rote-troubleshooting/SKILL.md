@@ -55,7 +55,7 @@ unless the result is a blocker that prevents any safe rote path.
 | Capability mismatch | Return to `rote-task-routing`, name the missing operation, and search or inspect adapters by capability. Do not keep using an adapter that only provides adjacent metadata. |
 | jq pitfalls | Quote jq filters with single quotes, use `-r` only for raw strings, and check `rote grammar query`. Inspect whether the cached response is an error envelope before changing filters. |
 | Play lint or release failures | Change play code, frontmatter, arguments, cwd, or environment before retrying. Never edit frontmatter `status` directly. |
-| `rote deno run` runtime or config failures | Inspect `rote deno status`, `rote sdk status`, `rote grammar deno`, cwd, `ROTE_HOME`, import map, and SDK install state. Repair with `rote deno install`, `rote sdk install`, or `rote sdk upgrade` as appropriate. Do not switch to raw `deno`, `$ROTE_HOME/bin/deno`, or `/tmp/.../bin/deno`; that bypasses rote runtime setup, SDK imports, and provenance. If generated code imports from `$HOME/.rote` while `ROTE_HOME` is set elsewhere, fix the import to honor `ROTE_HOME` and rerun through `rote deno run`. |
+| `rote deno run` runtime or config failures | Inspect `rote runtime status deno`, `rote sdk status`, `rote grammar deno`, cwd, `ROTE_HOME`, import map, and SDK install state. Repair with `rote runtime install deno`, `rote sdk install`, or `rote sdk upgrade` as appropriate. Do not switch to raw `deno`, `$ROTE_HOME/bin/deno`, or `/tmp/.../bin/deno`; that bypasses rote runtime setup, SDK imports, and provenance. If generated code imports from `$HOME/.rote` while `ROTE_HOME` is set elsewhere, fix the import to honor `ROTE_HOME` and rerun through `rote deno run`. |
 | Shell expansion prompts | Quote user-provided strings and jq filters. Run one rote command at a time so prompts and errors are visible. |
 | Untracked process evidence | Switch to `rote-shell`: rerun through `rote proc run`, capture files/stdout/stderr, and query the saved response before using the result in an artifact or completion claim. |
 | Direct filesystem inspection pitfalls | Inspect workspace state and cached responses through rote commands before reading managed files directly. Direct `.rote/responses/@N.json` reads are allowed only when rote-native query/state commands cannot expose the data needed to diagnose the failure; record that reason and return to rote commands once recovered. |
@@ -73,7 +73,7 @@ up:
   `rote workspace inspect meta`, and `rote workspace inspect variables`.
 - Adapter failures: `rote adapter list`.
 - Play lifecycle failures: `rote play pending list`, `rote play list`.
-- Runtime/SDK failures: `rote sdk status`, `rote deno status`.
+- Runtime/SDK failures: `rote sdk status`, `rote runtime status deno`.
 
 For cached response errors, inspect the response before changing transformation code:
 

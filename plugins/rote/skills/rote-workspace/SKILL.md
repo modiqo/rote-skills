@@ -157,7 +157,7 @@ rote adapter list
 rote play pending list
 rote play list
 rote sdk status
-rote deno status
+rote runtime status deno
 ```
 
 After compaction, interruption, or a context handoff, recover state through rote before continuing:

@@ -17,6 +17,8 @@ specialist workflows.
 Every `rote-<name>` reference in this skill set is a **skill**, never a CLI command —
 `rote-shell` is not `rote shell`, and `rote-adapter-config` is not `rote adapter config`. Invoke
 skills through the runtime's skill mechanism; only literal `rote …` commands run in the terminal.
+If the runtime cannot load a companion skill by name, read `../<name>/SKILL.md` beside this
+skill's own `SKILL.md` and follow it exactly; companion skills are installed next to this one.
 
 ## The rote Skill Rule
 

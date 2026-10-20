@@ -193,7 +193,7 @@ the default never widens a layer. Plain concurrency is not a legacy-body
 trigger. Browser work serializes its layer. See `rote grammar steps` for runtime semantics and
 `rote guidance typescript play-creation` for examples.
 
-Declare `param_type: array` for string lists; see `rote grammar steps` for invocation and default rules.
+Declare `param_type: array` for string lists, adding `items: {type: integer}` for integer lists; see `rote grammar steps` for invocation and default rules.
 
 `$param` substitutes into every step string field — adapter `params:` values and `process.exec`
 `argv` elements alike; an unresolved token passes through as a literal, not an error. `@step{.path}`
@@ -271,7 +271,7 @@ declares `steps:`; do not recreate rote lifecycle inside it.
 - Workspace bootstrap belongs outside play execution unless the SDK owns it.
 
 If `Rote.workspace(...)` creates a nonexistent cwd or fails, treat it as SDK/runtime failure.
-Inspect `rote deno status`, `rote sdk status`, and `rote guidance typescript play-creation`.
+Inspect `rote runtime status deno`, `rote sdk status`, and `rote guidance typescript play-creation`.
 
 ## Implement The Play Body
 
@@ -327,7 +327,7 @@ missing adapter setup; fix the adapter route or hand back to `rote-task-routing`
 
 If an explicit legacy body's `rote play run` fails because the generated SDK import cannot find
 `mod.ts`, `Adapter.callBg` is undefined, or the runtime cannot find rote-managed Deno/SDK state,
-treat that as a scaffold/runtime issue. Inspect `rote deno status`, `rote sdk status`, `rote grammar
+treat that as a scaffold/runtime issue. Inspect `rote runtime status deno`, `rote sdk status`, `rote grammar
 deno`, and `rote guidance typescript play-creation`; do not hand-edit around it with raw Deno, raw
 HTTP, or unrelated SDK APIs.
 

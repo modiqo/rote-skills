@@ -162,6 +162,27 @@ approves it. Choosing the default never counts as approval. Once approved, run t
 command as the one allowed compound command. Do not repeat the remote-code warning in an
 option or follow-up approval prompt.
 
+Both CLI commands also install the Play sidekick and Tulving, and wire Play into the agent
+harnesses the installer detects. To skip them, add `ROTE_NO_PLAY=1` to the command (the
+installer flag is `--no-play`). To install or repair Play later, run `rote install play`; it
+installs the latest Play release and never downgrades Play. `rote update` also updates Play.
+Check Tulving with
+`rote runtime status tulving`; install it with `rote runtime install tulving`.
+The installer's finale reports the Play version, wired agents, checks, advisories, and any
+failure with its retry command. Relay its first steps exactly as printed; `play guide` works
+before sign-in.
+Sign-in and scheduled Plays are optional for installation. Under `--yes`, `ROTE_YES=1`,
+or without a terminal, the wizard skips their prompts and never enables scheduling.
+
+Read `rote install status --json` for authoritative readiness, sign-in, scheduled Plays,
+and the next action. It probes sign-in and scheduled Plays live on every call. Decode its
+typed payload even on nonzero exit, and keep the same `ROTE_HOME` as the installation.
+Sign-in defaults to yes and scheduling to no; ask for explicit approval before either. To
+sign in, run `rote login` in a terminal for the provider picker, or
+`rote login --provider <provider>` for machine login. To turn on scheduled Plays, run
+`play recurring enable`; it installs a per-user background timer. Read status again
+afterward.
+
 After either CLI profile succeeds, resolve the installed binary before Step 0:
 
 ```bash
