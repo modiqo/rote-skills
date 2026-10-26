@@ -464,12 +464,20 @@ rote registry org usage <slug> --json
 Usage requires the owner or admin role. On `permission_denied`, mark that org unavailable and
 continue. Never retry the unchanged command.
 
-The shape: `{ plan, current{members, public_adapters, private_adapters, public_flows,
-private_flows}, limit{... null = unlimited}, features{audit, verification} }`.
+The shape: `{ plan, purchase_mode, current{members, public_adapters, private_adapters,
+public_flows, private_flows}, limit{... null = unlimited}, features{audit, verification},
+billing{status, period_end, cancel_at, checkout_open_until} }`. `billing.status` null means
+no subscription; `incomplete` means a first payment is pending; a set `cancel_at` means the
+plan ends that day; a set `checkout_open_until` means a checkout can still be paid until then,
+so the plan may change with no further command. Deletion waits for it.
 
 Render a per-org table — for each metric show `current / limit` (render `null` limit as
 **∞ / unlimited**), the plan, and which feature flags are on. Flag anything near a non-null
-limit (e.g. ≥80%) so the user sees pressure before they hit it. Example row:
+limit (e.g. ≥80%) so the user sees pressure before they hit it. On a `free` or
+`self_service` org whose `billing.status` is null, `canceled`, or `incomplete_expired` and
+whose `checkout_open_until` is null, offer `rote registry org upgrade <slug> --plan <team|growth>`;
+with an open checkout, say the plan changes once it is paid; with any other status Stripe can
+still charge it, so offer `rote registry org billing <slug>`. Example row:
 
 > **conikee-home** · plan `org_admin` · members 1/∞ · private adapters 3/∞ · private plays
 > 2/∞ · public 0 · features: audit ✓, verification ✓

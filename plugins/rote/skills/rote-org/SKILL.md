@@ -1,6 +1,6 @@
 ---
 name: rote-org
-description: Manage rote registry organizations — create / delete an org, list and change member roles, invite or remove users, revoke or list pending invites, view plan and usage, and manage org SSO. Use when the user says things like "create an org", "invite teammate to my org", "list org members", "remove user from org", "change role", "revoke invite", "what's my org usage", "set up SSO", "verify an SSO domain", or otherwise references organization administration in rote.
+description: Manage rote registry organizations — create / delete an org, list and change member roles, invite or remove users, revoke or list pending invites, read the activity log, view plan, usage, and billing, upgrade to a paid plan, and manage org SSO. Use when the user says things like "create an org", "invite teammate to my org", "list org members", "remove user from org", "change role", "revoke invite", "what's my org usage", "upgrade my org", "manage billing", "set up SSO", "verify an SSO domain", or otherwise references organization administration in rote.
 ---
 
 # rote-org — Organization management
@@ -46,13 +46,16 @@ Slug = URL-safe org identifier (e.g. `my-org`). `--help` calls this `<org>` for 
 | List your orgs | `rote registry org list [--json]` |
 | Create org | `rote registry org create --slug <slug> --name "<Name>"` |
 | Delete org (owner only) | `rote registry org delete <slug>` |
-| Plan, usage, feature flags | `rote registry org usage <slug> [--json]` |
+| Plan, usage, feature flags, billing state | `rote registry org usage <slug> [--json]` |
+| Buy a paid plan (owner/admin) | `rote registry org upgrade <slug> --plan <team\|growth> [--interval <month\|year>] [--json]` |
+| Billing portal: change plan, payment method, invoices, cancel (owner/admin) | `rote registry org billing <slug> [--json]` |
 | Invite member | `rote registry org invite <slug> <email> [--role <role>]` |
 | Revoke a pending invite | `rote registry org invite revoke <slug> <email>` |
 | List pending invites | `rote registry org invite pending <slug> [--json]` |
 | List members | `rote registry org members <slug> [--pending] [--json]` |
 | Remove a member | `rote registry org members remove <slug> <email>` |
 | Change a member's role | `rote registry org members role <slug> <email> <admin\|developer\|reader>` |
+| Activity log: membership, seat refusals, plan changes (owner/admin) | `rote registry org activity <slug> [--type <event>] [--limit <n>] [--json]` |
 | Show SSO status | `rote registry org sso show <slug> [--json]` |
 | Verify SSO domain | `rote registry org sso verify <slug> <domain> [--check] [--json]` |
 | Enable / disable SSO enforcement | `rote registry org sso enable <slug> <domain> [--json]` / `disable <slug> <domain> [--json]` |
@@ -76,7 +79,15 @@ verification, enforcement, unbind, and domain-wide revocation are owner-only.
 - Invites auto-onboard: invitee gets an email; on signup they become a
   member with the assigned role. There is no separate accept step.
 - Role changes and member removals require admin or owner of the target org.
-- `delete` is owner-only and irreversible
+- `delete` is owner-only and irreversible. It is refused while a subscription
+  can still bill or a checkout can still be paid; the error names the end date
+  or the portal command. Cancelling in the portal takes effect at the end of
+  the paid period, and deletion works after that.
+- `upgrade` prints a Stripe Checkout URL for the user to open; it expires in
+  one hour and replaces any earlier checkout link for the org. The plan changes
+  when Stripe confirms payment, so confirm with `usage` afterwards. An internal org has no billing, an org on a negotiated
+  plan is sent to support, and an org that already subscribes is sent to
+  `billing`.
 
 ## Related (push targeting)
 
