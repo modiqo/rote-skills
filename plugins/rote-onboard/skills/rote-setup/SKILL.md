@@ -273,8 +273,9 @@ rote whoami
 ```
 
 Read the output:
-- `ok: <email>` → **already logged in.** Say "You're signed in as `<email>`." and go to the
-  fork (**Step 2.5**).
+- `ok: <email>` → **already logged in.** Say "You're signed in as `<email>`" and add the `handle`
+  result field when present. An `environment` field means a non-production registry; name it.
+  Go to the fork (**Step 2.5**).
 - Anything else (error, `not logged in`, empty) → **not logged in.** Go to **Step 1**.
   Sign-in is required before the fork — do not skip it.
 
@@ -305,8 +306,9 @@ prints. Either way, re-verify:
 rote whoami
 ```
 
-When `whoami` returns `ok: <email>`, say "Signed in as `<email>`." and go to the fork
-(**Step 2.5**). If it still fails, show the login output and offer to retry with a different
+When `whoami` returns `ok: <email>`, say "Signed in as `<email>`." with the `handle` and
+`environment` fields as in Step 0, and go to the fork (**Step 2.5**). If it still fails, show the
+login output and offer to retry with a different
 provider.
 
 ---
@@ -325,8 +327,7 @@ and no new proxy quietly holding their data. Then ask how far they want to go:
 - **Just the CLI — stop here** — confirm rote is installed and signed in, print `rote how`
   for next steps, and **end the wizard cleanly**. No adapters. They can run `rote-setup`
   anytime to go further.
-- **Pull the powerpack** (curated starter adapters) — github, gmail, calendar, linear from
-  the registry. Go to the powerpack picker in **Step 3a**.
+- **Pull the powerpack** (curated starter adapters from the registry) — go to **Step 3a**.
 - **Build an adapter** (from the 872-spec catalog, a web-found spec, or a local file) —
   **delegate to the `rote-adapter-create` skill** (see Step 2.6). It does the dry-run-first
   pipeline: discover spec → analyze → pick auth/toolsets → create.
@@ -361,11 +362,11 @@ choices when the environment supports it:
 
 | Option | What it does | Command |
 |---|---|---|
-| **Pull powerpack adapters** (recommended) | Curated registry adapters, à la carte. **See 3a.** | `rote registry adapter pull bootstrap/<name> --yes` |
+| **Pull powerpack adapters** (recommended) | Curated registry adapters, à la carte or a preset. **See 3a.** | `rote registry adapter pull bootstrap/<name> --yes` |
 | **Build an adapter** | Catalog / web / local spec → dry-run-first create. **Delegates to `rote-adapter-create`.** | invoke the `rote-adapter-create` skill |
 | **Configure an adapter** | Tune auth, base-url, sensitivity, guard, etc. **Delegates to `rote-adapter-config`.** | invoke the `rote-adapter-config` skill |
 | **Set up credentials** | Token wizard for installed adapters. **Secrets — see 3c.** | `rote powerpack credentials` (run in user's own terminal) |
-| **Connect Google (OAuth)** | Browser OAuth for Google adapters (gmail/calendar). **Non-interactive — see 3d.** | `rote oauth setup google --adapter <release> --scopes <list>` |
+| **Connect Google (OAuth)** | Browser OAuth for the managed Google adapters (gmail, google-calendar, google-drive). **See 3d.** | `rote adapter reauth <release>` |
 | **Install the agent skill** | Installs the rote skills for supported local agents. | `rote install skill` |
 | **Explore / learn** | Onboarding tree + human-friendly help. | `rote how`, then `rote human` |
 
@@ -373,13 +374,11 @@ Recommend the order **adapters → credentials → OAuth → install skill → e
 only what they pick, one at a time, confirming after each. Once their picks are done, offer
 the **value-proof closer (Step 5)** — run one live play so setup ends with real output.
 
-### Step 3a — Install adapters (à la carte, from the live registry)
+### Step 3a — Install adapters (from the live registry)
 
-**Do not use `rote pull powerpack` presets.** The presets list adapters that aren't
-published to the reachable registry (`notion`, `gemini-api`, `googledrive`, `googledocs`),
-so they partially or fully fail (`ai` fails entirely; `default`/`dev` choke on notion;
-`google` loses drive+docs). Install à la carte instead — every pick either installs or
-gives its own clear error, with no phantom adapters.
+**Default to à la carte installs** (below) — each pick installs or fails on its own. If the
+user asks for a bundle, offer a `rote pull powerpack` preset; preset names and membership
+live in the CLI, so read `rote grammar powerpack` instead of naming them here.
 
 **Query the registry at runtime** — never hardcode the list, it grows:
 
@@ -406,7 +405,7 @@ that into Step 3c. Then reindex once at the end if needed (`rote adapter list` t
 ready state). `rote adapter list` prints each release reference, e.g. `modiqo/github@1.0.0`
 (`bootstrap` is an alias for `modiqo` and never appears in a reference). Later commands take that
 exact reference; the version is always required. Adapters that need an API token will surface their env var name; Google
-adapters (gmail/calendar) use OAuth via Step 3d, not a static token.
+adapters (gmail, google-calendar, google-drive) use managed OAuth via Step 3d, not a static token.
 
 **Credential gate — do NOT proceed past an unset required token** (real bug: an adapter was
 installed from a preset/bootstrap, its token was never set, and the wizard marched on to the
@@ -467,12 +466,13 @@ These credential shapes are handled differently:
 | Static bearer/API key | github `GITHUB_TOKEN`, linear `LINEAR_API_TOKEN`, stripe | Use masked terminal handoff; `rote token set <ENV> --stdin` only as explicit terminal opt-in. |
 | OAuth client id/secret | OAuth2 OpenAPI adapters with `oauth2_schemes` | Register the app, collect client id/secret through the OAuth flow, and avoid pasted bearer tokens; for an installed single-scheme adapter run `rote adapter reauth <release>` from a terminal. |
 | OAuth DCR / MCP PRM | MCP adapters with automatic browser redirect and dynamic registration | Pull/create the adapter, then run `rote adapter reauth <release>` if auth is not already complete. |
-| Google Discovery | gmail, calendar, drive | Use `rote oauth setup google --adapter <release> --scopes ...`; no static token. |
+| Google (managed) | `modiqo-hosted/gmail`, `modiqo-hosted/google-calendar`, `modiqo-hosted/google-drive` | Managed OAuth apps: `rote login`, then `rote adapter reauth <release>`. An installed Google release that declares the `google_discovery` setup: `rote oauth setup google --adapter <release> --scopes <list>`. No static token. |
+| Managed OAuth app | Adapter manifest declares `managed_oauth` setup (for example a Slack adapter backed by a Modiqo app) | Run `rote login`, then `rote adapter reauth <release>`. The browser asks for consent through the OAuth broker. No client id/secret and no pasted token. A manifest may name a third-party broker with `"broker": "<id>"` (absent means `modiqo`). If the user has not trusted that broker, reauth fails and prints `rote oauth broker trust <broker> <url>`. Only the user decides to trust a broker operator, because that broker sees every token it issues; never run `rote oauth broker trust` on your own. Third-party brokers do not need `rote login`. |
 | Unknown installed bearer | Existing adapter says bearer but provenance is unclear | Run `rote adapter list <release> --json --health` before telling the user to set a token. |
 
 - **Browser-OAuth adapters** → no static token at all; the browser redirect keeps the secret out
   of chat and command history. Always prefer this shape when the adapter supports it. For Google
-  Discovery adapters (gmail, calendar) skip to **Step 3d**; for OAuth DCR / MCP PRM adapters skip
+  adapters (gmail, google-calendar, google-drive) skip to **Step 3d**; for OAuth DCR / MCP PRM adapters skip
   to **Step 3e** for reauth/DCR.
 
 ### Step 3c — Static-token credential handoff
@@ -494,9 +494,8 @@ Say this plainly so the user understands the handoff isn't friction, it's the se
   It prompts per-adapter and **masks** input (rote uses `rpassword`), storing to
 	  `~/.rote/secrets/` (perms 600). The secret never passes through chat. This is the
 	  recommended path — frame the handoff as the secure one. The user
-  runs it, returns, and you verify (below). Note: the wizard lists Google credentials under the
-  shared `GSUITE_TOKEN` name whatever the adapter declares — tell the user to **skip them**;
-  Google is wired and verified in Step 3d, not here.
+  runs it, returns, and you verify (below). Google adapters are wired and verified in Step 3d,
+  not here.
 
 	  **`rote token set` is a last-resort opt-in only.** Offer it only if the user explicitly
 		  refuses the terminal handoff and insists on setting a token through the current session.
@@ -523,30 +522,30 @@ rote powerpack tokens
 (or `rote token get <name>` for one) — both work from any directory and show
 configured/not-configured without exercising the API.
 
-### Step 3d — Google OAuth (non-interactive)
+### Step 3d — Google adapters (managed OAuth)
 
-The bare `rote oauth setup google` opens an interactive multi-select ("Which Google APIs
-do you need?"). Drive it non-interactively with **`--adapter` and `--scopes`** — one run per
-adapter, passing only that adapter's scopes:
+Gmail, Google Calendar, and Google Drive are published as managed releases
+(`modiqo-hosted/gmail`, `modiqo-hosted/google-calendar`, `modiqo-hosted/google-drive`). Modiqo
+owns their OAuth apps, so the user brings no client id, secret, or token. After `rote login`,
+authorize each installed release once:
 
 ```bash
-rote oauth setup google --adapter modiqo/gmail@1.4.0 --scopes gmail.readonly
-rote oauth setup google --adapter modiqo/calendar@1.2.0 --scopes calendar.calendarlist.readonly,calendar.calendars.readonly,calendar.events.readonly,calendar.events.freebusy
+rote adapter reauth modiqo-hosted/gmail@<version>
+rote adapter reauth modiqo-hosted/google-calendar@<version>
 ```
 
-`--adapter` stores the grant in the credential that adapter declares (`GMAIL_TOKEN`,
-`CALENDAR_TOKEN`, or the shared `GSUITE_TOKEN` on installs predating per-adapter names) and
-binds it there. Without it the grant always lands in `GSUITE_TOKEN`, which an adapter
-declaring its own credential never reads — the flow reports success and the adapter stays
-unauthenticated.
+Each run opens a **browser** for the Google consent screen through the rote OAuth broker and
+stores the grant in the credential that adapter declares. Connections start with the release's
+default scopes. Tell the user to complete consent there, then confirm with
+`rote adapter list <release> --json --health` — that proves a refreshable credential exists.
 
-Scopes are comma-separated, no spaces, and belong to the adapters being authorized: with
-`--adapter`, scopes that no adapter reading the target credential uses are named and refused
-before the browser opens. Adapters sharing one credential share one grant, so a scope any of them
-uses is accepted. When any of those adapters declares no scope profile the run warns instead of
-refusing, and the requested scopes are stored unchecked. Each run opens a **browser** for the Google consent screen; tell
-the user to complete it there, then confirm with `rote adapter list <release> --json --health`
-— that proves a refreshable credential exists, not which scopes it carries.
+An installed Google release that declares the older `google_discovery` setup (for example
+`modiqo/gmail`) keeps authorizing through rote's built-in Google client. Drive it
+non-interactively with `--adapter` and that adapter's scopes, comma-separated:
+
+```bash
+rote oauth setup google --adapter modiqo/gmail@<version> --scopes gmail.readonly
+```
 
 ### Step 3e — OAuth DCR adapters (reference)
 
@@ -665,8 +664,7 @@ adapter call). For single-adapter delegated work, spawn a subagent and tell it t
 - **Prefer non-interactive commands in agent-run shells.** Many agent command runners cannot
   answer terminal prompts. The non-interactive switch differs per command: installer →
   `ROTE_YES=1`; powerpack picker → `--yes`; `rote adapter new` →
-  `--yes`; `rote adapter new-from-mcp` → **`--headless`** (it rejects `--yes`); Google OAuth →
-  `--adapter` + `--scopes …`. Don't guess the flag — if unsure, check `<command> --help` first. The one
+  `--yes`; `rote adapter new-from-mcp` → **`--headless`** (it rejects `--yes`). Don't guess the flag — if unsure, check `<command> --help` first. The one
   prompt you must NOT automate away is credential entry — see secrets below.
 - **Never handle secrets in chat.** Agent conversations and command histories are not a masked
   secret-entry surface unless the current environment explicitly says otherwise. Static tokens
@@ -706,8 +704,8 @@ adapter call). For single-adapter delegated work, spawn a subagent and tell it t
   live probe disagree, the probe wins. Once rote is present, start from `rote whoami` and
   branch on its real output.
 - **Lead with the happy path.** Sign-in first; then connect APIs or take the live tour.
-- **Browser steps are async.** After `rote login --provider ...` or `rote oauth setup
-  google`, tell the user to finish in the browser, then re-run `rote whoami` /
+- **Browser steps are async.** After `rote login --provider ...` or `rote adapter
+  reauth`, tell the user to finish in the browser, then re-run `rote whoami` /
   re-check before declaring success.
 - **Show errors verbatim.** Never paper over a failed step; offer a retry or alternate
   branch.

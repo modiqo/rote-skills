@@ -89,7 +89,8 @@ bearer env var, so never treat "Bearer" alone as proof of a static token.
 | Static bearer/API key | Health shows missing static env var or user is rotating a known API key | Use masked terminal handoff or `rote token set <ENV> --stdin`; never echo the value. |
 | OAuth client id/secret | Scheme metadata is OAuth2 or OpenAPI `oauth2_schemes` is present | From a terminal, run `rote adapter reauth <release>` for an installed single-scheme adapter, or `rote adapter reauth <release> --scheme <scheme>` for a multi-scheme adapter's OAuth2 scheme. Use `rote adapter auth scheme add <release> <scheme> [descriptor] --oauth2` when adding a scheme. On a scheme declaring both authorization-code and client-credentials, reauth re-runs the held grant's flow, or authorization-code when none is held. If `rote adapter auth scheme list` shows `oauth2 (authorization_code)` for a scheme holding a client-credentials grant, the adapter predates two-flow support; recreate it. |
 | OAuth DCR / MCP PRM | Token metadata says OAuth/DCR, MCP auth redirects, or provider registration was dynamic | Use `rote adapter reauth <release> [--scheme <name>]`; use `rote adapter reauth <release> --force-reregister` only when the provider pruned the dynamic client. |
-| Google Discovery | Google API adapter, or the manifest declares `google_discovery` setup | Use `rote oauth setup google --adapter <release> --scopes ...`; do not ask for a pasted bearer token. |
+| Google Discovery | Google API adapter, or the manifest declares `google_discovery` setup | Gmail, Google Calendar, and Google Drive: install the managed release (`modiqo-hosted/gmail`, `modiqo-hosted/google-calendar`, `modiqo-hosted/google-drive`) and follow the Managed OAuth app row. Any other Google Discovery adapter: `rote oauth setup google --adapter <release> --scopes ...`. Never ask for a pasted bearer token. |
+| Managed OAuth app | The manifest declares `managed_oauth` setup with an `app` and `scopes` | Requires `rote login`. Use `rote adapter reauth <release>` for both first acquisition and repair; the OAuth broker runs browser consent. Do not ask for a client id/secret or a pasted token. A manifest may name a third-party broker with `"broker": "<id>"` (absent means `modiqo`). If the user has not trusted that broker, reauth fails and prints `rote oauth broker trust <broker> <url>`. Only the user decides to trust a broker operator, because that broker sees every token it issues; never run `rote oauth broker trust` on your own. Third-party brokers do not need `rote login`. |
 | Unknown bearer | Installed adapter reports bearer but provenance is unclear | Run `rote adapter list <release> --json --health` before advising token set vs reauth. |
 
 ---
@@ -146,11 +147,16 @@ rote adapter auth scheme disable <release> <scheme> [--force]  # --force to disa
 ### Re-authorize OAuth
 
 ```bash
-rote adapter reauth <release> [--scheme <name>] [--force-reregister]
+rote adapter reauth <release> [--scheme <name>] [--access read-write | --scope <s>...] [--force-reregister]
 ```
 For an installed MCP adapter with a missing DCR credential, this registers and authorizes in place;
 it does not recreate the adapter. `--force-reregister` re-runs DCR when the provider pruned the
-client (rare).
+client (rare). `--scope` (repeatable) adds scopes to a DCR, spec-declared OAuth2, or
+client-credentials grant's requested list; managed apps refuse it and use `--access`, and Google
+Discovery setups refuse it. A scope the result lists in `not_granted` was declined by the
+provider; do not repeat `--scope` for it. A call refused with `kind: missing_scopes` sent no
+request; run its `@@next` command, then retry. Without `@@next`, its `fix` field says why no reauth
+grants the scopes; report it and do not retry.
 
 ### Write guard
 

@@ -60,13 +60,19 @@ If probe/call fails for missing or invalid auth, classify before advising:
 rote adapter list <release> --json --health
 ```
 
-- Do not assume Bearer means static token. OAuth, OAuth DCR / MCP PRM, and Google Discovery can
-  all appear as bearer at the transport layer.
+- Do not assume Bearer means static token. OAuth, OAuth DCR / MCP PRM, Google Discovery, and
+  managed OAuth apps can all appear as bearer at the transport layer.
 - Static bearer/API key: hand off to masked credential entry or `rote token set <ENV> --stdin`
   only as explicit terminal opt-in.
 - OAuth client id/secret or OAuth DCR / MCP PRM: return a blocker recommending
   `rote adapter reauth <release>` or `rote adapter reauth <release> --scheme <name>`.
-- Google Discovery: return a blocker recommending `rote oauth setup google --adapter <release> --scopes ...`.
+- Google Discovery: Gmail, Google Calendar, and Google Drive are managed OAuth apps (see below);
+  any other Google Discovery adapter authorizes with
+  `rote oauth setup google --adapter <release> --scopes ...`.
+- Managed OAuth app (`managed_oauth` setup): return a blocker recommending `rote login`, then
+  `rote adapter reauth <release>`. The OAuth broker runs browser consent; never request a pasted token.
+  If reauth fails because the manifest's `broker` is not trusted, return a blocker with the
+  printed `rote oauth broker trust <broker> <url>` command for the user to decide on; never run it yourself.
 - Unknown bearer: report the health output and route to `rote-adapter-config`; do not request a
   pasted token.
 
@@ -130,7 +136,9 @@ rote probe <release> "<natural language operation>"
 `<release>` is the exact reference from `rote adapter list`: `<publisher>/<name>@<version>` for a
 registry release, `@development/<name>` for a development adapter. The version is always required.
 Use the exact operation name from the probe result. Read required parameters, optional
-parameters, and response shape before making the call.
+parameters, and response shape before making the call. Text match chooses the results; among
+them, the ones the OAuth grant can call come first. A result whose `access.status` is
+`needs_scope` names the missing scopes and the `fix` command to widen the grant.
 
 Then call through rote:
 

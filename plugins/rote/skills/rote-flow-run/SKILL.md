@@ -103,6 +103,13 @@ When the run resolves a pulled adapter whose manifest declares portable OAuth se
 authorize it in place and surface the provider browser flow. Do not replace credential recovery
 with `rote adapter new-from-mcp` or recreate the installed adapter.
 
+A run refused with `@@authentication` `State: missing_scopes` (JSON `play.auth-required/v1`,
+`state: "missing_scopes"`) made no adapter call: the stored OAuth grant lacks a scope a step's tool
+needs, and `Missing scopes:` lines name each tool and the scope sets that would satisfy it. Widening
+consent is the user's decision: show them the `Remediation` command (`rote adapter reauth <release>
+...`), run it only with their approval, then rerun the play. With no command, the adapter's managed
+app does not offer those scopes; the user must set up a provider OAuth client that does.
+
 `metadata.execution_model: steps_with_presentation` is still a `steps:` play — the runner executes
 the declared steps first, then invokes the deprivileged presentation body; direct Deno would not
 receive the typed presentation input.

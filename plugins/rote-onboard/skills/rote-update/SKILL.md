@@ -80,12 +80,17 @@ Use `rote install skill --help` when the supported provider names are unclear. I
 agent session cached an older skill copy, tell the user to restart that session so the refreshed
 files are reloaded.
 
-If Play is installed, `rote update` updates Play to the latest stable tag every time, with
-auto-update on or off; after a rote upgrade it also rewires Play in the agents that have it. A background check
-every six hours does the same unless auto-update is turned off; it backs off a release that failed
-its checks (retry after 1, 3, then 7 days). Updates never replace Play with an older release.
+If Play is installed, `rote update` updates Play to the latest stable tag, even with auto-update off.
+After a rote upgrade, it also rewires Play in the agents that have it.
+With auto-update on, a background check updates Play every six hours.
+A rote upgrade starts that check immediately, without another command or a wait for the interval.
+A release that fails its checks is retried after 1, 3, then 7 days.
+Updates never replace Play with an older release.
+`CI` alone does not turn auto-update off: a first `install.sh` run under CI does, and a CI job
+that reuses a rote home sets `ROTE_NO_AUTO_UPDATE=1`.
 `rote update auto` shows the last update result for rote and Play, any failure streak, and
-a held Play release. If Play is missing, run `rote install play`.
+a held Play release; `rote update auto --json` returns the same report in one JSON envelope
+(`data.result`). If Play is missing, run `rote install play`.
 
 ---
 

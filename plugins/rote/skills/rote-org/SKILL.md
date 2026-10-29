@@ -44,7 +44,7 @@ Slug = URL-safe org identifier (e.g. `my-org`). `--help` calls this `<org>` for 
 | Goal | Command |
 |---|---|
 | List your orgs | `rote registry org list [--json]` |
-| Create org | `rote registry org create --slug <slug> --name "<Name>"` |
+| Create org | `rote registry org create <slug> --name "<Name>"` |
 | Delete org (owner only) | `rote registry org delete <slug>` |
 | Plan, usage, feature flags, billing state | `rote registry org usage <slug> [--json]` |
 | Buy a paid plan (owner/admin) | `rote registry org upgrade <slug> --plan <team\|growth> [--interval <month\|year>] [--json]` |

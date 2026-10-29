@@ -87,7 +87,8 @@ Core rules:
 ## Two entry modes
 
 **A. Hand-off (the schelling point).** `rote-adapter-create` (Stage 6) and the play-crystallize
-path invoke this skill right after minting. The artifact id is known; jump to Stage 1 with it.
+path invoke this skill right after minting. The artifact id is known; run Stage 0, then Stage 1
+with it.
 
 **B. Standalone.** User asks for registry help directly. Present the menu:
 - **Push / share** an adapter or play → Stage 1
@@ -110,7 +111,12 @@ path invoke this skill right after minting. The artifact id is known; jump to St
 ```bash
 rote registry whoami --verbose
 ```
-- Authenticated → note the email; continue.
+- Authenticated → note the email, `handle`, and `handle_status`, plus `environment` when present
+  (it appears only off production). Then branch on `handle_status`:
+  - `reserved` or `not_set` → continue.
+  - `session_expired` → sign in as below.
+  - `lookup_failed` → the registry did not answer. Report it and re-run `whoami` before any step
+    that needs the personal handle; it does not mean `not_set`.
 - Not authenticated → `rote login`. OAuth opens a browser — tell the user to finish there. Where no
   browser is reachable, `rote login --otp --otp-email <addr>` mails a code and
   `echo <code> | rote login --otp --otp-email <addr> --otp-verify` submits it. Re-run `whoami`
@@ -120,16 +126,18 @@ rote registry whoami --verbose
 
 ## Stage 1 — Choose the namespace
 
-Use the confirmed personal handle from account information and authorized organizations from:
+Use the personal `handle` from Stage 0 and authorized organizations from:
 
 ```bash
 rote registry org list --json
 ```
 
 Resolve the user's choice: **on your handle, or in which organization?** Reuse a destination already
-selected in this task. A user without organizations can publish under their confirmed personal
-handle. If that handle is missing, claim it through the live registry account commands before
-publishing. Create an organization through `rote-org` only when the user chooses a new organization.
+selected in this task. A user without organizations can publish under their personal handle. When
+the user chooses their personal handle and Stage 0 reported `handle_status: not_set`, ask the user
+to choose a handle (it is permanent), then run `rote profile set-handle <handle>` before publishing.
+An organization destination needs no personal handle. Create an organization through `rote-org`
+only when the user chooses a new organization.
 Then check the selected namespace in Stage 2.
 
 ---
