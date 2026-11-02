@@ -5,20 +5,13 @@
     "email": "social@modiqo.ai"
   },
   "metadata": {
-    "description": "Distributable rote skills — adapter workflow orchestration."
+    "description": "Distributable rote skill: one root skill that defers to `rote guidance`."
   },
   "plugins": [
     {
       "name": "rote",
       "source": "./plugins/rote",
-      "description": "Day-to-day rote skills for adapters, workflows, registry sharing, organization management, browser automation, and execution.",
-      "homepage": "https://getrote.dev",
-      "license": "Apache-2.0"
-    },
-    {
-      "name": "rote-onboard",
-      "source": "./plugins/rote-onboard",
-      "description": "Optional onboarding companion for the base rote plugin; adds guided setup and update workflows.",
+      "description": "One rote skill that defers to `rote guidance` for adapters, plays, workspaces, registry, organizations, and browser automation.",
       "homepage": "https://getrote.dev",
       "license": "Apache-2.0"
     }

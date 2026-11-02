@@ -1,8 +1,8 @@
 {
   "name": "rote",
   "displayName": "rote",
-  "description": "rote skills for day-to-day adapters, workflows, registry sharing, organization management, browser automation, and execution.",
-  "version": "0.94.0",
+  "description": "One rote skill that defers to `rote guidance` for adapters, plays, workspaces, registry, organizations, and browser automation.",
+  "version": "0.95.0",
   "author": {
     "name": "Modiqo",
     "url": "https://getrote.dev"

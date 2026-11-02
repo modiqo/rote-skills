@@ -1,7 +1,7 @@
 {
   "name": "rote",
-  "version": "0.94.0",
-  "description": "Day-to-day rote skills for adapters, workflows, registry sharing, and organization management.",
+  "version": "0.95.0",
+  "description": "One rote skill that defers to `rote guidance` for adapters, plays, workspaces, registry, organizations, and browser automation.",
   "homepage": "https://getrote.dev",
   "license": "Apache-2.0"
 }
