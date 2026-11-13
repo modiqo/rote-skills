@@ -2,7 +2,7 @@
   "name": "rote",
   "displayName": "rote",
   "description": "One rote skill that defers to `rote guidance` for adapters, plays, workspaces, registry, organizations, and browser automation.",
-  "version": "0.96.0",
+  "version": "0.97.0",
   "author": {
     "name": "Modiqo",
     "url": "https://getrote.dev"
