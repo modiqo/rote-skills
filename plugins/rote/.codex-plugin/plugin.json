@@ -1,7 +1,7 @@
 {
   "name": "rote",
-  "version": "0.97.1",
-  "description": "One rote skill that defers to `rote guidance` for adapters, plays, workspaces, registry, organizations, and browser automation.",
+  "version": "1.0.0",
+  "description": "One rote skill that defers to `rote guidance` for adapters, plays, workspaces, registry, and organizations.",
   "author": {
     "name": "Modiqo",
     "url": "https://getrote.dev"
@@ -15,14 +15,13 @@
     "mcp",
     "flows",
     "registry",
-    "organization",
-    "browser"
+    "organization"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "rote",
-    "shortDescription": "Day-to-day rote workflows with adapters, registry sharing, organization management, browser automation, and reusable results.",
-    "longDescription": "Invoked explicitly, or when a `rote:` hook line routes the request. The single rote skill points the agent at `rote guidance root`, which starts each request with `rote journey next` and hands other work to adapters, workspaces, browser automation, registry sharing, and organization management.",
+    "shortDescription": "Day-to-day rote workflows with adapters, registry sharing, organization management, and reusable results.",
+    "longDescription": "Invoked explicitly, or when a `rote:` hook line routes the request. The single rote skill points the agent at `rote guidance root`, which starts each request with `rote journey next` and hands other work to adapters, workspaces, registry sharing, and organization management.",
     "developerName": "Modiqo",
     "category": "Productivity",
     "capabilities": [

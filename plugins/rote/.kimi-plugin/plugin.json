@@ -1,7 +1,7 @@
 {
   "name": "rote",
-  "version": "0.97.1",
-  "description": "One rote skill that defers to `rote guidance` for adapters, plays, workspaces, registry, organizations, and browser automation.",
+  "version": "1.0.0",
+  "description": "One rote skill that defers to `rote guidance` for adapters, plays, workspaces, registry, and organizations.",
   "author": {
     "name": "Modiqo"
   },
@@ -13,8 +13,7 @@
     "mcp",
     "flows",
     "registry",
-    "organization",
-    "browser"
+    "organization"
   ],
   "skills": "./skills/",
   "sessionStart": "Load the rote skill only when the user asks for rote or a `rote:` hook line routes the request.",

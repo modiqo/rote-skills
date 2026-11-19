@@ -1,8 +1,8 @@
 {
   "name": "rote",
   "displayName": "rote",
-  "description": "One rote skill that defers to `rote guidance` for adapters, plays, workspaces, registry, organizations, and browser automation.",
-  "version": "0.97.1",
+  "description": "One rote skill that defers to `rote guidance` for adapters, plays, workspaces, registry, and organizations.",
+  "version": "1.0.0",
   "author": {
     "name": "Modiqo",
     "url": "https://getrote.dev"
@@ -16,8 +16,7 @@
     "mcp",
     "flows",
     "registry",
-    "organization",
-    "browser"
+    "organization"
   ],
   "skills": "./skills/"
 }

@@ -1,7 +1,7 @@
 {
   "name": "rote",
-  "version": "0.97.1",
-  "description": "One rote skill that defers to `rote guidance` for adapters, plays, workspaces, registry, organizations, and browser automation.",
+  "version": "1.0.0",
+  "description": "One rote skill that defers to `rote guidance` for adapters, plays, workspaces, registry, and organizations.",
   "homepage": "https://getrote.dev",
   "license": "Apache-2.0"
 }
